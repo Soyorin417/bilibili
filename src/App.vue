@@ -1,9 +1,8 @@
 <template>
-  <nav>
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
-  </nav>
-  <router-view/>
+  <NavBar>
+    <Home></Home>
+  </NavBar>
+  <router-view />
 </template>
 
 <style>
@@ -28,3 +27,17 @@ nav a.router-link-exact-active {
   color: #42b983;
 }
 </style>
+<script>
+import "bootstrap/dist/js/bootstrap";
+import "bootstrap/dist/css/bootstrap.css";
+import { Home } from "@icon-park/vue-next";
+
+import NavBar from "./components/NavBar.vue";
+export default {
+  name: "App",
+  components: {
+    NavBar,
+    Home,
+  },
+};
+</script>

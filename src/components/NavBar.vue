@@ -1,8 +1,9 @@
 <template>
   <nav class="navbar navbar-expand-lg bg-body-tertiary">
-    <div class="container-fluid">
+    <div class="container-fluid position-absolute top-1 start-50 translate-middle">
       <ul class="navbar-nav me-auto">
         <li class="nav-item">
+          <tv theme="outline" size="20" fill="#ffffff" />
           <a class="nav-link" href="#">首页</a>
         </li>
         <li class="nav-item">
@@ -27,7 +28,7 @@
           <a class="nav-link" href="#">PDD</a>
         </li>
         <li class="nav-item">
-          <download theme="outline" size="20" fill="#333" />
+          <download theme="outline" size="20" fill="#ffffff" />
           <a class="nav-link" href="#">下载客户端</a>
         </li>
       </ul>
@@ -43,14 +44,10 @@
 
       <ul class="navbar-nav ms-auto">
         <li class="nav-item dropdown">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            role="button"
-            aria-expanded="false"
-          >
-            头像
+          <a class="nav-link" href="#" role="button" aria-expanded="false"
+            ><img src="../assets/lucy.png" alt="" />
           </a>
+
           <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="#">Profile</a></li>
             <li><a class="dropdown-item" href="#">Settings</a></li>
@@ -58,15 +55,11 @@
           </ul>
         </li>
         <li class="nav-item dropdown">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            role="button"
-            aria-expanded="false"
-          >
-            大会员
+          <a class="nav-link" href="#" role="button" aria-expanded="false">
+            <vip-one theme="outline" size="20" fill="#ffffff" />
           </a>
-          <vip-one theme="outline" size="24" fill="#ffffff" />
+          <div class="nav-text">大会员</div>
+
           <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="#">Profile</a></li>
             <li><a class="dropdown-item" href="#">Settings</a></li>
@@ -74,15 +67,14 @@
           </ul>
         </li>
         <li class="nav-item dropdown">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            role="button"
-            aria-expanded="false"
-          >
-            消息
+          <a class="nav-link" href="#" role="button" aria-expanded="false">
+            <message-one theme="outline" size="20" fill="#ffffff" /><span
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-secondary"
+              >+99 <span class="visually-hidden">unread messages</span></span
+            >
           </a>
-          <message-one theme="outline" size="24" fill="#ffffff" />
+          <div class="nav-text">消息</div>
+
           <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="#">Profile</a></li>
             <li><a class="dropdown-item" href="#">Settings</a></li>
@@ -90,15 +82,11 @@
           </ul>
         </li>
         <li class="nav-item dropdown">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            role="button"
-            aria-expanded="false"
-          >
-            动态
+          <a class="nav-link" href="#" role="button" aria-expanded="false">
+            <windmill-two theme="outline" size="20" fill="#ffffff" />
           </a>
-          <windmill-two theme="outline" size="24" fill="#ffffff" />
+          <div class="nav-text">动态</div>
+
           <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="#">Profile</a></li>
             <li><a class="dropdown-item" href="#">Settings</a></li>
@@ -106,15 +94,10 @@
           </ul>
         </li>
         <li class="nav-item dropdown">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            role="button"
-            aria-expanded="false"
-          >
-            收藏
+          <a class="nav-link" href="#" role="button" aria-expanded="false">
+            <star theme="outline" size="20" fill="#ffffff" />
           </a>
-          <star theme="outline" size="24" fill="#ffffff" />
+          <div class="nav-text">收藏</div>
           <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="#">Profile</a></li>
             <li><a class="dropdown-item" href="#">Settings</a></li>
@@ -122,13 +105,8 @@
           </ul>
         </li>
         <li class="nav-item dropdown">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            role="button"
-            aria-expanded="false"
-          >
-            <alarm-clock theme="outline" size="24" fill="#ffffff" />
+          <a class="nav-link" href="#" role="button" aria-expanded="false">
+            <alarm-clock theme="outline" size="20" fill="#ffffff" />
           </a>
           <div class="nav-text">历史</div>
           <ul class="dropdown-menu">
@@ -140,7 +118,7 @@
 
         <li class="nav-item">
           <a class="nav-link" href="#">
-            <Tips theme="outline" size="24" fill="#ffffff" />
+            <Tips theme="outline" size="20" fill="#ffffff" />
           </a>
           <div class="nav-text">创作中心</div>
         </li>
@@ -160,6 +138,7 @@ import { WindmillTwo } from "@icon-park/vue-next";
 import { VipOne } from "@icon-park/vue-next";
 import { Star } from "@icon-park/vue-next";
 import { Tips } from "@icon-park/vue-next";
+import { Tv } from "@icon-park/vue-next";
 export default {
   name: "NavBar",
   components: {
@@ -170,11 +149,12 @@ export default {
     VipOne,
     Star,
     Tips,
+    Tv,
   },
 };
 </script>
 
-<style>
+<style scoped>
 .navbar {
   padding: 0.5rem 1rem; /* 调整导航栏内边距 */
   background-size: cover; /* 背景图覆盖整个导航栏 */
@@ -197,8 +177,11 @@ export default {
   font-size: small;
 }
 .nav-item img {
-  width: 30px; /* 设置图片宽度 */
-  height: 30px; /* 设置图片高度 */
+  width: 40px; /* 设置图片宽度 */
+  height: 40px; /* 设置图片高度 */
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ffffff;
 }
 
 .nav-link:hover {
@@ -217,7 +200,7 @@ export default {
 }
 
 .dropdown-menu {
-  display: none; /* 默认隐藏下拉菜单 */
+  display: none;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s ease, visibility 0.3s ease;

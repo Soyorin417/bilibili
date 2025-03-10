@@ -35,7 +35,7 @@
 
       <form class="d-flex" role="search">
         <input
-          class="form-control me-2"
+          class="form-control me-2 custom-search"
           type="search"
           placeholder="小明剑魔我老爸得了mvp"
           aria-label="Search"
@@ -161,7 +161,7 @@ export default {
   background-position: center; /* 背景图居中 */
   background-repeat: no-repeat; /* 背景图不重复 */
   height: 180px;
-  background-image: url("../assets/lucy.png");
+  background-image: url("../assets/background.webp");
 }
 
 .nav-link {
@@ -171,6 +171,11 @@ export default {
   color: white;
   display: inline-block; /* 确保 transform 生效 */
   transition: transform 0.3s ease;
+}
+
+.custom-search {
+  width: 500px; /* 设置固定宽度 */
+  max-width: 100%; /* 确保在小屏幕上不会溢出 */
 }
 .nav-text {
   color: white;

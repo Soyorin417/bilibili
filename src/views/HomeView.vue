@@ -1,6 +1,6 @@
 <template>
   <div class="container-fluid mt-3">
-    <div class="card page mx-auto">
+    <div class="page mx-auto">
       <div class="card-body">
         <div class="row">
           <div class="col-1">
@@ -42,8 +42,8 @@
             </div>
           </div>
         </div>
-        <div class="row mt-3">
-          <div class="col-5">
+        <div class="custom-layout mt-3">
+          <div class="left-section">
             <div
               id="carouselExampleIndicators"
               class="carousel slide"
@@ -74,22 +74,22 @@
               <div class="carousel-inner">
                 <div class="carousel-item active">
                   <img
-                    src="../assets/bilibili_icon.png"
-                    class="d-block w-100 slide_img"
+                    src="../assets/mygo.jpg"
+                    class="d-block w-100 slide_img rounded"
                     alt="Slide 1"
                   />
                 </div>
                 <div class="carousel-item">
                   <img
-                    src="../assets/logo.png"
-                    class="d-block w-100 slide_img"
+                    src="../assets/game.jpg"
+                    class="d-block w-100 slide_img rounded"
                     alt="Slide 2"
                   />
                 </div>
                 <div class="carousel-item">
                   <img
-                    src="../assets/mygo.png"
-                    class="d-block w-100 slide_img"
+                    src="../assets/arknights.webp"
+                    class="d-block w-100 slide_img rounded"
                     alt="Slide 3"
                   />
                 </div>
@@ -114,21 +114,33 @@
               </button>
             </div>
           </div>
-          <div class="col-7">
-            <div class="row">
-              <div v-for="(videoCard, index) in videoCards" :key="index" class="col-4">
-                <div v-for="(item, i) in videoCard" :key="i" :class="{ 'mt-4': i > 0 }">
-                  <VideoCard>{{ item }}</VideoCard>
-                </div>
+          <div class="right-section">
+            <div class="row row-cols-3">
+              <div v-for="(videoCard, index) in videoCards" :key="index" class="col">
+                <VideoCard
+                  v-for="(item, i) in videoCard"
+                  :key="i"
+                  :url="item.url"
+                  :title="item.title"
+                  :message="item.message"
+                  :class="{ 'mt-4': i > 0 }"
+                  class="mb-3"
+                />
               </div>
             </div>
           </div>
         </div>
-        <div class="row">
-          <div v-for="(otherVideo, index) in otherVideos" :key="index" class="col-2">
-            <div v-for="(item, i) in otherVideo" :key="i" :class="{ 'mt-4': i > 0 }">
-              <VideoCard>{{ item }}</VideoCard>
-            </div>
+        <div class="row row-cols-5">
+          <div v-for="(otherVideo, index) in otherVideos" :key="index" class="col">
+            <VideoCard
+              class="mb-3"
+              v-for="(item, i) in otherVideo"
+              :key="i"
+              :url="item.url"
+              :title="item.title"
+              :message="item.message"
+              :class="{ 'mt-4': i > 0 }"
+            />
           </div>
         </div>
       </div>
@@ -138,7 +150,7 @@
 
 <script>
 import TagButton from "@/components/TagButton.vue";
-import IconButton from "../components/IconButton.vue"; // 引入 IconButton 组件
+import IconButton from "../components/IconButton.vue";
 import VideoCard from "@/components/VideoCard.vue";
 
 export default {
@@ -179,16 +191,61 @@ export default {
         ],
       ],
       videoCards: [
-        ["1", "2"],
-        ["3", "4"],
-        ["5", "6"],
+        [
+          { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
+          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+        ],
+        [
+          { url: require("@/assets/background.webp"), title: "视频3", message: "描述3" },
+          { url: require("@/assets/lucy.png"), title: "视频4", message: "描述4" },
+        ],
+        [
+          { url: require("@/assets/mygo.jpg"), title: "视频5", message: "描述5" },
+          { url: require("@/assets/mygo.webp"), title: "视频6", message: "描述6" },
+        ],
       ],
+
       otherVideos: [
-        ["1", "2"],
-        ["3", "4"],
-        ["5", "6"],
-        ["7", "8"],
-        ["9", "10"],
+        [
+          { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
+          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+        ],
+        [
+          { url: require("@/assets/background.webp"), title: "视频3", message: "描述3" },
+          { url: require("@/assets/lucy.png"), title: "视频4", message: "描述4" },
+        ],
+        [
+          { url: require("@/assets/mygo.jpg"), title: "视频5", message: "描述5" },
+          { url: require("@/assets/mygo.webp"), title: "视频6", message: "描述6" },
+        ],
+        [
+          { url: require("@/assets/zc.jpg"), title: "视频1", message: "描述1" },
+          { url: require("@/assets/ew.png"), title: "视频2", message: "描述2" },
+        ],
+        [
+          { url: require("@/assets/ew.png"), title: "视频1", message: "描述1" },
+          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+        ],
+        [
+          { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
+          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+        ],
+        [
+          { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
+          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+        ],
+        [
+          { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
+          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+        ],
+        [
+          { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
+          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+        ],
+        [
+          { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
+          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+        ],
       ],
     };
   },
@@ -216,7 +273,7 @@ export default {
   margin: 5px;
 }
 .slide_img {
-  width: 400px;
+  width: 390px;
   height: 390px;
 }
 .main_tag {
@@ -229,5 +286,18 @@ export default {
 
 .text-center {
   text-align: center;
+}
+/* 自定义 2:3 布局 */
+.custom-layout {
+  display: flex;
+}
+
+.left-section {
+  flex: 2; /* 左侧占 2 份 */
+  margin-right: 16px; /* 添加右侧间距 */
+}
+
+.right-section {
+  flex: 3; /* 右侧占 3 份 */
 }
 </style>

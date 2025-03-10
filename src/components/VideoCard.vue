@@ -1,16 +1,28 @@
 <template>
   <div>
-    <div class="card">
-      <div class="card-body">t</div>
-    </div>
-    <div>title</div>
-    <div>message</div>
+    <img :src="url" class="card" alt="" />
+    <div>{{ title }}</div>
+    <div>{{ message }}</div>
   </div>
 </template>
 
 <script>
 export default {
   name: "VideoCard",
+  props: {
+    url: {
+      type: String,
+      required: true,
+    },
+    title: {
+      type: String,
+      default: "默认标题",
+    },
+    message: {
+      type: String,
+      default: "默认消息",
+    },
+  },
 };
 </script>
 

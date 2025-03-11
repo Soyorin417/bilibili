@@ -1,5 +1,6 @@
 <template>
   <div class="container-fluid mt-3">
+    <ThreeScene />
     <div class="page mx-auto">
       <div class="card-body">
         <div class="row">
@@ -88,7 +89,7 @@
                 </div>
                 <div class="carousel-item">
                   <img
-                    src="../assets/arknights.webp"
+                    src="http://121.36.211.155:9000/tuchuang/arknights.webp"
                     class="d-block w-100 slide_img rounded"
                     alt="Slide 3"
                   />
@@ -152,6 +153,7 @@
 import TagButton from "@/components/TagButton.vue";
 import IconButton from "../components/IconButton.vue";
 import VideoCard from "@/components/VideoCard.vue";
+import ThreeScene from "@/components/ThreeScene.vue";
 
 export default {
   name: "HomeView",
@@ -159,6 +161,7 @@ export default {
     IconButton,
     TagButton,
     VideoCard,
+    ThreeScene,
   },
   data() {
     return {
@@ -193,7 +196,11 @@ export default {
       videoCards: [
         [
           { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
-          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+          {
+            url: "http://121.36.211.155:9000/tuchuang/arknights.webp",
+            title: "视频2",
+            message: "描述2",
+          },
         ],
         [
           { url: require("@/assets/background.webp"), title: "视频3", message: "描述3" },
@@ -208,7 +215,11 @@ export default {
       otherVideos: [
         [
           { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
-          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+          {
+            url: "http://121.36.211.155:9000/tuchuang/arknights.webp",
+            title: "视频2",
+            message: "描述2",
+          },
         ],
         [
           { url: require("@/assets/background.webp"), title: "视频3", message: "描述3" },
@@ -224,27 +235,51 @@ export default {
         ],
         [
           { url: require("@/assets/ew.png"), title: "视频1", message: "描述1" },
-          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+          {
+            url: "http://121.36.211.155:9000/tuchuang/arknights.webp",
+            title: "视频2",
+            message: "描述2",
+          },
         ],
         [
           { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
-          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+          {
+            url: "http://121.36.211.155:9000/tuchuang/arknights.webp",
+            title: "视频2",
+            message: "描述2",
+          },
         ],
         [
           { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
-          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+          {
+            url: "http://121.36.211.155:9000/tuchuang/arknights.webp",
+            title: "视频2",
+            message: "描述2",
+          },
         ],
         [
           { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
-          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+          {
+            url: "http://121.36.211.155:9000/tuchuang/arknights.webp",
+            title: "视频2",
+            message: "描述2",
+          },
         ],
         [
           { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
-          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+          {
+            url: "http://121.36.211.155:9000/tuchuang/arknights.webp",
+            title: "视频2",
+            message: "描述2",
+          },
         ],
         [
           { url: require("@/assets/aibunala.jpg"), title: "视频1", message: "描述1" },
-          { url: require("@/assets/arknights.webp"), title: "视频2", message: "描述2" },
+          {
+            url: "http://121.36.211.155:9000/tuchuang/arknights.webp",
+            title: "视频2",
+            message: "描述2",
+          },
         ],
       ],
     };

@@ -1,7 +1,7 @@
 <template>
   <div :style="{ background: color }">
     <a href="#" role="button" aria-expanded="false">
-      <component :is="icon" theme="filled" size="20" fill="#61676d"
+      <component :is="icon" theme="filled" size="15" fill="#61676d"
     /></a>
     <span class="text-center" style="margin-left: 8px">{{ label }}</span>
   </div>

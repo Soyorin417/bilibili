@@ -41,8 +41,8 @@ export default {
 </script>
 <style scoped>
 .rounded-circle {
-  width: 3em;
-  height: 3em;
+  width: 4em;
+  height: 4em;
   display: flex;
   align-items: center;
   justify-content: center;

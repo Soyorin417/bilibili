@@ -83,8 +83,8 @@ export default {
 
 <style scoped>
 .three-container {
-  width: 100%;
-  height: 100vh;
+  width: 120vh;
+  height: 120vh;
   background-color: #000;
   display: flex;
   justify-content: center;

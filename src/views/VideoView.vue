@@ -232,8 +232,8 @@ export default {
   data() {
     return {
       is_show: false,
-      showDanmaku: true, // 用户控制的弹幕开关
-      danmakuEnabled: true, // 视频状态控制的弹幕显示
+      showDanmaku: true,
+      danmakuEnabled: true,
       danmakuText: "",
       activeDanmaku: [],
       currentTime: 0,
@@ -244,6 +244,11 @@ export default {
       recommendedVideos,
       danmakuDisplayList: [],
       danmakuInterval: null,
+      lastCheckTime: 0,
+      checkInterval: 50,
+      maxDanmakuCount: 50,
+      animationFrame: null,
+      danmakuStartTime: {},
     };
   },
   watch: {
@@ -288,88 +293,70 @@ export default {
     onTimeUpdate() {
       if (!this.$refs.videoPlayer) return;
 
-      this.currentTime = this.$refs.videoPlayer.currentTime;
+      const video = this.$refs.videoPlayer;
+      this.currentTime = video.currentTime;
 
-      // 查找当前时间点附近的弹幕
-      this.checkDanmakuTiming();
-      console.log("当前时间：", this.currentTime);
-    },
-    // 检查是否有弹幕需要显示
-    checkDanmakuTiming() {
-      if (!this.isDanmakuVisible) return;
-
-      const currentTimeInt = Math.floor(this.currentTime);
-      console.log("当前视频时间：", currentTimeInt);
-
-      this.danmakuList.forEach((danmaku) => {
-        const danmakuTime = this.timeToSeconds(danmaku.time);
-        console.log("检查弹幕时间：", danmakuTime, "弹幕内容：", danmaku.content);
-
-        if (Math.abs(danmakuTime - currentTimeInt) < 0.3) {
-          console.log("触发弹幕显示：", danmaku);
-          this.showNewDanmaku(danmaku.content, danmaku.type);
+      // 只在视频播放时检查弹幕
+      if (!video.paused) {
+        const now = Date.now();
+        if (now - this.lastCheckTime >= this.checkInterval) {
+          this.checkDanmakuTiming();
+          this.lastCheckTime = now;
         }
-      });
+      }
     },
-
     checkVideoStatus() {
       const video = this.$refs.videoPlayer;
       if (video) {
-        // 当视频在播放时隐藏弹幕，暂停时显示弹幕
-        this.danmakuEnabled = !(video.currentTime > 0 && !video.paused);
+        // 保持弹幕始终显示，只在视频真正结束时才隐藏
+        this.danmakuEnabled = !video.ended;
       }
     },
-
-    // 显示新弹幕
-    showNewDanmaku(content, type = "fixed") {
-      console.log("开始创建新弹幕：", { content, type });
-
-      const trackPosition = Math.floor(Math.random() * 80) + 10;
-      console.log("弹幕位置：", trackPosition);
-
-      let style = {};
-      if (type === "scroll") {
-        style = {
-          top: `${trackPosition}%`,
-          color: this.getRandomColor(),
-          right: "-100%",
-          transform: "translateX(0)",
-          whiteSpace: "nowrap",
-        };
-      } else {
-        style = {
-          top: `${trackPosition}%`,
-          color: this.getRandomColor(),
-          left: "50%",
-          transform: "translateX(-50%)",
-          animationName: "danmakuFade",
-          animationDuration: "5s",
-        };
+    // 检查是否有弹幕需要显示
+    checkDanmakuTiming() {
+      if (!this.isDanmakuVisible || this.activeDanmaku.length >= this.maxDanmakuCount) {
+        return;
       }
-      console.log("弹幕样式：", style);
 
-      const newDanmaku = {
-        content,
-        style,
-        type,
-        key: Date.now(),
-      };
-      console.log("新弹幕：", newDanmaku);
+      const currentTimeInt = Math.floor(this.currentTime);
+      const matchingDanmaku = this.danmakuList.find((danmaku) => {
+        const danmakuTime = this.timeToSeconds(danmaku.time);
+        const isTimeMatch = Math.abs(danmakuTime - currentTimeInt) <= 0.5; // 减小时间匹配范围
+        const isNotShown = !this.activeDanmaku.some(
+          (d) =>
+            d.content === danmaku.content && Math.abs(d.timestamp - currentTimeInt) < 1
+        );
+        return isTimeMatch && isNotShown;
+      });
 
-      this.activeDanmaku.push(newDanmaku);
-      console.log("当前活跃弹幕列表：", this.activeDanmaku);
+      if (matchingDanmaku) {
+        this.showNewDanmaku(matchingDanmaku.content, matchingDanmaku.type || "scroll");
+      }
+    },
+    // 获取可用轨道
+    getAvailableTrack() {
+      const maxTracks = 10; // 最大轨道数
+      const trackOccupancy = new Array(maxTracks).fill(0); // 记录每个轨道的占用情况
 
-      setTimeout(
-        () => {
-          const index = this.activeDanmaku.findIndex((d) => d.key === newDanmaku.key);
-          if (index !== -1) {
-            console.log("移除弹幕：", newDanmaku);
-            this.activeDanmaku.splice(index, 1);
-            console.log("移除后的弹幕列表：", this.activeDanmaku);
-          }
-        },
-        type === "scroll" ? 14000 : 5000
-      );
+      // 计算每个轨道的占用情况
+      this.activeDanmaku.forEach((danmaku) => {
+        if (danmaku.type === "scroll") {
+          trackOccupancy[danmaku.track]++;
+        }
+      });
+
+      // 优先选择占用最少的轨道
+      let minOccupancy = Infinity;
+      let bestTrack = 0;
+
+      for (let i = 0; i < maxTracks; i++) {
+        if (trackOccupancy[i] < minOccupancy) {
+          minOccupancy = trackOccupancy[i];
+          bestTrack = i;
+        }
+      }
+
+      return bestTrack;
     },
     // 获取随机颜色
     getRandomColor() {
@@ -379,13 +366,15 @@ export default {
         "#99ff99", // 浅绿色
         "#9999ff", // 浅蓝色
         "#ffff99", // 浅黄色
+        "#ffcc99", // 浅橙色
+        "#cc99ff", // 浅紫色
       ];
       return colors[Math.floor(Math.random() * colors.length)];
     },
     // 发送弹幕
     sendDanmaku() {
       if (!this.danmakuText.trim()) return;
-      console.log("发送弹幕：", this.danmakuText);
+
       // 获取当前视频时间
       const minutes = Math.floor(this.currentTime / 60);
       const seconds = Math.floor(this.currentTime % 60);
@@ -410,11 +399,102 @@ export default {
       // 添加到弹幕列表
       this.danmakuList.unshift(newDanmaku);
 
-      // 显示新发送的弹幕
-      this.showNewDanmaku(this.danmakuText);
+      // 立即显示新发送的弹幕
+      this.showNewDanmaku(this.danmakuText, this.currentDanmakuType);
 
       // 清空输入框
       this.danmakuText = "";
+    },
+    throttle(func, limit) {
+      let inThrottle;
+      return function (...args) {
+        if (!inThrottle) {
+          func.apply(this, args);
+          inThrottle = true;
+          setTimeout(() => (inThrottle = false), limit);
+        }
+      };
+    },
+    updateDanmaku() {
+      const now = Date.now();
+      this.activeDanmaku = this.activeDanmaku.filter((danmaku) => {
+        const duration = danmaku.type === "scroll" ? 8000 : 5000;
+        return now - danmaku.key < duration;
+      });
+
+      this.animationFrame = requestAnimationFrame(this.updateDanmaku);
+    },
+    showNewDanmaku(content, type = "scroll") {
+      if (this.activeDanmaku.length >= this.maxDanmakuCount) {
+        return;
+      }
+
+      const track = this.getAvailableTrack();
+      let style = {};
+      let duration = 8; // 默认时长（秒）
+
+      if (type === "scroll") {
+        const baseDuration = 8;
+        const lengthFactor = Math.max(1, content.length / 10);
+        duration = baseDuration * lengthFactor;
+
+        style = {
+          top: `${track * 8}%`,
+          color: this.getRandomColor(),
+          left: "100%",
+          transition: `left ${duration}s linear`,
+          willChange: "left",
+          zIndex: "auto",
+          pointerEvents: "none",
+        };
+      } else {
+        style = {
+          top: `${track * 8}%`,
+          color: this.getRandomColor(),
+          left: "50%",
+          transform: "translateX(-50%)",
+          animation: "danmakuFade 5s ease-out forwards",
+          pointerEvents: "none",
+        };
+      }
+
+      const newDanmaku = {
+        content,
+        style,
+        type,
+        key: Date.now(),
+        track,
+        timestamp: Math.floor(this.currentTime),
+        startTime: Date.now(),
+      };
+
+      this.activeDanmaku.push(newDanmaku);
+
+      if (type === "scroll") {
+        // 使用 nextTick 确保 DOM 更新后再开始动画
+        this.$nextTick(() => {
+          requestAnimationFrame(() => {
+            newDanmaku.style.left = "-100%";
+          });
+        });
+
+        // 根据弹幕长度设置移除时间，增加缓冲时间确保动画完成
+        const removeDuration = (duration + 1) * 1000; // 增加1秒缓冲时间
+        setTimeout(() => {
+          const index = this.activeDanmaku.findIndex((d) => d.key === newDanmaku.key);
+          if (index !== -1) {
+            this.activeDanmaku.splice(index, 1);
+          }
+        }, removeDuration);
+      } else {
+        // 静态弹幕在动画结束后移除
+        setTimeout(() => {
+          const index = this.activeDanmaku.findIndex((d) => d.key === newDanmaku.key);
+          if (index !== -1) {
+            this.activeDanmaku.splice(index, 1);
+          }
+        }, 6000); // 5秒动画 + 1秒缓冲
+      }
     },
   },
   computed: {
@@ -429,10 +509,15 @@ export default {
   mounted() {
     console.log("加载视频ID:", this.videoId);
   },
+  beforeUnmount() {
+    if (this.animationFrame) {
+      cancelAnimationFrame(this.animationFrame);
+    }
+  },
 };
 </script>
 
-<style scoped>
+<style scoped lang="less">
 .page {
   max-width: 1500px;
 }
@@ -443,6 +528,7 @@ export default {
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 20px;
+  z-index: 1;
 }
 
 .video-player {
@@ -455,6 +541,8 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  position: relative;
+  z-index: 1;
 }
 
 .video-player::before {
@@ -482,60 +570,53 @@ export default {
   height: 100%;
   pointer-events: none;
   overflow: hidden;
-  z-index: 9999;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  z-index: 2;
 }
 
 .danmaku-item {
   position: absolute;
+  font-size: 24px;
+  text-shadow: -1px -1px #000, 1px -1px #000, -1px 1px #000, 1px 1px #000;
   white-space: nowrap;
-  font-size: 20px;
-  font-weight: 500;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
-  will-change: transform;
-  user-select: none;
-}
-
-/* 滚动弹幕动画 */
-@keyframes running {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-3000px);
-  }
-}
-
-/* 固定弹幕动画 */
-@keyframes danmakuFade {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
-  }
-  20% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  80% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.2);
-  }
+  will-change: left;
+  pointer-events: none;
+  z-index: auto;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .danmaku-running {
-  animation: running 12s linear forwards;
-  position: absolute;
-  right: -100%;
+  animation: scroll 8s linear;
 }
 
 .danmaku-fixed {
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  animation: danmakuFade 5s forwards;
+  animation: danmakuFade 5s ease-out forwards;
+}
+
+@keyframes scroll {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes danmakuFade {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 /* 弹幕控制条 */
@@ -546,6 +627,8 @@ export default {
   background-color: #f8f9fa;
   border-radius: 4px;
   margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
 }
 
 .danmaku-input {

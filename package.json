@@ -33,6 +33,8 @@
     "@vue/cli-service": "~5.0.0",
     "eslint": "^8.57.0",
     "eslint-plugin-vue": "^8.7.1",
+    "less": "^4.3.0",
+    "less-loader": "^12.2.0",
     "vue-eslint-parser": "^10.1.3"
   },
   "eslintConfig": {

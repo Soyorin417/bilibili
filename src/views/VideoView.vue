@@ -5,7 +5,7 @@
       <div class="page mx-auto">
         <div class="row">
           <!-- 左侧区域：视频播放器和视频信息 -->
-          <div class="col-lg-9 mt-2">
+          <div class="col-lg-9 mt-4">
             <div class="row mb-3">
               <div class="col-8">
                 <h4 class="d-flex">
@@ -38,7 +38,7 @@
             </div>
 
             <!-- 视频播放器 -->
-            <div class="video-player-container">
+            <div class="video-player-container" id="videoStatus">
               <div class="video-player bg-dark position-relative">
                 <video
                   class="w-100"
@@ -47,12 +47,15 @@
                   :src="videoInfo.video_url"
                   ref="videoPlayer"
                   @timeupdate="onTimeUpdate"
+                  @play="checkVideoStatus"
+                  @pause="checkVideoStatus"
+                  @seeking="checkVideoStatus"
                 >
                   <source :src="videoInfo.video_url" type="video/mp4" />
                 </video>
 
                 <!-- 弹幕显示区域 -->
-                <div class="danmaku-display-area" v-show="showDanmaku">
+                <div class="danmaku-display-area" v-show="isDanmakuVisible">
                   <div
                     v-for="(item, index) in activeDanmaku"
                     :key="index"
@@ -139,47 +142,11 @@
           <!-- 右侧区域：推荐视频 -->
           <div class="col-lg-3">
             <!-- 作者信息区域 -->
-            <div class="author-info">
-              <div class="d-flex align-items-center">
-                <div class="author-avatar me-2">
-                  <img
-                    :src="videoInfo.avatar"
-                    class="rounded-circle"
-                    width="80"
-                    height="80"
-                    alt="author avatar"
-                  />
-                </div>
-                <div class="author-details">
-                  <div class="d-flex align-items-center mb-1">
-                    <h6>{{ videoInfo.author }}</h6>
-                    <el-icon><Message /></el-icon>
-                    <div>发消息</div>
-                  </div>
-                  <p class="small text-start">{{ videoInfo.description }}</p>
-                  <span>
-                    <button class="btn btn-sm btn-outline-secondary me-2">
-                      <i class="bi bi-lightning-charge"></i> 充电
-                    </button>
-
-                    <button
-                      class="btn btn-sm btn-primary"
-                      @click="is_follow"
-                      v-if="!userInfo.is_follow"
-                    >
-                      + 关注 {{ videoInfo.follow }}
-                    </button>
-                    <button
-                      class="btn btn-sm btn-secondary"
-                      @click="is_follow"
-                      v-if="userInfo.is_follow"
-                    >
-                      已关注 {{ videoInfo.follow }}
-                    </button>
-                  </span>
-                </div>
-              </div>
-            </div>
+            <AuthorInfo
+              :videoInfo="videoInfo"
+              :userInfo="userInfo"
+              @toggle-follow="is_follow"
+            />
 
             <!-- 弹幕列表 -->
             <div class="danmaku-container mb-3" :class="{ expanded: is_show }">
@@ -225,38 +192,10 @@
             </div>
 
             <!-- 推荐视频列表 -->
-            <div
-              class="recommended-header d-flex justify-content-between align-items-center mb-2"
-            >
-              <h6 class="mb-0">推荐列表</h6>
-              <button class="btn btn-link text-secondary p-0">
-                <i class="bi bi-three-dots"></i>
-              </button>
-            </div>
-            <div class="recommended-videos">
-              <div
-                v-for="(item, index) in recommendedVideos"
-                :key="index"
-                class="recommended-video-item d-flex mb-3"
-              >
-                <div class="recommended-video-thumbnail position-relative me-2">
-                  <img
-                    :src="item.image"
-                    class="recommended-thumbnail"
-                    alt="video thumbnail"
-                  />
-                  <span
-                    class="video-duration position-absolute bottom-0 end-0 bg-dark text-white px-1 rounded-1"
-                    >{{ item.duration }}</span
-                  >
-                </div>
-                <div class="recommended-video-info">
-                  <h6 class="recommended-video-title mb-1">{{ item.title }}</h6>
-                  <small class="text-muted d-block">{{ item.author }}</small>
-                  <small class="text-muted">{{ item.views }}次观看</small>
-                </div>
-              </div>
-            </div>
+            <RecommendedVideos
+              :recommendedVideos="recommendedVideos"
+              :to="'/video/' + videoInfo.id"
+            />
           </div>
         </div>
       </div>
@@ -267,392 +206,76 @@
 <script>
 import VideoBar from "@/components/navBar/VideoBar.vue";
 import { PlayTwo, CommentOne, Forbid, DropDownList } from "@icon-park/vue-next";
+import { danmakuList } from "@/data/danmakuData";
+import { userInfo } from "@/data/userInfoData";
+import { videoInfo } from "@/data/videoData";
+import { recommendedVideos } from "@/data/recommendedVideoData";
+import RecommendedVideos from "@/components/video/RecommendedVideos.vue";
+import AuthorInfo from "@/components/video/AuthorInfo.vue";
 
 export default {
-  components: { VideoBar, PlayTwo, CommentOne, Forbid, DropDownList },
-  props: ["id"],
+  components: {
+    VideoBar,
+    PlayTwo,
+    CommentOne,
+    Forbid,
+    DropDownList,
+    RecommendedVideos,
+    AuthorInfo,
+  },
+  props: {
+    id: {
+      type: [String, Number],
+      required: true,
+    },
+  },
   data() {
     return {
       is_show: false,
-      showDanmaku: true,
+      showDanmaku: true, // 用户控制的弹幕开关
+      danmakuEnabled: true, // 视频状态控制的弹幕显示
       danmakuText: "",
       activeDanmaku: [],
       currentTime: 0,
-      currentDanmakuType: "scroll", // 默认滚动弹幕
-      danmakuList: [
-        {
-          time: "01:32",
-          content: "你我都是孤独之人",
-          sendTime: "09-30 19:02",
-          type: "scroll",
-        },
-        {
-          time: "00:51",
-          content: "老婆qwq不要死",
-          sendTime: "09-30 19:01",
-          type: "scroll",
-        },
-        {
-          time: "00:31",
-          content: "哗",
-          sendTime: "09-30 19:03",
-          type: "fixed",
-        },
-        {
-          time: "01:19",
-          content: "阿梅离开后的粒子特效",
-          sendTime: "09-30 19:03",
-          type: "scroll",
-        },
-        {
-          time: "01:32",
-          content: "靠癫火取暖（doge）",
-          sendTime: "09-30 19:03",
-          type: "scroll",
-        },
-        {
-          time: "00:31",
-          content: "???",
-          sendTime: "09-30 19:04",
-          type: "fixed",
-        },
-        {
-          time: "00:32",
-          content: "wc",
-          sendTime: "09-30 19:03",
-          type: "fixed",
-        },
-        {
-          time: "00:00",
-          content: "你更新的消息从漂流墓地到求学洞窟无人不晓",
-          sendTime: "09-30 19:04",
-          type: "scroll",
-        },
-        {
-          time: "00:28",
-          content: "好！！！",
-          sendTime: "09-30 19:07",
-          type: "scroll",
-        },
-        {
-          time: "01:03",
-          content: "小木头：痛，太痛了",
-          sendTime: "09-30 19:14",
-          type: "scroll",
-        },
-        {
-          time: "00:24",
-          content: "我的女巫啊啊啊啊啊",
-          sendTime: "09-30 19:31",
-          type: "fixed",
-        },
-        {
-          time: "01:20",
-          content: "痛，太痛了",
-          sendTime: "09-30 19:31",
-          type: "scroll",
-        },
-        {
-          time: "01:29",
-          content: "把那个发癫的叉出去",
-          sendTime: "09-30 19:23",
-          type: "scroll",
-        },
-        {
-          time: "00:17",
-          content: "即使引导已经破碎，也请您当上艾尔登之王",
-          sendTime: "09-30 19:11",
-          type: "scroll",
-        },
-        {
-          time: "00:07",
-          content: "the fallen leaves tell a story",
-          sendTime: "09-30 19:23",
-          type: "scroll",
-        },
-        {
-          time: "00:45",
-          content: "梅琳娜我恨你是块木头啊！",
-          sendTime: "09-30 19:32",
-          type: "scroll",
-        },
-        {
-          time: "00:40",
-          content: "啊啊啊，居然不是整活视频",
-          sendTime: "09-30 19:18",
-          type: "scroll",
-        },
-        {
-          time: "00:25",
-          content: "托雷特和小木头",
-          sendTime: "09-30 19:21",
-          type: "scroll",
-        },
-        {
-          time: "01:26",
-          content: "绝了",
-          sendTime: "09-30 19:11",
-          type: "scroll",
-        },
-        {
-          time: "01:31",
-          content: "痛  太痛了",
-          sendTime: "09-30 19:11",
-          type: "scroll",
-        },
-        {
-          time: "01:49",
-          content: "恶兆王——蒙葛特",
-          sendTime: "09-30 19:55",
-          type: "scroll",
-        },
-        {
-          time: "01:31",
-          content: "泪目",
-          sendTime: "09-30 19:09",
-          type: "scroll",
-        },
-        {
-          time: "01:29",
-          content: "痛，太痛了",
-          sendTime: "09-30 19:32",
-          type: "scroll",
-        },
-        {
-          time: "01:20",
-          content: "又到了。。。白。。",
-          sendTime: "09-30 19:54",
-          type: "scroll",
-        },
-        {
-          time: "00:30",
-          content: "厚礼谢",
-          sendTime: "09-30 20:03",
-          type: "scroll",
-        },
-        {
-          time: "00:31",
-          content: "巨大宝箱",
-          sendTime: "09-30 19:05",
-          type: "scroll",
-        },
-        {
-          time: "01:58",
-          content: "为了你，我要在这里发癫",
-          sendTime: "09-30 19:45",
-          type: "scroll",
-        },
-        {
-          time: "00:03",
-          content: "泪目",
-          sendTime: "09-30 19:17",
-          type: "scroll",
-        },
-        {
-          time: "01:24",
-          content: "卧槽，这个场景",
-          sendTime: "09-30 20:07",
-          type: "scroll",
-        },
-        {
-          time: "00:02",
-          content: "落叶捎来讯息",
-          sendTime: "09-30 19:10",
-          type: "scroll",
-        },
-        {
-          time: "00:03",
-          content: "最喜欢的一集",
-          sendTime: "09-30 19:38",
-          type: "scroll",
-        },
-        {
-          time: "01:12",
-          content: "梅琳娜你这块木头",
-          sendTime: "09-30 19:06",
-          type: "scroll",
-        },
-        {
-          time: "01:58",
-          content: "阿梅，为了你，我要烧尽世间隔绝你我的一切！",
-          sendTime: "09-30 21:31",
-          type: "scroll",
-        },
-        {
-          time: "01:05",
-          content: "老婆！！！",
-          sendTime: "09-30 19:17",
-          type: "scroll",
-        },
-        {
-          time: "01:33",
-          content: "痛 太痛了 痛贯天灵",
-          sendTime: "09-30 20:05",
-          type: "scroll",
-        },
-        {
-          time: "01:35",
-          content: "小木头   我哭死",
-          sendTime: "09-30 20:10",
-          type: "scroll",
-        },
-        {
-          time: "00:02",
-          content: "落叶捎来讯息",
-          sendTime: "09-30 19:17",
-          type: "scroll",
-        },
-        {
-          time: "01:47",
-          content: "活下去！木头！",
-          sendTime: "09-30 21:14",
-          type: "scroll",
-        },
-        {
-          time: "01:33",
-          content: "泪目",
-          sendTime: "09-30 19:26",
-          type: "scroll",
-        },
-        {
-          time: "01:11",
-          content: "好家伙，太厉害了吧",
-          sendTime: "09-30 20:49",
-          type: "scroll",
-        },
-        {
-          time: "01:12",
-          content: "难蚌",
-          sendTime: "09-30 20:20",
-          type: "scroll",
-        },
-        {
-          time: "01:53",
-          content: "褪色者：那么……只有这一条路了。",
-          sendTime: "09-30 20:16",
-          type: "scroll",
-        },
-        {
-          time: "00:06",
-          content: "最喜欢的一集",
-          sendTime: "10-01 09:31",
-          type: "scroll",
-        },
-        {
-          time: "00:45",
-          content: "刚到王城，梅玲娜走掉我真的愣住了，跟老婆跑调了一样。",
-          sendTime: "09-30 19:17",
-          type: "scroll",
-        },
-        {
-          time: "00:01",
-          content: "我等的可是望眼欲穿呀",
-          sendTime: "09-30 20:33",
-          type: "scroll",
-        },
-        {
-          time: "01:22",
-          content: "淦！她要是真愿意来看我，我可得感动哭了",
-          sendTime: "09-30 19:18",
-          type: "scroll",
-        },
-        {
-          time: "00:33",
-          content: "我来帮你把卢恩转化成力量",
-          sendTime: "09-30 20:23",
-          type: "scroll",
-        },
-        {
-          time: "00:00",
-          content: "催泪神作",
-          sendTime: "09-30 20:41",
-          type: "scroll",
-        },
-        {
-          time: "00:50",
-          content: "好美啊啊啊啊啊",
-          sendTime: "09-30 19:38",
-          type: "scroll",
-        },
-        {
-          time: "00:01",
-          content: "The fallen leaves tell a story",
-          sendTime: "09-30 19:21",
-          type: "scroll",
-        },
-      ],
-      videoInfo: {
-        title: "《一等情事》",
-        views: "1312.8万",
-        comments: "1.0万",
-        time: "2020-09-30 19:00:00",
-        description: "前有无畏",
-        avatar:
-          "http://113.45.69.13:9000/image/70f8a4e6046ea9795fc96784ba7cb69bec9832c1.jpg",
-        video_url: "http://113.45.69.13:9000/image/《 一等情事 》.mp4",
-        image:
-          "http://113.45.69.13:9000/image/78845e847febc6fdf4f41eeb6306c25c23396569.jpg",
-        show_right: false,
-        author: "红宝石戒指",
-        follow: "13.6万",
-      },
-      userInfo: {
-        name: "红宝石戒指",
-        avatar:
-          "http://113.45.69.13:9000/image/70f8a4e6046ea9795fc96784ba7cb69bec9832c1.jpg",
-        is_follow: false,
-        follow: "13.6万",
-      },
-      recommendedVideos: [
-        {
-          id: 1,
-          title: "苏士比亚",
-          author: "陈暖暖",
-          views: "626.3万",
-          duration: "01:41",
-          image:
-            "http://113.45.69.13:9000/image/a29d12bfc0664b4a62dc5de95d42f14c65e6f303.jpg",
-        },
-        {
-          id: 2,
-          title: "MVP唱法",
-          author: "白小鱼",
-          views: "551.2万",
-          duration: "01:31",
-          image:
-            "http://113.45.69.13:9000/image/23b06d02882bcf31d6d044339796693b7d02ed2a.jpg",
-        },
-        {
-          id: 3,
-          title: "Look in my eyes",
-          author: "白小鱼",
-          views: "551.2万",
-          duration: "01:11",
-          image:
-            "http://113.45.69.13:9000/image/f94ec129e83bfca078e5e84277d8a69ea932732e.jpg",
-        },
-        {
-          id: 4,
-          title: "八勒比寥斯",
-          author: "陌生人Ming",
-          views: "1269.4万",
-          duration: "01:24",
-          image:
-            "http://113.45.69.13:9000/image/d1183a9170bd267f19f748ad874ad5467b4dcca2.jpg",
-        },
-        {
-          id: 5,
-          title: "满坑大佬痛哭新手村",
-          author: "Hermoe",
-          views: "6222.9万",
-          duration: "02:06",
-          image:
-            "http://113.45.69.13:9000/image/33e9ef5fc74dc0057dd50cf73e119bcd475d4f56.jpg",
-        },
-      ],
+      currentDanmakuType: "scroll",
+      danmakuList,
+      userInfo,
+      videoInfo,
+      recommendedVideos,
+      danmakuDisplayList: [],
+      danmakuInterval: null,
     };
   },
+  watch: {
+    // 监听路由参数变化
+    id: {
+      immediate: true,
+      handler(newId) {
+        console.log("Video ID changed:", newId);
+        this.loadVideoData(newId);
+      },
+    },
+  },
   methods: {
+    loadVideoData(id) {
+      // 从推荐视频列表中查找对应ID的视频
+      const video = recommendedVideos.find((v) => v.id === parseInt(id));
+      if (video) {
+        // 更新视频信息
+        this.videoInfo = {
+          ...this.videoInfo,
+          ...video,
+          id: parseInt(id),
+        };
+      }
+      // 重置视频播放器
+      if (this.$refs.videoPlayer) {
+        this.$refs.videoPlayer.currentTime = 0;
+        this.$refs.videoPlayer.pause();
+      }
+      // 清空弹幕列表
+      this.activeDanmaku = [];
+    },
     is_follow() {
       this.userInfo.is_follow = !this.userInfo.is_follow;
     },
@@ -673,7 +296,7 @@ export default {
     },
     // 检查是否有弹幕需要显示
     checkDanmakuTiming() {
-      if (!this.showDanmaku) return;
+      if (!this.isDanmakuVisible) return;
 
       const currentTimeInt = Math.floor(this.currentTime);
       console.log("当前视频时间：", currentTimeInt);
@@ -687,6 +310,14 @@ export default {
           this.showNewDanmaku(danmaku.content, danmaku.type);
         }
       });
+    },
+
+    checkVideoStatus() {
+      const video = this.$refs.videoPlayer;
+      if (video) {
+        // 当视频在播放时隐藏弹幕，暂停时显示弹幕
+        this.danmakuEnabled = !(video.currentTime > 0 && !video.paused);
+      }
     },
 
     // 显示新弹幕
@@ -789,6 +420,10 @@ export default {
   computed: {
     videoId() {
       return this.id;
+    },
+    // 最终的弹幕显示状态
+    isDanmakuVisible() {
+      return this.showDanmaku && this.danmakuEnabled;
     },
   },
   mounted() {
@@ -1052,10 +687,9 @@ export default {
 }
 
 .author-info {
-  padding: 12px;
-  background-color: #f8f9fa;
+  background-color: white;
   border-radius: 6px;
-  margin-bottom: 16px;
+  margin-bottom: 5px;
 }
 
 .author-avatar img {
@@ -1072,17 +706,15 @@ export default {
 }
 
 .author-details .text-muted {
-  font-size: 12px;
-  margin-bottom: 6px;
+  font-size: 15px;
 }
 
 .author-details .btn-sm {
-  padding: 0.2rem 0.4rem;
-  font-size: 11px;
+  font-size: 12px;
+  margin-bottom: 0.5rem;
 }
-
 .author-details .el-icon {
-  font-size: 14px;
+  font-size: 15px;
   margin-left: 4px;
   color: #666;
 }
@@ -1100,6 +732,6 @@ export default {
 
 /* 当列表显示时，容器才应用固定高度 */
 .danmaku-container.expanded {
-  height: 600px; /* 列表高度 + header/footer 空间 */
+  height: 634px; /* 列表高度 + header/footer 空间 */
 }
 </style>

@@ -1,12 +1,12 @@
 export const recommendedVideos = [
     {
       id: 1,
-      title: "苏士比亚",
-      author: "陈暖暖",
-      views: "626.3万",
+      title: "《一等情事》",
+      author: "红宝石戒指",
+      views: "1312.8万",
       duration: "01:41",
       image:
-        "http://113.45.69.13:9000/image/a29d12bfc0664b4a62dc5de95d42f14c65e6f303.jpg",
+        "http://113.45.69.13:9000/image/78845e847febc6fdf4f41eeb6306c25c23396569.jpg",
     },
     {
       id: 2,
@@ -44,4 +44,13 @@ export const recommendedVideos = [
       image:
         "http://113.45.69.13:9000/image/33e9ef5fc74dc0057dd50cf73e119bcd475d4f56.jpg",
     },
+    {
+      id: 6,
+      title: "【7月】咒术回战 第2期 第1集",
+      author: "哔哩哔哩番剧",
+      views: "1891.4万",
+      duration: "00:23:40",
+      image: "http://113.45.69.13:9000/image/a731849d356512ec5a3bdaab6911f324c3ac0b0d.jpg",
+    },
+    
   ]

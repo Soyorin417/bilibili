@@ -250,7 +250,8 @@ export default {
       loop_videoCards: [
         {
           id: "1",
-          url: "http://113.45.69.13:9000/image/lucy_moon.jpg",
+          url:
+            "http://113.45.69.13:9000/image/78845e847febc6fdf4f41eeb6306c25c23396569.jpg",
           title: "视频1",
           message: "描述1",
         },
@@ -276,7 +277,8 @@ export default {
       videoCards: [
         {
           id: "1",
-          url: "http://113.45.69.13:9000/image/lucy_moon.jpg",
+          url:
+            "http://113.45.69.13:9000/image/78845e847febc6fdf4f41eeb6306c25c23396569.jpg",
           title: "视频1",
           message: "描述1",
         },

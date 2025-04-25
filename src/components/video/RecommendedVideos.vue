@@ -14,7 +14,7 @@
         :key="index"
         :to="'/video/' + item.id"
         class="recommended-video-item d-flex mb-3 text-decoration-none"
-        @click="$router.go(0)"
+        @click="handleVideoClick(item.id)"
       >
         <div class="recommended-video-thumbnail position-relative me-2">
           <img :src="item.image" class="recommended-thumbnail" alt="video thumbnail" />
@@ -135,6 +135,9 @@ export default {
       return `${minutes.toString().padStart(2, "0")}:${seconds
         .toString()
         .padStart(2, "0")}`;
+    },
+    handleVideoClick(videoId) {
+      this.$emit("video-click", videoId);
     },
   },
 };

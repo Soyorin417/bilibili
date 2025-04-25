@@ -191,7 +191,7 @@ export default {
 }
 
 .danmaku-running {
-  animation: danmaku-scroll var(--duration) linear forwards;
+  animation: danmaku-scroll var(--duration) linear;
   will-change: transform;
 }
 

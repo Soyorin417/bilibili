@@ -148,6 +148,6 @@ export default {
 
 /* 当列表显示时，容器才应用固定高度 */
 .danmaku-container.expanded {
-  height: 634px;
+  height: 625px;
 }
 </style>

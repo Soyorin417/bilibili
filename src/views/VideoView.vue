@@ -1,40 +1,35 @@
 ﻿<template>
-  <div>
+  <div :key="$route.params.id">
     <VideoBar></VideoBar>
     <div class="container-fluid mt-3">
       <div class="page mx-auto">
         <div class="row">
-          <!-- 左侧区域：视频播放器和视频信息 -->
-          <div class="col-lg-9 mt-4">
-            <div class="row">
-              <div class="col-8">
-                <h4 class="d-flex">
-                  {{ videoInfo.title }}
-                </h4>
-                <div class="d-flex align-items-center video-stats">
-                  <play-two
-                    theme="outline"
-                    size="18"
-                    fill="#666666"
-                    :strokeWidth="2"
-                    class="me-1"
-                  />
-                  <span class="me-3">{{ videoInfo.views }}</span>
-                  <comment-one
-                    theme="outline"
-                    size="18"
-                    fill="#666666"
-                    :strokeWidth="2"
-                    class="me-1"
-                  />
-                  <span class="me-3">{{ videoInfo.comments }}</span>
-                  <span class="me-3">{{ videoInfo.time }}</span>
-                  <span v-if="!videoInfo.show_right" class="ms-2">
-                    <forbid theme="outline" size="18" fill="#fc0404" class="me-1" />
-                    <span class="text-danger">未经作者授权，禁止转载</span>
-                  </span>
-                </div>
-              </div>
+          <div class="col-lg-9 mt-4 text-start">
+            <h4 class="title-wrapper">
+              {{ videoInfo.title }}
+            </h4>
+            <div class="stats-wrapper d-flex align-items-center">
+              <play-two
+                theme="outline"
+                size="16"
+                fill="#666666"
+                :strokeWidth="2"
+                class="me-1 icon-fix"
+              />
+              <span class="me-3 stats-text">1891.4万</span>
+              <comment-one
+                theme="outline"
+                size="16"
+                fill="#666666"
+                :strokeWidth="2"
+                class="me-1 icon-fix"
+              />
+              <span class="me-3 stats-text">12.3万</span>
+              <span class="me-3 stats-text">2024-03-10</span>
+              <span v-if="!videoInfo.show_right" class="ms-2">
+                <forbid theme="outline" size="16" fill="#fc0404" class="me-1 icon-fix" />
+                <span class="copyright-text">未经作者授权，禁止转载</span>
+              </span>
             </div>
 
             <!-- 视频播放器 -->
@@ -119,7 +114,7 @@
             <!-- 推荐视频列表 -->
             <RecommendedVideos
               :recommendedVideos="recommendedVideos"
-              :to="'/video/' + videoInfo.id"
+              @video-click="handleVideoClick"
             />
           </div>
         </div>
@@ -131,15 +126,15 @@
 <script>
 import VideoBar from "@/components/navBar/VideoBar.vue";
 import { PlayTwo, CommentOne, Forbid } from "@icon-park/vue-next";
-import { danmakuList } from "@/data/danmakuData";
+import { danmakuPool } from "@/data/danmakuPool";
 import { userInfo } from "@/data/userInfoData";
-import { videoInfo } from "@/data/videoData";
-import { recommendedVideos } from "@/data/recommendedVideoData";
+import { videoInfos } from "@/data/videoInfos";
 import RecommendedVideos from "@/components/video/RecommendedVideos.vue";
 import AuthorInfo from "@/components/video/AuthorInfo.vue";
 import DanmakuList from "@/components/video/DanmakuList.vue";
 import DanmakuControl from "@/components/video/DanmakuControl.vue";
 import DanmakuDisplay from "@/components/video/DanmakuDisplay.vue";
+import axios from "axios";
 
 export default {
   components: {
@@ -164,70 +159,184 @@ export default {
       is_show: false,
       showDanmaku: true,
       danmakuEnabled: true,
-      danmakuText: "",
-      activeDanmaku: [],
       currentTime: 0,
       currentDanmakuType: "scroll",
-      danmakuList,
+      danmakuList: [],
+      danmakuPool,
       userInfo,
-      videoInfo,
-      recommendedVideos,
-      danmakuDisplayList: [],
-      danmakuInterval: null,
+      videoInfos,
+      recommendedVideos: [],
+      activeDanmaku: [],
       lastCheckTime: 0,
       checkInterval: 50,
-      maxDanmakuCount: 50,
-      animationFrame: null,
-      danmakuStartTime: {},
+      videoInfo: {},
     };
   },
   watch: {
-    // 监听路由参数变化
-    id: {
+    $route: {
       immediate: true,
-      handler(newId) {
-        console.log("Video ID changed:", newId);
-        this.loadVideoData(newId);
+      handler(to) {
+        if (to.params.id) {
+          // 重置数据
+          this.danmakuList = [];
+          this.activeDanmaku = [];
+          if (this.$refs.videoPlayer) {
+            this.$refs.videoPlayer.currentTime = 0;
+            this.$refs.videoPlayer.pause();
+          }
+          // 加载新数据
+          this.loadVideoData(to.params.id);
+          this.selectDanmakuList();
+        }
       },
     },
   },
   methods: {
     loadVideoData(id) {
-      // 从推荐视频列表中查找对应ID的视频
-      const video = recommendedVideos.find((v) => v.id === parseInt(id));
+      // 首先从 videoInfos 中查找
+      let video = this.videoInfos.find((v) => v.id === parseInt(id));
+
       if (video) {
-        // 更新视频信息
         this.videoInfo = {
-          ...this.videoInfo,
           ...video,
           id: parseInt(id),
         };
+
+        // 重置视频播放器状态
+        if (this.$refs.videoPlayer) {
+          this.$refs.videoPlayer.currentTime = 0;
+          this.$refs.videoPlayer.pause();
+        }
+
+        // 清空当前弹幕
+        this.activeDanmaku = [];
+
+        // 更新推荐视频列表
+        this.refreshRecommendedVideos();
+      } else {
+        console.error(`Video with id ${id} not found`);
       }
-      // 重置视频播放器
-      if (this.$refs.videoPlayer) {
-        this.$refs.videoPlayer.currentTime = 0;
-        this.$refs.videoPlayer.pause();
-      }
-      // 清空弹幕列表
-      this.activeDanmaku = [];
     },
+
+    handleVideoClick(videoId) {
+      // 使用 replace 而不是 push，这样可以替换当前历史记录
+      this.$router.replace({
+        name: "VideoView",
+        params: { id: videoId },
+      });
+    },
+
+    refreshRecommendedVideos() {
+      const currentId = this.videoInfo.id;
+      // 确保 videoInfos 是数组且有数据
+      if (Array.isArray(this.videoInfos) && this.videoInfos.length > 0) {
+        this.recommendedVideos = this.videoInfos.filter(
+          (video) => video.id !== currentId
+        );
+        console.log("推荐视频数量:", this.recommendedVideos.length);
+      } else {
+        console.error("videoInfos 不是有效的数组或为空");
+      }
+    },
+
+    async selectDanmakuList() {
+      console.log("selectDanmakuList called");
+      console.log("videoInfo:", this.videoInfo);
+      let danmakuId = this.videoInfo.id;
+      console.log("danmakuId:", danmakuId);
+
+      // 根据视频ID加载对应的弹幕数据
+      const danmakuInfo = danmakuPool.find((d) => d.id === danmakuId);
+      console.log("Found danmaku info:", danmakuInfo);
+
+      if (danmakuInfo) {
+        try {
+          // 使用axios获取远程数据
+          console.log("Fetching from URL:", danmakuInfo.url);
+          const response = await axios.get(danmakuInfo.url, {
+            transformResponse: [
+              (data) => {
+                // 不自动转换响应数据
+                return data;
+              },
+            ],
+          });
+          console.log("Raw response data:", response.data);
+
+          let data;
+          try {
+            // 尝试解析JSON
+            if (typeof response.data === "string") {
+              data = JSON.parse(response.data);
+            } else {
+              data = response.data;
+            }
+            console.log("Parsed data:", data);
+          } catch (parseError) {
+            console.error("Error parsing JSON:", parseError);
+            // 如果是JavaScript文件，尝试提取变量
+            const text = response.data;
+            if (typeof text === "string" && text.includes("danmakuList")) {
+              // 尝试提取danmakuList的值
+              const match = text.match(/danmakuList\s*=\s*(\[[\s\S]*?\]);/);
+              if (match && match[1]) {
+                try {
+                  data = { danmakuList: JSON.parse(match[1]) };
+                  console.log("Extracted data from JS:", data);
+                } catch (e) {
+                  console.error("Error parsing extracted data:", e);
+                  throw new Error("Could not parse danmaku data");
+                }
+              }
+            }
+          }
+
+          // 检查data是否为数组，如果不是但data.danmakuList是数组则使用它
+          if (Array.isArray(data)) {
+            this.danmakuList = data;
+          } else if (data && Array.isArray(data.danmakuList)) {
+            this.danmakuList = data.danmakuList;
+          } else {
+            throw new Error(
+              "Invalid danmaku data format: expected an array or object with danmakuList array"
+            );
+          }
+
+          console.log(
+            "Successfully loaded danmaku list:",
+            this.danmakuList.length,
+            "items"
+          );
+        } catch (error) {
+          console.error("加载弹幕数据失败:", error);
+          console.error("Error details:", {
+            message: error.message,
+            stack: error.stack,
+            response: error.response,
+            rawData: error.response?.data,
+          });
+          this.danmakuList = [];
+        }
+      } else {
+        console.warn(`未找到ID为 ${danmakuId} 的弹幕数据`);
+        this.danmakuList = [];
+      }
+    },
+
     is_follow() {
       this.userInfo.is_follow = !this.userInfo.is_follow;
     },
-    // 时间格式化为秒
     timeToSeconds(timeStr) {
       const parts = timeStr.split(":");
       return parseInt(parts[0]) * 60 + parseInt(parts[1]);
     },
-    // 视频时间更新事件
     onTimeUpdate() {
       if (!this.$refs.videoPlayer) return;
 
       const video = this.$refs.videoPlayer;
       this.currentTime = video.currentTime;
 
-      // 只在视频播放时检查弹幕
-      if (!video.paused) {
+      if (!video.paused && this.isDanmakuVisible) {
         const now = Date.now();
         if (now - this.lastCheckTime >= this.checkInterval) {
           this.checkDanmakuTiming();
@@ -238,72 +347,42 @@ export default {
     checkVideoStatus() {
       const video = this.$refs.videoPlayer;
       if (video) {
-        // 保持弹幕始终显示，只在视频真正结束时才隐藏
         this.danmakuEnabled = !video.ended;
       }
     },
-    // 检查是否有弹幕需要显示
     checkDanmakuTiming() {
       const currentTime = this.$refs.videoPlayer.currentTime;
+      const targetTime = Math.floor(currentTime * 10) / 10;
 
-      // 使用二分查找优化匹配
-      const targetTime = Math.floor(currentTime * 10) / 10; // 精确到0.1秒
-      const index = this.danmakuList.findIndex(
-        (d) => Math.abs(this.timeToSeconds(d.time) - targetTime) < 0.3
-      );
-
-      if (index !== -1) {
-        const danmaku = this.danmakuList[index];
-        this.showNewDanmaku(danmaku.content, danmaku.type || "scroll");
-      }
-    },
-    // 获取可用轨道
-    getAvailableTrack() {
-      const maxTracks = 10; // 最大轨道数
-      const trackOccupancy = new Array(maxTracks).fill(0); // 记录每个轨道的占用情况
-
-      // 计算每个轨道的占用情况
-      this.activeDanmaku.forEach((danmaku) => {
-        if (danmaku.type === "scroll") {
-          trackOccupancy[danmaku.track]++;
+      this.danmakuList.forEach((d) => {
+        const danmakuTime = this.timeToSeconds(d.time);
+        if (Math.abs(danmakuTime - targetTime) < 0.3) {
+          this.showNewDanmaku(d.content, d.type || "scroll");
         }
       });
-
-      // 优先选择占用最少的轨道
-      let minOccupancy = Infinity;
-      let bestTrack = 0;
-
-      for (let i = 0; i < maxTracks; i++) {
-        if (trackOccupancy[i] < minOccupancy) {
-          minOccupancy = trackOccupancy[i];
-          bestTrack = i;
-        }
-      }
-
-      return bestTrack;
     },
-    // 获取随机颜色
-    getRandomColor() {
-      const colors = [
-        "#ffffff", // 白色
-        "#ff9999", // 浅红色
-        "#99ff99", // 浅绿色
-        "#9999ff", // 浅蓝色
-        "#ffff99", // 浅黄色
-        "#ffcc99", // 浅橙色
-        "#cc99ff", // 浅紫色
-      ];
-      return colors[Math.floor(Math.random() * colors.length)];
+    showNewDanmaku(content, type = "scroll") {
+      const danmaku = {
+        content,
+        type,
+        timestamp: Date.now(),
+      };
+
+      this.activeDanmaku = [...this.activeDanmaku, danmaku];
+
+      if (this.activeDanmaku.length > 100) {
+        this.activeDanmaku = this.activeDanmaku.slice(-100);
+      }
     },
     sendDanmaku({ content, type }) {
-      // 获取当前视频时间
+      if (!content.trim()) return;
+
       const minutes = Math.floor(this.currentTime / 60);
       const seconds = Math.floor(this.currentTime % 60);
       const timeStr = `${minutes
         .toString()
         .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
-      // 创建新弹幕
       const now = new Date();
       const month = (now.getMonth() + 1).toString().padStart(2, "0");
       const day = now.getDate().toString().padStart(2, "0");
@@ -317,66 +396,36 @@ export default {
         type: type,
       };
 
-      // 添加到弹幕列表
       this.danmakuList.unshift(newDanmaku);
-
-      // 立即显示新发送的弹幕
       this.showNewDanmaku(content, type);
     },
     toggleDanmaku(value) {
       this.showDanmaku = value;
-    },
-    throttle(func, limit) {
-      let inThrottle;
-      return function (...args) {
-        if (!inThrottle) {
-          func.apply(this, args);
-          inThrottle = true;
-          setTimeout(() => (inThrottle = false), limit);
-        }
-      };
-    },
-    updateDanmaku() {
-      const now = Date.now();
-      this.activeDanmaku = this.activeDanmaku.filter((danmaku) => {
-        const duration = danmaku.type === "scroll" ? 8000 : 5000;
-        return now - danmaku.key < duration;
-      });
-
-      this.animationFrame = requestAnimationFrame(this.updateDanmaku);
-    },
-    showNewDanmaku(content, type = "scroll") {
-      // 创建新弹幕对象
-      const danmaku = {
-        content,
-        type,
-      };
-
-      // 添加到活动弹幕列表
-      this.activeDanmaku = [...this.activeDanmaku, danmaku];
-
-      // 限制活动弹幕数量
-      if (this.activeDanmaku.length > 100) {
-        this.activeDanmaku = this.activeDanmaku.slice(-100);
-      }
     },
   },
   computed: {
     videoId() {
       return this.id;
     },
-    // 最终的弹幕显示状态
     isDanmakuVisible() {
       return this.showDanmaku && this.danmakuEnabled;
     },
   },
+  created() {
+    // 确保 videoInfos 正确初始化
+    if (!Array.isArray(this.videoInfos)) {
+      console.error("videoInfos 初始化失败");
+      this.videoInfos = [];
+    }
+    console.log("初始化 videoInfos 长度:", this.videoInfos.length);
+  },
   mounted() {
-    console.log("加载视频ID:", this.videoId);
+    console.log("VideoView mounted");
+    this.loadVideoData(this.videoId);
+    this.selectDanmakuList();
   },
   beforeUnmount() {
-    if (this.animationFrame) {
-      cancelAnimationFrame(this.animationFrame);
-    }
+    this.activeDanmaku = [];
   },
 };
 </script>
@@ -469,5 +518,52 @@ export default {
   margin-top: 20px;
   padding: 15px 0;
   border-bottom: 1px solid #eee;
+}
+
+.left-align {
+  text-align: left !important;
+}
+
+.stats-text {
+  font-size: 13px;
+  color: #666666;
+}
+
+.copyright-text {
+  font-size: 12px;
+  color: #666666;
+}
+
+.title-wrapper {
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+  font-size: 24px;
+  font-weight: 600;
+  text-align: left;
+  /* 添加以下属性来优化中文显示 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  letter-spacing: 0.2px;
+}
+
+.stats-wrapper {
+  margin-top: 12px;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.icon-fix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+h4 {
+  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica", "Arial", sans-serif;
+  font-size: 20px; /* 保持适中的大小 */
+  font-weight: 600; /* 加点粗体 */
+  line-height: 1.4; /* 行高正常一点 */
+  letter-spacing: 0.5px; /* 字距微微拉开，中英文更自然 */
 }
 </style>

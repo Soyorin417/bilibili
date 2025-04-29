@@ -107,7 +107,7 @@
             aria-expanded="false"
             :class="{ avatar: isAvatarVisible }"
             ><img
-              src="http://113.45.69.13:9000/image/lucy_moon.jpg"
+              :src="userData.avatar"
               alt=""
               class="avart-img"
               v-if="isAvatarVisible"
@@ -270,6 +270,7 @@ import { Tips } from "@icon-park/vue-next";
 import { Tv } from "@icon-park/vue-next";
 import { Upload } from "@icon-park/vue-next";
 import { Search } from "@icon-park/vue-next";
+import userData from "@/data/userData";
 
 export default {
   name: "NavBar",
@@ -287,6 +288,7 @@ export default {
   },
   data() {
     return {
+      userData,
       tags: [
         ["番剧", "/Anime"],
         ["直播", "/Broadcast"],

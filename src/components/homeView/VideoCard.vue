@@ -15,16 +15,17 @@
         </div>
       </div>
     </div>
-    <small>{{ title }}</small>
-    <div class="icon-container">
+    <div class="title-text">{{ truncatedTitle }}</div>
+    <div class="icon-container mt-1">
       <svg
+        @click="toggleLike"
         xmlns="http://www.w3.org/2000/svg"
         xmlns:xlink="http://www.w3.org/1999/xlink"
         viewBox="0 0 24 24"
         width="15"
         height="15"
         fill="currentColor"
-        class="bili-video-card__info--owner__up icon"
+        :class="['bili-video-card__info--owner__up icon', { active: isLiked }]"
       >
         <path
           d="M6.15 8.24805C6.5642 8.24805 6.9 8.58383 6.9 8.99805L6.9 12.7741C6.9 13.5881 7.55988 14.248 8.3739 14.248C9.18791 14.248 9.8478 13.5881 9.8478 12.7741L9.8478 8.99805C9.8478 8.58383 10.1836 8.24805 10.5978 8.24805C11.012 8.24805 11.3478 8.58383 11.3478 8.99805L11.3478 12.7741C11.3478 14.41655 10.01635 15.748 8.3739 15.748C6.73146 15.748 5.4 14.41655 5.4 12.7741L5.4 8.99805C5.4 8.58383 5.73578 8.24805 6.15 8.24805z"
@@ -39,8 +40,8 @@
           fill="currentColor"
         ></path>
       </svg>
-      <small>{{ message }}</small>
-      <small class="ms-2">2-10</small>
+      <small class="info-text">{{ message }}</small>
+      <small class="ms-2 info-text">2-10</small>
     </div>
   </div>
 </template>
@@ -80,6 +81,24 @@ export default {
       default: "默认消息",
     },
   },
+  data() {
+    return {
+      isLiked: false,
+    };
+  },
+  computed: {
+    truncatedTitle() {
+      if (this.title.length > 20) {
+        return this.title.slice(0, 20) + "...";
+      }
+      return this.title;
+    },
+  },
+  methods: {
+    toggleLike() {
+      this.isLiked = !this.isLiked;
+    },
+  },
 };
 </script>
 
@@ -96,7 +115,32 @@ export default {
 
 .icon {
   margin-right: 8px;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.3s;
 }
+
+.icon.active {
+  color: #00aeec;
+}
+
+.title-text {
+  display: block;
+  width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.info-text {
+  color: #999;
+  font-size: 12px;
+}
+
 .inner-shadow {
   position: absolute;
   bottom: 0;

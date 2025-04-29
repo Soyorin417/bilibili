@@ -31,6 +31,14 @@ const danmakuPool = [
     id: 8,
     url: "http://121.36.211.155:9000/danmaku/Bv8.json",
   },
+  {
+    id: 9,
+    url: "http://121.36.211.155:9000/danmaku/Bv9.json",
+  },
+  {
+    id: 10,
+    url: "http://121.36.211.155:9000/danmaku/Bv10.json",
+  },
 ];
 
 export { danmakuPool };

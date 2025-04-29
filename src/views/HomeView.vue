@@ -118,12 +118,12 @@
                   </div>
                   <VideoCard
                     v-else
-                    :url="item.url"
+                    :url="item.image"
                     :playCount="item.playCount"
                     :comment="item.comment"
-                    :time="item.time"
+                    :time="item.duration"
                     :title="item.title"
-                    :message="item.message"
+                    :message="item.author"
                     class="mb-3"
                   />
                 </router-link>
@@ -151,12 +151,12 @@
               <VideoCard
                 v-else
                 class="mb-3"
-                :url="item.url"
+                :url="item.image"
                 :playCount="item.playCount"
                 :comment="item.comment"
-                :time="item.time"
+                :time="item.duration"
                 :title="item.title"
-                :message="item.message"
+                :message="item.author"
               />
             </router-link>
           </div>
@@ -171,6 +171,7 @@ import TagButton from "@/components/homeView/TagButton.vue";
 import IconButton from "../components/homeView/IconButton.vue";
 import VideoCard from "@/components/homeView/VideoCard.vue";
 import NavBar from "@/components/navBar/NavBar.vue";
+import { videoInfos } from "@/data/videoInfos.js";
 
 export default {
   name: "HomeView",
@@ -252,151 +253,34 @@ export default {
           id: "1",
           url:
             "http://113.45.69.13:9000/image/78845e847febc6fdf4f41eeb6306c25c23396569.jpg",
-          title: "视频1",
-          message: "描述1",
-        },
-        {
-          id: "2",
-          url: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-          title: "视频2",
-          message: "描述2",
-        },
-        {
-          id: "3",
-          url: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-          title: "视频3",
-          message: "描述3",
-        },
-        {
-          id: "4",
-          url: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-          title: "视频4",
-          message: "描述4",
-        },
-      ],
-      videoCards: [
-        {
-          id: "1",
-          url:
-            "http://113.45.69.13:9000/image/78845e847febc6fdf4f41eeb6306c25c23396569.jpg",
-          title: "视频1",
-          message: "描述1",
-        },
-        {
-          id: "2",
-          url: "http://113.45.69.13:9000/image/mingchao.jpg",
-          title: "视频2",
-          time: "12:20",
-          message: "描述2",
-        },
-        {
-          id: "3",
-          url: "http://113.45.69.13:9000/image/fulilian.png",
-          title: "视频3",
-          time: "12:20",
-          message: "描述3",
-        },
-        {
-          id: "4",
-          url: "http://113.45.69.13:9000/image/Florian.jpg",
-          title: "视频4",
-          message: "描述4",
-        },
-        {
-          id: "5",
-          url: "http://113.45.69.13:9000/image/arknight_w.jpg",
-          title: "视频5",
-          message: "描述5",
-        },
-        {
-          id: "6",
-          url: "http://113.45.69.13:9000/image/amiya.jpg",
-          title: "视频6",
-          message: "描述6",
-        },
-      ],
-
-      otherVideos: [
-        {
-          id: "7",
-          url: "http://113.45.69.13:9000/image/lucy.png",
-          title: "视频7",
-          message: "描述7",
-        },
-        {
-          id: "8",
-          url: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-          playCount: "10万",
-          time: "12:20",
-          title: "视频8",
-          message: "描述8",
-        },
-        {
-          id: "9",
-          url: "http://113.45.69.13:9000/image/fulilian.jpg",
-          playCount: "10万",
-          title: "视频9",
-          message: "描述9",
-        },
-        {
-          id: "10",
-          url:
-            "http://113.45.69.13:9000/image/a29d12bfc0664b4a62dc5de95d42f14c65e6f303.jpg",
-          playCount: "10万",
-          title: "视频10",
-          message: "描述10",
-        },
-        {
-          id: "11",
-          url:
-            "http://113.45.69.13:9000/image/23b06d02882bcf31d6d044339796693b7d02ed2a.jpg",
-          playCount: "10万",
-          title: "视频11",
-          message: "描述11",
-        },
-        {
-          id: "12",
-          url:
-            "http://113.45.69.13:9000/image/f94ec129e83bfca078e5e84277d8a69ea932732e.jpg",
-          playCount: "10万",
-          title: "视频12",
-          message: "描述12",
-        },
-        {
-          id: "13",
-          url:
-            "http://113.45.69.13:9000/image/d1183a9170bd267f19f748ad874ad5467b4dcca2.jpg",
-          title: "视频13",
-          message: "描述13",
-        },
-        {
-          id: "14",
-          url:
-            "http://113.45.69.13:9000/image/33e9ef5fc74dc0057dd50cf73e119bcd475d4f56.jpg",
-          title: "视频14",
-          message: "描述14",
-        },
-        {
-          id: "15",
-          url:
-            "http://113.45.69.13:9000/image/625f17ba06fb22950a272ebbcbed4b1f5f9dcce5.jpg",
-          title: "视频15",
-          message: "描述15",
-        },
-        {
-          id: "16",
-          url:
-            "http://113.45.69.13:9000/image/78845e847febc6fdf4f41eeb6306c25c23396569.jpg",
           title: "《一等情事》",
           message: "红宝石戒指",
         },
         {
-          id: "17",
-          url: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-          title: "视频17",
-          message: "描述17",
+          id: "2",
+          url:
+            "http://113.45.69.13:9000/image/5ab6f52da55a05594087e4631c241cf46796ea12.jpg",
+          title:
+            "小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥",
+          message: "红宝石戒指",
+        },
+        {
+          id: "3",
+          url:
+            "http://113.45.69.13:9000/image/35d43d37454c820e9d994445e8edd348a0a2233c.jpg",
+          title: "【芙莉莲/静止系MAD】想不想看花海盛开",
+          message: "红宝石戒指",
+        },
+        {
+          id: "4",
+          url:
+            "http://113.45.69.13:9000/image/23b06d02882bcf31d6d044339796693b7d02ed2a.jpg",
+          title: "三秒喜欢不上486的都是神人",
+          message: "白小鱼",
         },
       ],
+      videoCards: videoInfos.slice(0, 6),
+      otherVideos: videoInfos.slice(6),
       showPlaceholder: true,
       loadedVideos: [],
     };

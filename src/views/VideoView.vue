@@ -24,8 +24,8 @@
                 :strokeWidth="2"
                 class="me-1 icon-fix"
               />
-              <span class="me-3 stats-text">12.3万</span>
-              <span class="me-3 stats-text">2024-03-10</span>
+              <span class="me-3 stats-text">{{ videoInfo.view_count }}</span>
+              <span class="me-3 stats-text">{{ videoInfo.time }}</span>
               <span v-if="!videoInfo.show_right" class="ms-2">
                 <forbid theme="outline" size="16" fill="#fc0404" class="me-1 icon-fix" />
                 <span class="copyright-text">未经作者授权，禁止转载</span>
@@ -63,39 +63,123 @@
             <!-- 视频互动区域 -->
             <div class="video-actions d-flex align-items-center mt-3 pb-3 border-bottom">
               <div class="d-flex align-items-center me-4">
-                <button class="btn btn-outline-secondary me-2">
-                  <i class="bi bi-hand-thumbs-up"></i> 30.0万
-                </button>
-                <button class="btn btn-outline-secondary">
-                  <i class="bi bi-hand-thumbs-down"></i> 8.3万
-                </button>
+                <div class="d-flex align-items-center me-4">
+                  <thumbs-up
+                    @click="videoLike"
+                    v-if="!videoInfo.is_like"
+                    theme="filled"
+                    size="32"
+                    fill="#61666d"
+                    :strokeWidth="3"
+                    strokeLinecap="square"
+                  />
+                  <thumbs-up
+                    @click="videoDislike"
+                    v-else
+                    theme="filled"
+                    size="32"
+                    fill="#00aeec"
+                    :strokeWidth="3"
+                    strokeLinecap="square"
+                  />
+                  {{ videoInfo.like_count }}
+                </div>
+
+                <div class="d-flex align-items-center me-4">
+                  <svg
+                    @click="videoCoin"
+                    v-if="!videoInfo.is_coin"
+                    width="28"
+                    height="28"
+                    viewBox="0 0 28 28"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="video-coin-icon video-toolbar-item-icon"
+                    data-v-b72e4a72=""
+                    style="color: #61666d"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      clip-rule="evenodd"
+                      d="M14.045 25.5454C7.69377 25.5454 2.54504 20.3967 2.54504 14.0454C2.54504 7.69413 7.69377 2.54541 14.045 2.54541C20.3963 2.54541 25.545 7.69413 25.545 14.0454C25.545 17.0954 24.3334 20.0205 22.1768 22.1771C20.0201 24.3338 17.095 25.5454 14.045 25.5454ZM9.66202 6.81624H18.2761C18.825 6.81624 19.27 7.22183 19.27 7.72216C19.27 8.22248 18.825 8.62807 18.2761 8.62807H14.95V10.2903C17.989 10.4444 20.3766 12.9487 20.3855 15.9916V17.1995C20.3854 17.6997 19.9799 18.1052 19.4796 18.1052C18.9793 18.1052 18.5738 17.6997 18.5737 17.1995V15.9916C18.5667 13.9478 16.9882 12.2535 14.95 12.1022V20.5574C14.95 21.0577 14.5444 21.4633 14.0441 21.4633C13.5437 21.4633 13.1382 21.0577 13.1382 20.5574V12.1022C11.1 12.2535 9.52148 13.9478 9.51448 15.9916V17.1995C9.5144 17.6997 9.10883 18.1052 8.60856 18.1052C8.1083 18.1052 7.70273 17.6997 7.70265 17.1995V15.9916C7.71158 12.9487 10.0992 10.4444 13.1382 10.2903V8.62807H9.66202C9.11309 8.62807 8.66809 8.22248 8.66809 7.72216C8.66809 7.22183 9.11309 6.81624 9.66202 6.81624Z"
+                      fill="currentColor"
+                    ></path>
+                  </svg>
+                  <svg
+                    @click="videoDiscoin"
+                    v-else
+                    width="28"
+                    height="28"
+                    viewBox="0 0 28 28"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="video-coin-icon video-toolbar-item-icon"
+                    data-v-b72e4a72=""
+                    style="color: #00aeec"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      clip-rule="evenodd"
+                      d="M14.045 25.5454C7.69377 25.5454 2.54504 20.3967 2.54504 14.0454C2.54504 7.69413 7.69377 2.54541 14.045 2.54541C20.3963 2.54541 25.545 7.69413 25.545 14.0454C25.545 17.0954 24.3334 20.0205 22.1768 22.1771C20.0201 24.3338 17.095 25.5454 14.045 25.5454ZM9.66202 6.81624H18.2761C18.825 6.81624 19.27 7.22183 19.27 7.72216C19.27 8.22248 18.825 8.62807 18.2761 8.62807H14.95V10.2903C17.989 10.4444 20.3766 12.9487 20.3855 15.9916V17.1995C20.3854 17.6997 19.9799 18.1052 19.4796 18.1052C18.9793 18.1052 18.5738 17.6997 18.5737 17.1995V15.9916C18.5667 13.9478 16.9882 12.2535 14.95 12.1022V20.5574C14.95 21.0577 14.5444 21.4633 14.0441 21.4633C13.5437 21.4633 13.1382 21.0577 13.1382 20.5574V12.1022C11.1 12.2535 9.52148 13.9478 9.51448 15.9916V17.1995C9.5144 17.6997 9.10883 18.1052 8.60856 18.1052C8.1083 18.1052 7.70273 17.6997 7.70265 17.1995V15.9916C7.71158 12.9487 10.0992 10.4444 13.1382 10.2903V8.62807H9.66202C9.11309 8.62807 8.66809 8.22248 8.66809 7.72216C8.66809 7.22183 9.11309 6.81624 9.66202 6.81624Z"
+                      fill="currentColor"
+                    ></path>
+                  </svg>
+                  {{ videoInfo.coin_count }}
+                </div>
+                <div class="d-flex align-items-center me-4">
+                  <star
+                    @click="videoCollect"
+                    v-if="!videoInfo.is_collect"
+                    theme="filled"
+                    size="32"
+                    fill="#61666d"
+                    :strokeWidth="3"
+                    strokeLinecap="square"
+                  />
+                  <star
+                    @click="videoDiscollect"
+                    v-else
+                    theme="filled"
+                    size="32"
+                    fill="#00aeec"
+                    :strokeWidth="3"
+                    strokeLinecap="square"
+                  />
+                  {{ videoInfo.collect_count }}
+                </div>
+                <div class="d-flex align-items-center me-4">
+                  <share-two
+                    @click="videoShare"
+                    v-if="!videoInfo.is_share"
+                    theme="filled"
+                    size="32"
+                    fill="#61666d"
+                    :strokeWidth="3"
+                    strokeLinecap="square"
+                  />
+                  <share-two
+                    @click="videoDisshare"
+                    v-else
+                    theme="filled"
+                    size="32"
+                    fill="#00aeec"
+                    :strokeWidth="3"
+                    strokeLinecap="square"
+                  />{{ videoInfo.share_count }}
+                </div>
               </div>
-              <button class="btn btn-outline-secondary me-3">
-                <i class="bi bi-star"></i> 收藏 7.4万
-              </button>
-              <button class="btn btn-outline-secondary">
-                <i class="bi bi-share"></i> 分享 3.2万
-              </button>
             </div>
 
-            <!-- 视频简介 -->
+            <!--视频简介-->
             <div class="video-info mt-3">
-              <div class="d-flex">
-                <div class="user-avatar me-3">
-                  <img
-                    src="http://113.45.69.13:9000/image/lucy_moon.jpg"
-                    class="rounded-circle"
-                    width="48"
-                    height="48"
-                    alt="user avatar"
-                  />
-                </div>
-                <div>
-                  <h6 class="mb-0">陈暖暖</h6>
-                  <small class="text-muted">发布于 2023-03-02 17:17:30</small>
-                  <p class="mt-2">这是一个神奇的视频，希望大家喜欢！</p>
-                </div>
-              </div>
+              <p class="mt-2">{{ videoInfo.introduction }}</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- 评论列表 -->
+            <div class="comments-section mt-4">
+              <h5 class="mb-3">评论 ({{ commentData.length }})</h5>
+              <CommentInput @send-comment="handleNewComment" />
+              <CommentList :comments="commentData" @like="handleLike" />
             </div>
           </div>
 
@@ -125,16 +209,27 @@
 
 <script>
 import VideoBar from "@/components/navBar/VideoBar.vue";
-import { PlayTwo, CommentOne, Forbid } from "@icon-park/vue-next";
+import {
+  PlayTwo,
+  CommentOne,
+  Forbid,
+  ThumbsUp,
+  Star,
+  ShareTwo,
+} from "@icon-park/vue-next";
 import { danmakuPool } from "@/data/danmakuPool";
 import { userInfo } from "@/data/userInfoData";
 import { videoInfos } from "@/data/videoInfos";
+import { commentData } from "@/data/commentData";
 import RecommendedVideos from "@/components/video/RecommendedVideos.vue";
 import AuthorInfo from "@/components/video/AuthorInfo.vue";
 import DanmakuList from "@/components/video/DanmakuList.vue";
 import DanmakuControl from "@/components/video/DanmakuControl.vue";
 import DanmakuDisplay from "@/components/video/DanmakuDisplay.vue";
+import CommentInput from "@/components/video/CommentInput.vue";
+import CommentList from "@/components/video/CommentList.vue";
 import axios from "axios";
+import userData from "@/data/userData";
 
 export default {
   components: {
@@ -147,6 +242,11 @@ export default {
     DanmakuList,
     DanmakuControl,
     DanmakuDisplay,
+    ThumbsUp,
+    Star,
+    ShareTwo,
+    CommentInput,
+    CommentList,
   },
   props: {
     id: {
@@ -165,11 +265,13 @@ export default {
       danmakuPool,
       userInfo,
       videoInfos,
+      commentData,
       recommendedVideos: [],
       activeDanmaku: [],
       lastCheckTime: 0,
       checkInterval: 50,
       videoInfo: {},
+      userData,
     };
   },
   watch: {
@@ -192,6 +294,49 @@ export default {
     },
   },
   methods: {
+    handleNewComment(newComment) {
+      this.commentData.unshift(newComment);
+    },
+    handleLike(item) {
+      item.isLiked = !item.isLiked;
+      if (item.isLiked) {
+        item.likeCount++;
+      } else {
+        item.likeCount--;
+      }
+    },
+    videoLike() {
+      this.videoInfo.is_like = !this.videoInfo.is_like;
+      this.videoInfo.like_count++;
+    },
+    videoDislike() {
+      this.videoInfo.is_like = !this.videoInfo.is_like;
+      this.videoInfo.like_count--;
+    },
+    videoCollect() {
+      this.videoInfo.is_collect = !this.videoInfo.is_collect;
+      this.videoInfo.collect_count++;
+    },
+    videoDiscollect() {
+      this.videoInfo.is_collect = !this.videoInfo.is_collect;
+      this.videoInfo.collect_count--;
+    },
+    videoShare() {
+      this.videoInfo.is_share = !this.videoInfo.is_share;
+      this.videoInfo.share_count++;
+    },
+    videoDisshare() {
+      this.videoInfo.is_share = !this.videoInfo.is_share;
+      this.videoInfo.share_count--;
+    },
+    videoCoin() {
+      this.videoInfo.is_coin = true;
+      this.videoInfo.coin_count++;
+    },
+    videoDiscoin() {
+      this.videoInfo.is_coin = false;
+      this.videoInfo.coin_count--;
+    },
     loadVideoData(id) {
       // 首先从 videoInfos 中查找
       let video = this.videoInfos.find((v) => v.id === parseInt(id));
@@ -233,26 +378,21 @@ export default {
         this.recommendedVideos = this.videoInfos.filter(
           (video) => video.id !== currentId
         );
-        console.log("推荐视频数量:", this.recommendedVideos.length);
       } else {
         console.error("videoInfos 不是有效的数组或为空");
       }
     },
 
     async selectDanmakuList() {
-      console.log("selectDanmakuList called");
-      console.log("videoInfo:", this.videoInfo);
       let danmakuId = this.videoInfo.id;
-      console.log("danmakuId:", danmakuId);
 
       // 根据视频ID加载对应的弹幕数据
       const danmakuInfo = danmakuPool.find((d) => d.id === danmakuId);
-      console.log("Found danmaku info:", danmakuInfo);
 
       if (danmakuInfo) {
         try {
           // 使用axios获取远程数据
-          console.log("Fetching from URL:", danmakuInfo.url);
+
           const response = await axios.get(danmakuInfo.url, {
             transformResponse: [
               (data) => {
@@ -261,7 +401,6 @@ export default {
               },
             ],
           });
-          console.log("Raw response data:", response.data);
 
           let data;
           try {
@@ -271,9 +410,7 @@ export default {
             } else {
               data = response.data;
             }
-            console.log("Parsed data:", data);
           } catch (parseError) {
-            console.error("Error parsing JSON:", parseError);
             // 如果是JavaScript文件，尝试提取变量
             const text = response.data;
             if (typeof text === "string" && text.includes("danmakuList")) {
@@ -282,9 +419,7 @@ export default {
               if (match && match[1]) {
                 try {
                   data = { danmakuList: JSON.parse(match[1]) };
-                  console.log("Extracted data from JS:", data);
                 } catch (e) {
-                  console.error("Error parsing extracted data:", e);
                   throw new Error("Could not parse danmaku data");
                 }
               }
@@ -301,24 +436,10 @@ export default {
               "Invalid danmaku data format: expected an array or object with danmakuList array"
             );
           }
-
-          console.log(
-            "Successfully loaded danmaku list:",
-            this.danmakuList.length,
-            "items"
-          );
         } catch (error) {
-          console.error("加载弹幕数据失败:", error);
-          console.error("Error details:", {
-            message: error.message,
-            stack: error.stack,
-            response: error.response,
-            rawData: error.response?.data,
-          });
           this.danmakuList = [];
         }
       } else {
-        console.warn(`未找到ID为 ${danmakuId} 的弹幕数据`);
         this.danmakuList = [];
       }
     },
@@ -402,6 +523,12 @@ export default {
     toggleDanmaku(value) {
       this.showDanmaku = value;
     },
+    handleClickOutside(event) {
+      // 如果点击的不是输入框，则隐藏发送按钮
+      if (!event.target.closest(".form-floating")) {
+        this.showButton = false;
+      }
+    },
   },
   computed: {
     videoId() {
@@ -414,18 +541,19 @@ export default {
   created() {
     // 确保 videoInfos 正确初始化
     if (!Array.isArray(this.videoInfos)) {
-      console.error("videoInfos 初始化失败");
       this.videoInfos = [];
     }
-    console.log("初始化 videoInfos 长度:", this.videoInfos.length);
   },
   mounted() {
-    console.log("VideoView mounted");
     this.loadVideoData(this.videoId);
     this.selectDanmakuList();
+    // 添加全局点击事件监听器
+    document.addEventListener("click", this.handleClickOutside);
   },
   beforeUnmount() {
     this.activeDanmaku = [];
+    // 移除全局点击事件监听器
+    document.removeEventListener("click", this.handleClickOutside);
   },
 };
 </script>
@@ -565,5 +693,32 @@ h4 {
   font-weight: 600; /* 加点粗体 */
   line-height: 1.4; /* 行高正常一点 */
   letter-spacing: 0.5px; /* 字距微微拉开，中英文更自然 */
+}
+
+.video-coin-icon {
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.divider {
+  height: 1px;
+  background-color: #e3e5e7;
+  margin: 20px 0;
+}
+
+.comments-section {
+  .comment-item {
+    .comment-content {
+      flex: 1;
+    }
+  }
+  .replies-section {
+    margin-left: 48px;
+    .reply-item {
+      .reply-content {
+        flex: 1;
+      }
+    }
+  }
 }
 </style>

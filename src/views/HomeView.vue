@@ -313,8 +313,6 @@ export default {
   width: 3em;
   height: 3em;
   display: flex;
-  align-items: center;
-  justify-content: center;
   border-radius: 50%;
 }
 
@@ -343,9 +341,6 @@ export default {
   width: 1700px;
 }
 
-.text-center {
-  text-align: center;
-}
 /* 自定义 2:3 布局 */
 .custom-layout {
   display: flex;

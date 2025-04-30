@@ -1,165 +1,268 @@
 <template>
-  <div class="danmaku-display-area" v-show="isVisible" ref="displayArea">
-    <div
-      v-for="item in visibleDanmaku"
-      :key="item.key"
-      :style="getDanmakuStyle(item)"
-      :class="[
-        'danmaku-item',
-        item.type === 'scroll' ? 'danmaku-scroll' : 'danmaku-fixed',
-      ]"
-    >
-      {{ item.content }}
+  <div class="video-container">
+    <video
+      ref="videoPlayer"
+      class="video-player"
+      controls
+      :src="videoUrl"
+      @timeupdate="onTimeUpdate"
+      @seeked="onSeek"
+    ></video>
+
+    <div class="danmaku-display-area" v-show="localVisible" ref="displayArea">
+      <div
+        v-for="danmaku in activeDanmakus"
+        :key="danmaku.id"
+        class="danmaku-item"
+        :class="'type-' + danmaku.type"
+        :style="{
+          top: danmaku.style.top,
+          color: danmaku.style.color,
+          'animation-duration': danmaku.style.animationDuration,
+          'font-size': danmaku.style.fontSize,
+        }"
+        @animationend="removeDanmaku(danmaku.id)"
+      >
+        {{ danmaku.text }}
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import { parseDanmakuXml } from "../danmaku/danmakuParser";
+
 export default {
   name: "DanmakuDisplay",
   props: {
+    url: {
+      type: String,
+      required: true,
+    },
+    videoId: {
+      type: String,
+      required: true,
+    },
     isVisible: {
       type: Boolean,
       default: true,
     },
-    activeDanmaku: {
-      type: Array,
-      required: true,
-    },
   },
   data() {
     return {
-      visibleDanmaku: [],
-      maxVisibleCount: 50,
-      tracks: [],
-      trackCount: 10,
-      animationFrame: null,
-      danmakuQueue: [],
-      lastProcessedIndex: -1,
+      danmakus: [],
+      activeDanmakus: [],
+      videoUrl: this.url,
+      currentTime: 0,
+      nextIndex: 0,
+      duration: 8,
+      localVisible: this.isVisible,
     };
   },
-  watch: {
-    activeDanmaku: {
-      handler(newVal) {
-        // 只处理新增的弹幕
-        if (newVal.length > this.lastProcessedIndex + 1) {
-          const newDanmaku = newVal.slice(this.lastProcessedIndex + 1);
-          this.danmakuQueue.push(...newDanmaku);
-          this.lastProcessedIndex = newVal.length - 1;
-        }
-      },
-    },
+  async mounted() {
+    try {
+      const response = await fetch(
+        `http://121.36.211.155:9000/danmaku/bv${this.videoId}.xml`
+      );
+      const xmlText = await response.text();
+      this.danmakus = parseDanmakuXml(xmlText);
+      console.log("弹幕数据：", this.danmakus);
+      console.log("弹幕数量：", this.danmakus.length);
+    } catch (error) {
+      console.error("获取弹幕数据失败:", error);
+    }
   },
   methods: {
-    getDanmakuStyle(item) {
-      const style = {
-        transform:
-          item.type === "scroll"
-            ? `translate3d(${item.position}px, ${item.track * 40}px, 0)`
-            : `translate3d(-50%, ${item.track * 40}px, 0)`,
-        color: item.color,
-      };
-
-      if (item.type === "fixed") {
-        style.left = "50%";
-      }
-
-      return style;
+    onSeek() {
+      // 找到第一个时间 >= currentTime 的弹幕索引
+      const idx = this.danmakus.findIndex((d) => d.time >= this.currentTime);
+      this.nextIndex = idx >= 0 ? idx : this.danmakus.length;
+      // 清空当前屏幕弹幕
+      this.activeDanmakus = [];
     },
-    getRandomColor() {
-      const colors = ["#ffffff", "#ff9999", "#99ff99", "#9999ff", "#ffff99"];
-      return colors[Math.floor(Math.random() * colors.length)];
-    },
-    findAvailableTrack() {
-      const now = Date.now();
-      for (let i = 0; i < this.trackCount; i++) {
-        if (!this.tracks[i] || now - this.tracks[i] > 2000) {
-          this.tracks[i] = now;
-          return i;
-        }
-      }
-      return Math.floor(Math.random() * this.trackCount);
-    },
-    handleResize() {
-      if (this.$refs.displayArea) {
-        const containerWidth = this.$refs.displayArea.clientWidth;
-        this.visibleDanmaku.forEach((item) => {
-          if (item.type === "scroll") {
-            const elapsed = Date.now() - item.startTime;
-            const progress = elapsed / item.duration;
-            item.position = containerWidth * (1 - progress);
-          }
-        });
+    onTimeUpdate() {
+      if (this.$refs.videoPlayer) {
+        this.currentTime = this.$refs.videoPlayer.currentTime;
+        this.updateActiveDanmakus();
       }
     },
-    updateDanmaku() {
-      const now = Date.now();
-      const containerWidth = this.$refs.displayArea?.clientWidth || 1000;
+    checkVideoStatus() {
+      if (this.$refs.videoPlayer) {
+        this.danmakuEnabled = !this.$refs.videoPlayer.ended;
+      }
+    },
+    removeDanmaku(id) {
+      const idx = this.activeDanmakus.findIndex((d) => d.id === id);
+      if (idx !== -1) {
+        this.activeDanmakus.splice(idx, 1);
+      }
+    },
+    // 检查弹幕是否应该显示
+    shouldShowDanmaku(danmaku) {
+      // 放宽时间范围，从1.0秒改为0.5秒
+      return Math.abs(danmaku.time - this.currentTime) < 0.5;
+    },
+    // 更新活跃弹幕
+    updateActiveDanmakus() {
+      if (!this.danmakus.length) return;
 
-      // 更新现有弹幕位置
-      this.visibleDanmaku = this.visibleDanmaku.filter((item) => {
-        if (item.type === "scroll") {
-          const elapsed = now - item.startTime;
-          const duration = item.duration;
+      // 获取当前时间附近的弹幕
+      const currentDanmakus = this.danmakus.filter((danmaku) =>
+        this.shouldShowDanmaku(danmaku)
+      );
 
-          if (elapsed >= duration) {
-            return false;
-          }
+      // 处理每个弹幕
+      currentDanmakus.forEach((danmaku) => {
+        // 检查是否已经显示过这个弹幕
+        const isAlreadyShown = this.activeDanmakus.some(
+          (active) => active.text === danmaku.text && active.time === danmaku.time
+        );
+        if (isAlreadyShown) return;
 
-          const progress = elapsed / duration;
-          item.position = containerWidth * (1 - progress);
-          return true;
+        if (danmaku.isAdvanced) {
+          // 高级弹幕 - 直接显示
+          const id = Date.now() + Math.random();
+          const activeDanmaku = {
+            id,
+            text: danmaku.text,
+            type: "advanced",
+            time: danmaku.time,
+            isSelf: danmaku.isSelf,
+            style: {
+              top: `${danmaku.position.y}%`,
+              left: `${danmaku.position.x}%`,
+              color: danmaku.position.color || danmaku.color || "#fff",
+              animationDuration: `${danmaku.position.duration || 8}s`,
+              fontSize: `${danmaku.position.size || danmaku.fontSize || 24}px`,
+              transform: `scale(${danmaku.position.scaleX || 1}, ${
+                danmaku.position.scaleY || 1
+              }) rotate(${danmaku.position.rotation || 0}deg)`,
+              opacity: danmaku.position.alpha || 1,
+              fontFamily: danmaku.position.fontFamily || "inherit",
+              whiteSpace: "pre-wrap",
+              textAlign: "center",
+              transformOrigin: "center center",
+              textDecoration: danmaku.isSelf ? "underline" : "none",
+            },
+          };
+          this.activeDanmakus.push(activeDanmaku);
+        } else if (danmaku.type === 1) {
+          // 滚动弹幕 - 直接显示
+          const id = Date.now() + Math.random();
+          const activeDanmaku = {
+            id,
+            text: danmaku.text,
+            type: danmaku.type,
+            time: danmaku.time,
+            isSelf: danmaku.isSelf,
+            style: {
+              top: `${Math.random() * 80}%`,
+              color: danmaku.color || "#fff",
+              animationDuration: `${this.duration}s`,
+              fontSize: `${danmaku.fontSize || 24}px`,
+              textDecoration: danmaku.isSelf ? "underline" : "none",
+            },
+          };
+          this.activeDanmakus.push(activeDanmaku);
         } else {
-          return now - item.startTime < 5000;
+          // 固定弹幕（顶部或底部）- 直接显示
+          const id = Date.now() + Math.random();
+          const isTop = danmaku.type === 5;
+          const activeDanmaku = {
+            id,
+            text: danmaku.text,
+            type: danmaku.type,
+            time: danmaku.time,
+            isSelf: danmaku.isSelf,
+            style: {
+              top: isTop ? `${Math.random() * 20}%` : `${80 + Math.random() * 20}%`,
+              color: danmaku.color || "#fff",
+              animationDuration: `${this.duration}s`,
+              fontSize: `${danmaku.fontSize || 24}px`,
+              textDecoration: danmaku.isSelf ? "underline" : "none",
+            },
+          };
+          this.activeDanmakus.push(activeDanmaku);
         }
       });
 
-      // 添加新弹幕
-      while (
-        this.visibleDanmaku.length < this.maxVisibleCount &&
-        this.danmakuQueue.length > 0
-      ) {
-        const danmaku = this.danmakuQueue.shift();
-        if (danmaku) {
-          const track = this.findAvailableTrack();
-          this.visibleDanmaku.push({
-            ...danmaku,
-            key: now + Math.random(),
-            track,
-            startTime: now,
-            position: containerWidth,
-            color: this.getRandomColor(),
-            duration: Math.min(12000, 8000 + danmaku.content.length * 200),
-          });
-        }
-      }
+      // 清理已经过期的弹幕
+      this.activeDanmakus = this.activeDanmakus.filter((danmaku) => {
+        const danmakuTime = this.danmakus.find((d) => d.text === danmaku.text)?.time || 0;
+        return this.currentTime - danmakuTime < this.duration;
+      });
+    },
+    // 添加新弹幕
+    addNewDanmaku(danmakuData) {
+      console.log("Adding new danmaku:", danmakuData);
+      const { content, type } = danmakuData;
+      const newDanmaku = {
+        text: content,
+        time: this.currentTime,
+        type: type === "scroll" ? 1 : 5,
+        color: "#ffffff",
+        fontSize: 24,
+        isSelf: true, // 标记是自己发送的弹幕
+      };
 
-      this.animationFrame = requestAnimationFrame(this.updateDanmaku);
-    },
-    initDanmakuQueue() {
-      // 初始化时添加现有的弹幕到队列
-      if (this.activeDanmaku.length > 0) {
-        this.danmakuQueue.push(...this.activeDanmaku);
-        this.lastProcessedIndex = this.activeDanmaku.length - 1;
-      }
+      // 添加到弹幕列表
+      this.danmakus.push(newDanmaku);
+
+      // 立即显示弹幕
+      const id = Date.now() + Math.random();
+      const activeDanmaku = {
+        id,
+        text: content,
+        type: newDanmaku.type,
+        time: this.currentTime,
+        isSelf: true,
+        style: {
+          top: type === "scroll" ? `${Math.random() * 80}%` : `${Math.random() * 20}%`,
+          color: "#ffffff",
+          animationDuration: `${this.duration}s`,
+          fontSize: "24px",
+          textDecoration: "underline", // 添加下划线
+        },
+      };
+
+      this.activeDanmakus.push(activeDanmaku);
     },
   },
-  mounted() {
-    this.initDanmakuQueue();
-    this.updateDanmaku();
-    window.addEventListener("resize", this.handleResize);
-  },
-  beforeUnmount() {
-    if (this.animationFrame) {
-      cancelAnimationFrame(this.animationFrame);
-    }
-    window.removeEventListener("resize", this.handleResize);
+  watch: {
+    currentTime: {
+      handler() {
+        if (this.localVisible) {
+          this.updateActiveDanmakus();
+        }
+      },
+      immediate: true, // 添加immediate选项，确保组件创建时就执行一次
+    },
+    isVisible: {
+      immediate: true,
+      handler(value) {
+        this.localVisible = value;
+      },
+    },
   },
 };
 </script>
 
 <style scoped>
-/* 弹幕显示区域 */
+.video-container {
+  position: relative;
+  width: 1111px;
+  height: 625px;
+  overflow: hidden;
+  margin: 0 auto;
+  background-color: #000;
+}
+
+.video-player {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .danmaku-display-area {
   position: absolute;
   top: 0;
@@ -168,47 +271,67 @@ export default {
   height: 100%;
   pointer-events: none;
   overflow: hidden;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  z-index: 2;
+  z-index: 10;
 }
 
 .danmaku-item {
   position: absolute;
-  font-size: 24px;
   white-space: nowrap;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   will-change: transform;
-  pointer-events: none;
-  z-index: auto;
-
-  /* 增强可读性 */
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8), -1px -1px 3px rgba(0, 0, 0, 0.8);
-
-  /* 优化渲染性能 */
-  contain: content;
-  backface-visibility: hidden;
-  transform: translateZ(0);
+  color: #fff;
+  font-size: 24px;
+  z-index: 20;
+  max-width: 100%;
+  overflow: hidden;
 }
 
-.danmaku-running {
-  animation: danmaku-scroll var(--duration) linear;
-  will-change: transform;
+/* 滚动弹幕样式 */
+.danmaku-item[class*="type-1"] {
+  left: 100%;
+  transform: translateX(0);
+  animation-name: moveLeft;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  animation-duration: 8s;
+  max-width: 100%;
 }
 
-.danmaku-fixed {
-  animation: danmakuFade 5s ease-out forwards;
+/* 固定弹幕样式 */
+.danmaku-item[class*="type-5"],
+.danmaku-item[class*="type-4"] {
+  left: 50%;
+  transform: translateX(-50%);
+  animation-name: fadeInOut;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  text-align: center;
+  width: 100%;
+  animation-duration: 6s;
+  max-width: 100%;
+  padding: 0 10px;
 }
 
-@keyframes danmaku-scroll {
+/* 高级弹幕样式 */
+.danmaku-item[class*="type-advanced"] {
+  animation-name: fadeInOut;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  transform-origin: center center;
+  will-change: transform, opacity;
+  animation-duration: 4s;
+}
+
+@keyframes moveLeft {
   from {
-    transform: translateX(100vw);
+    transform: translateX(0);
   }
   to {
-    transform: translateX(-100%);
+    transform: translateX(-100vw);
   }
 }
 
-@keyframes danmakuFade {
+@keyframes fadeInOut {
   0% {
     opacity: 0;
   }

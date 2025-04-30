@@ -3,6 +3,7 @@
     <div class="danmaku-header d-flex justify-content-between align-items-center p-1">
       <div class="d-flex align-items-center">
         <h6 class="mb-0 ms-1">弹幕列表</h6>
+        <small class="text-secondary ms-2">({{ danmakuList.length }}条)</small>
       </div>
       <div>
         <small class="text-secondary me-1" @click="toggleShow">
@@ -14,32 +15,30 @@
       <table class="table table-sm table-hover borderless">
         <thead class="thead-light">
           <tr class="header-row">
-            <th scope="col" width="10%">时间</th>
-            <th scope="col" width="70%">弹幕内容</th>
+            <th scope="col" width="15%">时间</th>
+            <th scope="col" width="65%">内容</th>
             <th scope="col" width="20%">发送时间</th>
           </tr>
         </thead>
         <tbody class="small">
           <tr v-for="(item, index) in danmakuList" :key="index">
-            <td>{{ item.time }}</td>
+            <td>{{ formatTime(item.time) }}</td>
             <td class="text-truncate" style="max-width: 160px">
-              {{ item.content }}
+              {{ item.text }}
             </td>
             <td>{{ item.sendTime }}</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <div v-if="isShow" class="danmaku-footer text-center">
-      <small
-        ><a href="#" class="text-decoration-none text-secondary">查看历史弹幕</a></small
-      >
-    </div>
+    <div v-if="isShow" class="danmaku-footer text-center"></div>
   </div>
 </template>
 
 <script>
 import { DropDownList } from "@icon-park/vue-next";
+import { parseDanmakuXml } from "../danmaku/danmakuParser";
+import axios from "axios";
 
 export default {
   name: "DanmakuList",
@@ -47,19 +46,65 @@ export default {
     DropDownList,
   },
   props: {
-    danmakuList: {
+    videoId: {
+      type: Number,
+      required: true,
+      validator: (value) => {
+        return !isNaN(value) && value > 0;
+      },
+    },
+    danmakuPool: {
       type: Array,
       required: true,
+      default: () => [],
     },
   },
   data() {
     return {
-      isShow: false,
+      isShow: true,
+      danmakuList: [],
     };
   },
   methods: {
     toggleShow() {
+      console.log(this.danmakuList, "danmakuList");
       this.isShow = !this.isShow;
+    },
+    formatTime(time) {
+      const minutes = Math.floor(time / 60);
+      const seconds = Math.floor(time % 60);
+      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    },
+    async loadDanmaku() {
+      console.log("videoId:", this.videoId);
+      console.log("danmakuPool:", this.danmakuPool);
+      const danmakuInfo = this.danmakuPool.find((d) => d.id === this.videoId);
+      console.log("danmakuInfo:", danmakuInfo);
+
+      if (danmakuInfo) {
+        try {
+          const response = await axios.get(danmakuInfo.url, {
+            transformResponse: [(data) => data],
+          });
+
+          this.danmakuList = parseDanmakuXml(response.data);
+          this.$emit("danmaku-loaded", this.danmakuList);
+        } catch (error) {
+          console.error("获取弹幕数据失败:", error);
+          this.danmakuList = [];
+        }
+      } else {
+        console.log("未找到对应的弹幕信息:", this.videoId);
+        this.danmakuList = [];
+      }
+    },
+  },
+  watch: {
+    videoId: {
+      immediate: true,
+      handler() {
+        this.loadDanmaku();
+      },
     },
   },
 };
@@ -94,7 +139,7 @@ export default {
 }
 
 .danmaku-list {
-  height: 700px;
+  height: 625px;
   overflow-y: auto;
   max-height: none;
 }
@@ -102,20 +147,24 @@ export default {
 .danmaku-list table {
   margin-bottom: 0;
   border: none;
+  font-size: 12px;
 }
 
 .danmaku-list th {
   font-size: 12px;
   font-weight: 600;
   color: #555;
-  padding: 1px 3px;
+  padding: 4px 8px;
   border: none;
   background-color: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .danmaku-list td {
   font-size: 12px;
-  padding: 1px 3px;
+  padding: 4px 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -126,8 +175,8 @@ export default {
 .danmaku-footer {
   background-color: #f8f9fa;
   border-top: 1px solid #eee;
-  font-size: 9px;
-  padding: 1px !important;
+  padding: 2px 0;
+  height: 4px;
 }
 
 .borderless th,
@@ -146,7 +195,7 @@ export default {
   background-color: #f8f9fa;
 }
 
-/* 当列表显示时，容器才应用固定高度 */
+/* 调整容器高度以匹配内容 */
 .danmaku-container.expanded {
   height: 625px;
 }

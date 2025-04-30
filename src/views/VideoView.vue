@@ -33,32 +33,20 @@
             </div>
 
             <!-- 视频播放器 -->
-            <div class="video-player-container mt-4" id="videoStatus">
-              <div class="video-player bg-dark position-relative">
-                <video
-                  class="w-100"
-                  controls
-                  :poster="videoInfo.image"
-                  :src="videoInfo.video_url"
-                  ref="videoPlayer"
-                  @timeupdate="onTimeUpdate"
-                  @play="checkVideoStatus"
-                  @pause="checkVideoStatus"
-                  @seeking="checkVideoStatus"
-                >
-                  <source :src="videoInfo.video_url" type="video/mp4" />
-                </video>
-
-                <!-- 弹幕显示区域 -->
-                <DanmakuDisplay
-                  :isVisible="isDanmakuVisible"
-                  :activeDanmaku="activeDanmaku"
-                />
-              </div>
+            <div class="mt-4" id="videoStatus">
+              <DanmakuDisplay
+                :url="videoInfo.video_url"
+                :videoId="videoId"
+                :isVisible="isDanmakuVisible"
+                ref="danmakuDisplay"
+              />
             </div>
 
             <!-- 弹幕控制条 -->
-            <DanmakuControl @send-danmaku="sendDanmaku" @toggle-danmaku="toggleDanmaku" />
+            <DanmakuControl
+              @send-danmaku="handleSendDanmaku"
+              @toggle-danmaku="handleToggleDanmaku"
+            />
 
             <!-- 视频互动区域 -->
             <div class="video-actions d-flex align-items-center mt-3 pb-3 border-bottom">
@@ -193,7 +181,12 @@
             />
 
             <!-- 弹幕列表 -->
-            <DanmakuList :danmakuList="danmakuList" class="mb-1" />
+            <DanmakuList
+              :videoId="parseInt(videoId)"
+              :danmakuPool="danmakuPool"
+              @danmaku-loaded="handleDanmakuLoaded"
+              class="mb-1"
+            />
 
             <!-- 推荐视频列表 -->
             <RecommendedVideos
@@ -230,6 +223,7 @@ import CommentInput from "@/components/video/CommentInput.vue";
 import CommentList from "@/components/video/CommentList.vue";
 import axios from "axios";
 import userData from "@/data/userData";
+import { parseDanmakuXml } from "@/components/danmaku/danmakuParser";
 
 export default {
   components: {
@@ -272,6 +266,7 @@ export default {
       checkInterval: 50,
       videoInfo: {},
       userData,
+      isDanmakuVisible: true,
     };
   },
   watch: {
@@ -392,7 +387,6 @@ export default {
       if (danmakuInfo) {
         try {
           // 使用axios获取远程数据
-
           const response = await axios.get(danmakuInfo.url, {
             transformResponse: [
               (data) => {
@@ -402,41 +396,11 @@ export default {
             ],
           });
 
-          let data;
-          try {
-            // 尝试解析JSON
-            if (typeof response.data === "string") {
-              data = JSON.parse(response.data);
-            } else {
-              data = response.data;
-            }
-          } catch (parseError) {
-            // 如果是JavaScript文件，尝试提取变量
-            const text = response.data;
-            if (typeof text === "string" && text.includes("danmakuList")) {
-              // 尝试提取danmakuList的值
-              const match = text.match(/danmakuList\s*=\s*(\[[\s\S]*?\]);/);
-              if (match && match[1]) {
-                try {
-                  data = { danmakuList: JSON.parse(match[1]) };
-                } catch (e) {
-                  throw new Error("Could not parse danmaku data");
-                }
-              }
-            }
-          }
-
-          // 检查data是否为数组，如果不是但data.danmakuList是数组则使用它
-          if (Array.isArray(data)) {
-            this.danmakuList = data;
-          } else if (data && Array.isArray(data.danmakuList)) {
-            this.danmakuList = data.danmakuList;
-          } else {
-            throw new Error(
-              "Invalid danmaku data format: expected an array or object with danmakuList array"
-            );
-          }
+          // 使用danmakuParser解析XML数据
+          this.danmakuList = parseDanmakuXml(response.data);
+          console.log("解析后的弹幕数据:", this.danmakuList);
         } catch (error) {
+          console.error("获取弹幕数据失败:", error);
           this.danmakuList = [];
         }
       } else {
@@ -476,66 +440,89 @@ export default {
       const targetTime = Math.floor(currentTime * 10) / 10;
 
       this.danmakuList.forEach((d) => {
-        const danmakuTime = this.timeToSeconds(d.time);
-        if (Math.abs(danmakuTime - targetTime) < 0.3) {
-          this.showNewDanmaku(d.content, d.type || "scroll");
+        if (Math.abs(d.time - targetTime) < 0.3) {
+          this.showNewDanmaku(d);
         }
       });
     },
-    showNewDanmaku(content, type = "scroll") {
-      const danmaku = {
-        content,
-        type,
-        timestamp: Date.now(),
-      };
-
-      this.activeDanmaku = [...this.activeDanmaku, danmaku];
-
-      if (this.activeDanmaku.length > 100) {
-        this.activeDanmaku = this.activeDanmaku.slice(-100);
+    showNewDanmaku(danmaku) {
+      if (danmaku.isAdvanced) {
+        // 高级弹幕
+        const id = Date.now() + Math.random();
+        const activeDanmaku = {
+          id,
+          text: danmaku.text,
+          type: "advanced",
+          time: danmaku.time,
+          style: {
+            top: `${danmaku.position.y}%`,
+            left: `${danmaku.position.x}%`,
+            color: danmaku.position.color || danmaku.color,
+            animationDuration: `${danmaku.position.duration}s`,
+            fontSize: `${danmaku.position.size || danmaku.fontSize}px`,
+            transform: `scale(${danmaku.position.scaleX}, ${danmaku.position.scaleY}) rotate(${danmaku.position.rotation}deg)`,
+            opacity: danmaku.position.alpha,
+            fontFamily: danmaku.position.fontFamily,
+            whiteSpace: "pre-wrap",
+            textAlign: "center",
+            transformOrigin: "center center",
+          },
+        };
+        this.activeDanmaku.push(activeDanmaku);
+      } else if (danmaku.type === 1) {
+        // 滚动弹幕
+        const id = Date.now() + Math.random();
+        const activeDanmaku = {
+          id,
+          text: danmaku.text,
+          type: danmaku.type,
+          time: danmaku.time,
+          style: {
+            top: `${Math.random() * 100}%`,
+            color: danmaku.color,
+            animationDuration: `${this.duration}s`,
+            fontSize: `${danmaku.fontSize}px`,
+          },
+        };
+        this.activeDanmaku.push(activeDanmaku);
+      } else {
+        // 固定弹幕（顶部或底部）
+        const id = Date.now() + Math.random();
+        const isTop = danmaku.type === 5;
+        const activeDanmaku = {
+          id,
+          text: danmaku.text,
+          type: danmaku.type,
+          time: danmaku.time,
+          style: {
+            top: isTop ? `${Math.random() * 20}%` : `${80 + Math.random() * 20}%`,
+            color: danmaku.color,
+            animationDuration: `${this.duration}s`,
+            fontSize: `${danmaku.fontSize}px`,
+          },
+        };
+        this.activeDanmaku.push(activeDanmaku);
       }
     },
-    sendDanmaku({ content, type }) {
-      if (!content.trim()) return;
-
-      const minutes = Math.floor(this.currentTime / 60);
-      const seconds = Math.floor(this.currentTime % 60);
-      const timeStr = `${minutes
-        .toString()
-        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-
-      const now = new Date();
-      const month = (now.getMonth() + 1).toString().padStart(2, "0");
-      const day = now.getDate().toString().padStart(2, "0");
-      const hours = now.getHours().toString().padStart(2, "0");
-      const mins = now.getMinutes().toString().padStart(2, "0");
-
-      const newDanmaku = {
-        time: timeStr,
-        content: content,
-        sendTime: `${month}-${day} ${hours}:${mins}`,
-        type: type,
-      };
-
-      this.danmakuList.unshift(newDanmaku);
-      this.showNewDanmaku(content, type);
-    },
-    toggleDanmaku(value) {
-      this.showDanmaku = value;
-    },
-    handleClickOutside(event) {
-      // 如果点击的不是输入框，则隐藏发送按钮
-      if (!event.target.closest(".form-floating")) {
-        this.showButton = false;
+    handleSendDanmaku(danmakuData) {
+      if (this.$refs.danmakuDisplay) {
+        this.$refs.danmakuDisplay.addNewDanmaku(danmakuData);
       }
+    },
+    handleToggleDanmaku(value) {
+      this.isDanmakuVisible = value;
+    },
+    handleDanmakuLoaded(parsedDanmaku) {
+      this.danmakuList = parsedDanmaku;
     },
   },
   computed: {
     videoId() {
-      return this.id;
+      return this.$route.params.id;
     },
-    isDanmakuVisible() {
-      return this.showDanmaku && this.danmakuEnabled;
+    danmakuUrl() {
+      const danmakuInfo = this.danmakuPool.find((d) => d.id === this.videoInfo.id);
+      return danmakuInfo?.url || "";
     },
   },
   created() {
@@ -561,45 +548,6 @@ export default {
 <style scoped lang="less">
 .page {
   max-width: 1500px;
-}
-
-.video-player-container {
-  position: relative;
-  background-color: #000;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 20px;
-  z-index: 1;
-}
-
-.video-player {
-  width: 100%;
-  aspect-ratio: 16/9;
-  position: relative;
-}
-
-.video-player video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  position: relative;
-  z-index: 1;
-}
-
-.video-player::before {
-  content: "";
-  display: block;
-  padding-top: 56.25%;
-}
-
-.video-player video,
-.video-player img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .recommended-thumbnail {

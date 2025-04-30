@@ -134,6 +134,7 @@ export default {
   font-weight: 500;
   margin-top: 8px;
   margin-bottom: 4px;
+  text-align: left;
 }
 
 .info-text {

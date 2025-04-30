@@ -1,0 +1,893 @@
+<template>
+  <nav
+    class="navbar navbar-expand-lg"
+    :style="{ backgroundImage: `url(${currentBackground})` }"
+  >
+    <div class="container-fluid mt-1 position-absolute top-0 start-0">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="#"
+            ><tv theme="outline" size="20" fill="#ffffff" class="me-1" />首页</a
+          >
+        </li>
+        <li class="nav-item" v-for="i in tags" :key="i">
+          <router-link class="nav-link" :to="i[1]">{{ i[0] }}</router-link>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="#"
+            ><download
+              theme="outline"
+              size="20"
+              fill="#ffffff"
+              class="me-1"
+            />下载客户端</a
+          >
+        </li>
+      </ul>
+
+      <form role="search" class="search-form">
+        <div class="search-container">
+          <div class="search-wrapper" :class="{ 'is-focused': isSearchFocused }">
+            <input
+              type="text"
+              class="search-input"
+              placeholder="搜索番剧"
+              v-model="searchQuery"
+              @focus="handleSearchFocus"
+              @blur="handleSearchBlur"
+            />
+            <button class="search-button" @click="handleSearch">
+              <search theme="outline" size="18" fill="currentColor" />
+            </button>
+          </div>
+
+          <!-- 搜索下拉菜单 -->
+          <div class="search-dropdown" v-if="isSearchFocused">
+            <div class="search-history">
+              <div class="history-header">
+                <span>搜索历史</span>
+                <span class="clear-history" @click="clearHistory">清空</span>
+              </div>
+              <div class="history-tags">
+                <span
+                  v-for="(tag, index) in historyTags"
+                  :key="`history-${index}`"
+                  class="history-tag"
+                  @click="setSearchQuery(tag)"
+                >
+                  {{ tag }}
+                </span>
+              </div>
+            </div>
+
+            <div class="hot-search">
+              <div class="hot-search-header">
+                <span>bilibili热搜</span>
+              </div>
+              <div class="hot-search-list">
+                <div class="row">
+                  <div
+                    class="col-6"
+                    v-for="(column, colIndex) in hotTagsColumns"
+                    :key="`col-${colIndex}`"
+                  >
+                    <div
+                      v-for="(item, index) in column"
+                      :key="`hot-${colIndex}-${index}`"
+                      class="hot-search-item"
+                      @click="setSearchQuery(item.message)"
+                    >
+                      <span
+                        class="hot-number"
+                        :class="{ 'top-rank': isTopRank(colIndex, index) }"
+                      >
+                        {{ item.num }}
+                      </span>
+                      <span class="hot-title">{{ item.message }}</span>
+                      <span
+                        v-if="item.icon"
+                        class="hot-tag"
+                        :style="item.background_color"
+                      >
+                        {{ item.icon }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <ul class="navbar-nav ms-auto me-2">
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link"
+            href="#"
+            role="button"
+            aria-expanded="false"
+            :class="{ avatar: isAvatarVisible }"
+            ><img
+              :src="userData.avatar"
+              alt=""
+              class="avart-img"
+              v-if="isAvatarVisible"
+            />
+          </a>
+
+          <div class="dropdown-menu card">
+            <div class="card-body">
+              <ul class="list-group list-group-flush">
+                <li
+                  class="list-group-item position-absolute top-0 start-50 translate-middle bg-transparent"
+                >
+                  <router-link :to="right_tags[0]" class="custom-link"
+                    ><img
+                      class="avart-card"
+                      src="http://113.45.69.13:9000/image/lucy_moon.jpg"
+                      alt=""
+                  /></router-link>
+                </li>
+                <li class="list-group-item">
+                  <div>name</div>
+                  <div>message</div>
+                </li>
+                <li class="list-group-item">
+                  <div>level</div>
+                  <div>message</div>
+                </li>
+                <li class="list-group-item">activite</li>
+                <li class="list-group-item">look</li>
+                <li class="list-group-item">个人中心</li>
+                <li class="list-group-item">投稿管理</li>
+                <li class="list-group-item">推荐服务</li>
+                <li class="list-group-item">退出登录</li>
+              </ul>
+            </div>
+          </div>
+        </li>
+        <li class="nav-item dropdown">
+          <router-link :to="right_tags[1]" class="custom-link"
+            ><div class="nav-link">
+              <vip-one theme="outline" size="20" fill="#ffffff" />
+              <span
+                class="position-absolute top-1 start-60 translate-middle badge border border-light rounded-circle bg-danger p-1"
+                ><span class="visually-hidden">unread messages</span></span
+              >
+            </div>
+            <div class="nav-text">大会员</div>
+          </router-link>
+
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">Profile</a></li>
+            <li><a class="dropdown-item" href="#">Settings</a></li>
+            <li><a class="dropdown-item" href="#">Logout</a></li>
+          </ul>
+        </li>
+        <li class="nav-item dropdown">
+          <router-link :to="right_tags[2]" class="custom-link"
+            ><div class="nav-link">
+              <message-one theme="outline" size="20" fill="#ffffff" />
+              <span
+                class="position-absolute top-1 start-80 translate-middle badge rounded-pill bg-danger"
+                >9<span class="visually-hidden">unread messages</span>
+              </span>
+            </div>
+            <div class="nav-text">消息</div></router-link
+          >
+
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">Profile</a></li>
+            <li><a class="dropdown-item" href="#">Settings</a></li>
+            <li><a class="dropdown-item" href="#">Logout</a></li>
+          </ul>
+        </li>
+        <li class="nav-item dropdown">
+          <router-link :to="right_tags[3]" class="custom-link"
+            ><div class="nav-link">
+              <windmill-two theme="outline" size="20" fill="#ffffff" />
+              <span
+                class="position-absolute top-1 start-60 translate-middle badge border border-light rounded-circle bg-danger p-1"
+                ><span class="visually-hidden">unread messages</span></span
+              >
+            </div>
+            <div class="nav-text">动态</div></router-link
+          >
+
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">Profile</a></li>
+            <li><a class="dropdown-item" href="#">Settings</a></li>
+            <li><a class="dropdown-item" href="#">Logout</a></li>
+          </ul>
+        </li>
+        <li class="nav-item dropdown">
+          <router-link :to="right_tags[4]" class="custom-link"
+            ><div class="nav-link">
+              <star theme="outline" size="20" fill="#ffffff" />
+              <span
+                class="position-absolute top-1 start-60 translate-middle badge border border-light rounded-circle bg-danger p-1"
+                ><span class="visually-hidden">unread messages</span></span
+              >
+            </div>
+            <div class="nav-text">收藏</div></router-link
+          >
+
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">Profile</a></li>
+            <li><a class="dropdown-item" href="#">Settings</a></li>
+            <li><a class="dropdown-item" href="#">Logout</a></li>
+          </ul>
+        </li>
+        <li class="nav-item dropdown">
+          <router-link :to="right_tags[5]" class="custom-link"
+            ><div class="nav-link">
+              <alarm-clock theme="outline" size="20" fill="#ffffff" />
+              <span
+                class="position-absolute top-1 start-60 translate-middle badge border border-light rounded-circle bg-danger p-1"
+                ><span class="visually-hidden">unread messages</span></span
+              >
+            </div>
+            <div class="nav-text">历史</div></router-link
+          >
+
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">Profile</a></li>
+            <li><a class="dropdown-item" href="#">Settings</a></li>
+            <li><a class="dropdown-item" href="#">Logout</a></li>
+          </ul>
+        </li>
+
+        <li class="nav-item">
+          <router-link :to="right_tags[6]" class="custom-link"
+            ><div class="nav-link">
+              <Tips theme="outline" size="20" fill="#ffffff" />
+              <span
+                class="position-absolute top-1 start-60 translate-middle badge border border-light rounded-circle bg-danger p-1"
+                ><span class="visually-hidden">unread messages</span></span
+              >
+            </div>
+            <div class="nav-text">创作中心</div></router-link
+          >
+        </li>
+        <li class="nav-item mt-1 me-1">
+          <button type="submit" class="btn btn-primary ms-3">
+            <upload theme="outline" size="20" fill="#ffffff" />
+            <small class="ms-1">投稿</small>
+          </button>
+        </li>
+      </ul>
+    </div>
+    <div class="carousel">
+      <div
+        class="card"
+        v-for="(image, index) in images"
+        :key="index"
+        :class="{ active: currentIndex === index }"
+        @mouseenter="setBackground(image, index)"
+        @mouseleave="resetBackground"
+      >
+        <div class="body">
+          <img :src="image" alt="" />
+        </div>
+      </div>
+    </div>
+  </nav>
+</template>
+
+<script>
+import { Download } from "@icon-park/vue-next";
+import { MessageOne } from "@icon-park/vue-next";
+import { AlarmClock } from "@icon-park/vue-next";
+import { WindmillTwo } from "@icon-park/vue-next";
+import { VipOne } from "@icon-park/vue-next";
+import { Star } from "@icon-park/vue-next";
+import { Tips } from "@icon-park/vue-next";
+import { Tv } from "@icon-park/vue-next";
+import { Upload } from "@icon-park/vue-next";
+import { Search } from "@icon-park/vue-next";
+import userData from "@/data/userData";
+
+export default {
+  name: "AnimeBar",
+  components: {
+    Download,
+    MessageOne,
+    AlarmClock,
+    WindmillTwo,
+    VipOne,
+    Star,
+    Tips,
+    Tv,
+    Upload,
+    Search,
+  },
+  props: {
+    url: {
+      type: String,
+      required: true,
+    },
+  },
+  data() {
+    return {
+      userData,
+      tags: [
+        ["番剧", "/Anime"],
+        ["直播", "/Broadcast"],
+        ["游戏中心", "/GameCenter"],
+        ["会员购", "/Purchase"],
+        ["漫画", "/Caricature"],
+        ["赛事", "/Events"],
+        ["PDD", "/PDD"],
+      ],
+      right_tags: [
+        "user",
+        "vip",
+        "message",
+        "activity",
+        "collection",
+        "history",
+        "create",
+      ],
+      history_tags: [
+        "bilibili icon",
+        "icon 图标",
+        "明日方舟",
+        "妈妈妈妈你看有花",
+        "gptsovits",
+        "viggleai使用教程",
+        "回答我",
+        "影色舞",
+        "mygo",
+        "NEXT TO YOU",
+      ],
+      hotTags: [
+        [
+          {
+            num: 1,
+            message: "法院禁止newjeans独立",
+            icon: "热",
+            background_color: "background-color:#f85a54",
+          },
+          {
+            num: 3,
+            message: "哪吒2延长上映至4月30日",
+            icon: "热",
+            background_color: "background-color:#f85a54",
+          },
+          {
+            num: 5,
+            message: "毛利兰 回答我",
+            icon: "梗",
+            background_color: "background-color:#ff6699",
+          },
+          { num: 7, message: "汉密尔顿王者归来", icon: "null", background_color: "" },
+          {
+            num: 9,
+            message: "张郃得了mvp",
+            icon: "独家",
+            background_color: "background-color:#ff6699",
+          },
+        ],
+
+        [
+          {
+            num: 2,
+            message: "月薪多少吃得起火锅",
+            icon: "新",
+            background_color: "background-color:#ffbc4a",
+          },
+          {
+            num: 4,
+            message: "刺客信条影登顶全球销量榜",
+            icon: "新",
+            background_color: "background-color:#ffbc4a",
+          },
+          {
+            num: 6,
+            message: "泰国前总理他信重游唐人街",
+            icon: "null",
+            background_color: "",
+          },
+          {
+            num: 8,
+            message: "金秀贤事件法律争议",
+            icon: "直播中",
+            background_color: "background-color:#ff6699",
+          },
+          {
+            num: 10,
+            message: "跨越60年的爱情",
+            icon: "新",
+            background_color: "background-color:#ffbc4a",
+          },
+        ],
+      ],
+      searchQuery: "",
+      isCardVisible: false,
+      isAvatarVisible: true,
+      isSearchFocused: false,
+      historyTags: [
+        "译之空",
+        "bilibili icon",
+        "icon图标",
+        "明日方舟",
+        "妈妈妈妈你看我有",
+      ],
+      images: [
+        "http://113.45.69.13:9000/image/lucy.png",
+        "http://113.45.69.13:9000/image/Florian.jpg",
+        "http://113.45.69.13:9000/image/fulilian.png",
+        "http://113.45.69.13:9000/image/d1183a9170bd267f19f748ad874ad5467b4dcca2.jpg",
+        "http://113.45.69.13:9000/image/lucy.png",
+        "http://113.45.69.13:9000/image/amiya.jpg",
+        "http://113.45.69.13:9000/image/amiya.jpg",
+      ],
+      currentBackground: "",
+      currentIndex: 0,
+      timer: null,
+      isHovered: false,
+    };
+  },
+  computed: {
+    hotTagsColumns() {
+      const columns = [[], []];
+      this.hotTags.forEach((column, index) => {
+        columns[index] = column;
+      });
+      return columns;
+    },
+  },
+  mounted() {
+    this.currentBackground = this.url;
+    this.startAutoSwitch();
+  },
+  beforeUnmount() {
+    this.stopAutoSwitch();
+  },
+  methods: {
+    toggleCard() {
+      this.isCardVisible = !this.isCardVisible;
+      console.log(this.isCardVisible);
+    },
+    hideAvatar() {
+      this.isAvatarVisible = !this.isAvatarVisible;
+    },
+    handleSearchFocus() {
+      this.isSearchFocused = true;
+    },
+    handleSearchBlur() {
+      setTimeout(() => {
+        this.isSearchFocused = false;
+      }, 200);
+    },
+    handleSearch() {
+      if (this.searchQuery.trim()) {
+        if (!this.historyTags.includes(this.searchQuery)) {
+          this.historyTags.unshift(this.searchQuery);
+          if (this.historyTags.length > 10) {
+            this.historyTags.pop();
+          }
+        }
+        console.log("搜索:", this.searchQuery);
+      }
+    },
+    clearHistory() {
+      this.historyTags = [];
+    },
+    setSearchQuery(query) {
+      this.searchQuery = query;
+      this.handleSearch();
+    },
+    isTopRank(colIndex, index) {
+      const position = colIndex * 5 + index;
+      return position < 3;
+    },
+
+    //随时间切换
+    startAutoSwitch() {
+      this.timer = setInterval(() => {
+        if (!this.isHovered) {
+          this.switchToNext();
+        }
+      }, 5000);
+    },
+    stopAutoSwitch() {
+      if (this.timer) {
+        clearInterval(this.timer);
+        this.timer = null;
+      }
+    },
+    switchToNext() {
+      this.currentIndex = (this.currentIndex + 1) % this.images.length;
+      this.currentBackground = this.images[this.currentIndex];
+    },
+    setBackground(image, index) {
+      this.isHovered = true;
+      this.currentBackground = image;
+      this.currentIndex = index;
+    },
+    resetBackground() {
+      this.isHovered = false;
+    },
+  },
+};
+</script>
+
+<style scoped>
+/* 导航栏容器样式 */
+.navbar {
+  padding: 0.5rem 1rem;
+  height: 600px;
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  transition: background-image 0.5s ease; /* 背景图切换动画 */
+}
+
+/* 底部轮播图容器 */
+.carousel {
+  position: absolute;
+  bottom: 20px; /* 距离底部距离 */
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 20px; /* 卡片之间的间距 */
+  z-index: 2;
+}
+
+/* 轮播图卡片样式 */
+.card {
+  width: 200px; /* 卡片宽度 - 可调整 */
+  height: 120px; /* 卡片高度 - 可调整 */
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease; /* 所有属性变化动画 */
+  opacity: 0.7;
+  border: 2px solid transparent;
+  position: relative; /* 为进度条定位 */
+}
+
+/* 卡片悬浮和激活状态 */
+.card:hover,
+.card.active {
+  transform: translateY(-5px); /* 上移距离 - 可调整 */
+  opacity: 1;
+  border-color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* 激活状态添加底部进度条 */
+.card.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px; /* 进度条高度 - 可调整 */
+  background-color: #00a1d6; /* 进度条颜色 - 可调整 */
+  animation: progress 5s linear; /* 进度条动画 - 对应自动切换时间 */
+}
+
+/* 进度条动画 */
+@keyframes progress {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* 卡片内容容器 */
+.card .body {
+  width: 100%;
+  height: 100%;
+}
+
+/* 卡片图片样式 */
+.card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 图片填充方式：保持比例填充 */
+}
+
+/* 导航内容容器 */
+.container-fluid {
+  position: relative;
+  z-index: 2;
+}
+
+.navbar::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 20%,
+    rgba(255, 255, 255, 0.6) 40%,
+    rgba(255, 255, 255, 0.8) 60%,
+    rgba(255, 255, 255, 0.9) 80%,
+    rgba(255, 255, 255, 1) 100%
+  );
+  pointer-events: none;
+}
+
+.nav-link {
+  margin: 0 0.5rem;
+  font-weight: 500;
+  font-size: small;
+  color: white;
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.custom-search {
+  width: 500px;
+  max-width: 100%;
+}
+.nav-text {
+  color: white;
+  font-size: small;
+}
+.avart-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ffffff;
+}
+.avart-card {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.nav-link:hover {
+  transform: translateY(-5px);
+  color: white;
+}
+
+.btn-outline-success {
+  margin-left: 1rem;
+}
+
+.nav-item.dropdown:hover .dropdown-menu {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+}
+
+.input-group.dropdown-toggle:focus-within .dropdown-menu {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+}
+
+.dropdown-menu {
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.custom-search {
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+}
+
+.search-menu {
+  width: 545px;
+  max-width: 100%;
+}
+
+.input-group-text {
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+}
+
+.historyTag {
+  height: 20px;
+  width: 60px;
+  font-size: small;
+}
+.hotTag {
+  font-size: small;
+}
+.tag-icon {
+  color: white;
+  border-radius: 20%;
+  font-size: smaller;
+}
+.tag-icon:hover {
+  background-color: #e3e5e7;
+}
+
+.custom-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.search-form {
+  position: relative;
+  margin: 0 auto;
+}
+
+.search-container {
+  position: relative;
+  width: 500px;
+  z-index: 100;
+  margin: 0 20px;
+}
+
+.search-wrapper {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e3e5e7;
+  border-radius: 8px;
+  padding: 0 0.5rem;
+  height: 36px;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.search-wrapper.is-focused {
+  border-color: var(--bs-primary, #0d6efd);
+  background-color: #fff;
+  box-shadow: 0 0 5px rgba(13, 110, 253, 0.2);
+}
+
+.search-input {
+  flex-grow: 1;
+  border: none;
+  background-color: transparent;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  outline: none;
+  color: white;
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+}
+
+.search-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.search-button:hover {
+  color: var(--bs-primary, #0d6efd);
+}
+
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 0.5rem;
+  z-index: 1000;
+  max-height: 500px;
+  overflow-y: auto;
+  border: 1px solid #e3e5e7;
+  animation: dropdownFade 0.2s ease-in-out;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-history,
+.hot-search {
+  padding: 1rem;
+}
+
+.hot-search {
+  border-top: 1px solid #e3e5e7;
+}
+
+.history-header,
+.hot-search-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.clear-history {
+  color: #0d6efd;
+  cursor: pointer;
+}
+
+.clear-history:hover {
+  text-decoration: underline;
+}
+
+.history-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.history-tag {
+  background-color: #f6f7f8;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #666;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.history-tag:hover {
+  background-color: #e3e5e7;
+}
+
+.hot-search-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.hot-search-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  cursor: pointer;
+}
+
+.hot-search-item:hover {
+  background-color: #f6f7f8;
+}
+
+.hot-number {
+  width: 20px;
+  text-align: center;
+  font-weight: 600;
+  color: #999;
+  margin-right: 0.8rem;
+}
+
+.hot-number.top-rank {
+  color: #ff6699;
+}
+
+.hot-title {
+  flex-grow: 1;
+  font-size: 0.9rem;
+}
+
+.hot-tag {
+  padding: 0.1rem 0.4rem;
+  border-radius: 2px;
+  font-size: 0.7rem;
+  margin-left: 0.5rem;
+  display: inline-block;
+}
+</style>

@@ -452,7 +452,7 @@ export default {
   background-position: center;
   background-repeat: no-repeat;
   height: 180px;
-  background-image: url("http://113.45.69.13:9000/image/lucy_moon.jpg");
+  background-image: url("http://113.45.69.13:9000/image/4da345730163c365225ed6c489a069a89a82cdd7.png");
 }
 
 .nav-link {

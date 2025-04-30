@@ -9,10 +9,14 @@
             <div class="col-1 mt-1">
               <div class="row">
                 <div class="col-6">
-                  <IconButton icon="WindmillTwo" color="#ff9212" label="动态" />
+                  <router-link to="/activity" class="nav-link">
+                    <IconButton icon="WindmillTwo" color="#ff9212" label="动态" />
+                  </router-link>
                 </div>
                 <div class="col-5">
-                  <IconButton icon="Fire" color="#f07775" label="热门" />
+                  <router-link to="/hot" class="nav-link">
+                    <IconButton icon="Fire" color="#f07775" label="热门" />
+                  </router-link>
                 </div>
                 <div class="col-1"></div>
               </div>

@@ -456,17 +456,17 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
+  }
 
 .schedule-ranking-container {
   display: flex;
   gap: 20px;
   margin: 20px 0;
-}
+  }
 
 .schedule-section {
   flex: 1;
-}
+  }
 
 .ranking-section {
   flex: 1;

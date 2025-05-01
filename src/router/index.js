@@ -46,6 +46,9 @@ import HistoryView from '@/views/HistoryView.vue';
 import CreateView from '@/views/CreateView.vue';
 import VideoView from '@/views/VideoView.vue';
 import HotView from '@/views/HotView.vue';
+import SearchView from '@/views/SearchView.vue';
+import UpLoadView from '@/views/UpLoadView.vue';
+import DataView from '@/views/DataView.vue';
 // 定义路由配置数组
 const routes = [
   // 首页路由
@@ -232,12 +235,31 @@ const routes = [
     component: VideoView,
     props: true,  // 允许将 `id` 作为 props 传递给组件
   },
-  
+
   // 热门页面路由
   {
     path: '/hot',
     name: 'HotView',
     component: HotView,
+  },
+
+  // 搜索页面路由
+  {
+    path: '/search',
+    name: 'SearchView',
+    component: SearchView,
+  },
+  // 上传页面路由
+  {
+    path: '/upload',
+    name: 'UpLoadView',
+    component: UpLoadView,
+  },
+  // 数据统计页面路由
+  {
+    path: '/data',
+    name: 'DataView',
+    component: DataView,
   },
 ]
 

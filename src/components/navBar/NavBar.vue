@@ -35,7 +35,7 @@
               @blur="handleSearchBlur"
             />
             <button class="search-button" @click="handleSearch">
-              <search theme="outline" size="18" fill="currentColor" />
+              <i class="bi bi-search"></i>
             </button>
           </div>
 
@@ -250,7 +250,7 @@
         </li>
         <li class="nav-item mt-1 me-1">
           <button type="submit" class="btn btn-primary ms-3">
-            <upload theme="outline" size="20" fill="#ffffff" />
+            <upload theme="outline" size="20" fill="#ffffff" @click="handleUpload" />
             <small class="ms-1">投稿</small>
           </button>
         </li>
@@ -269,7 +269,6 @@ import { Star } from "@icon-park/vue-next";
 import { Tips } from "@icon-park/vue-next";
 import { Tv } from "@icon-park/vue-next";
 import { Upload } from "@icon-park/vue-next";
-import { Search } from "@icon-park/vue-next";
 import userData from "@/data/userData";
 
 export default {
@@ -284,7 +283,6 @@ export default {
     Tips,
     Tv,
     Upload,
-    Search,
   },
   data() {
     return {
@@ -404,6 +402,11 @@ export default {
     },
   },
   methods: {
+    handleUpload() {
+      this.$router.push({
+        path: "/upload",
+      });
+    },
     toggleCard() {
       this.isCardVisible = !this.isCardVisible;
       console.log(this.isCardVisible);
@@ -427,7 +430,10 @@ export default {
             this.historyTags.pop();
           }
         }
-        console.log("搜索:", this.searchQuery);
+        this.$router.push({
+          path: "/search",
+          query: { keyword: this.searchQuery },
+        });
       }
     },
     clearHistory() {

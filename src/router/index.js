@@ -45,7 +45,7 @@ import CollectionView from '@/views/CollectionView.vue';
 import HistoryView from '@/views/HistoryView.vue';
 import CreateView from '@/views/CreateView.vue';
 import VideoView from '@/views/VideoView.vue';
-
+import HotView from '@/views/HotView.vue';
 // 定义路由配置数组
 const routes = [
   // 首页路由
@@ -231,6 +231,13 @@ const routes = [
     name: 'VideoView',
     component: VideoView,
     props: true,  // 允许将 `id` 作为 props 传递给组件
+  },
+  
+  // 热门页面路由
+  {
+    path: '/hot',
+    name: 'HotView',
+    component: HotView,
   },
 ]
 

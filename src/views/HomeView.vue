@@ -4,55 +4,7 @@
     <div class="container-fluid mt-3">
       <div class="page mx-auto">
         <div class="card-body">
-          <div class="row">
-            <!--左边区域-->
-            <div class="col-1 mt-1">
-              <div class="row">
-                <div class="col-6">
-                  <router-link to="/activity" class="nav-link">
-                    <IconButton icon="WindmillTwo" color="#ff9212" label="动态" />
-                  </router-link>
-                </div>
-                <div class="col-5">
-                  <router-link to="/hot" class="nav-link">
-                    <IconButton icon="Fire" color="#f07775" label="热门" />
-                  </router-link>
-                </div>
-                <div class="col-1"></div>
-              </div>
-            </div>
-
-            <!--中间tag区域-->
-            <div class="col-9">
-              <div class="row">
-                <div v-for="(tag, index) in tags" :key="index" class="col-1">
-                  <div
-                    v-for="(item, i) in tag"
-                    :key="i"
-                    class="card tag border border-0"
-                    :class="{ 'mt-1': i > 0 }"
-                  >
-                    <router-link class="card-body fw-normal nav-link" :to="item.link">{{
-                      item.name
-                    }}</router-link>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 右侧空白区域 -->
-            <div class="col-2 mt-1">
-              <div class="row border-start">
-                <div v-for="(tag, index) in main_tags" :key="index" class="col-4">
-                  <div v-for="(item, i) in tag" :key="i" :class="{ 'mt-4': i > 0 }">
-                    <router-link class="main_tag nav-link" :to="item[2]">
-                      <TagButton :icon="item[0]" :label="item[1]" />
-                    </router-link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <TopNav />
           <div class="custom-layout mt-3">
             <div class="left-section">
               <div
@@ -171,19 +123,16 @@
 </template>
 
 <script>
-import TagButton from "@/components/homeView/TagButton.vue";
-import IconButton from "../components/homeView/IconButton.vue";
 import VideoCard from "@/components/homeView/VideoCard.vue";
 import NavBar from "@/components/navBar/NavBar.vue";
 import { videoInfos } from "@/data/videoInfos.js";
-
+import TopNav from "@/components/navBar/TopNav.vue";
 export default {
   name: "HomeView",
   components: {
-    IconButton,
-    TagButton,
     VideoCard,
     NavBar,
+    TopNav,
   },
   data() {
     return {

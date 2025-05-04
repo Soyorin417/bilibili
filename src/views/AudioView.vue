@@ -1,13 +1,10 @@
 <template>
-  <div class="upload-view">
+  <div class="audio-view">
     <VideoBar />
-    <div class="upload-container">
-      <!-- 左侧导航 -->
+    <div class="container">
       <DataNav currentPage="upload" />
-
-      <!-- 主内容区 -->
-      <div class="upload-main">
-        <!-- 上传区域 -->
+      <div class="main-content">
+        <h2>音频投稿</h2>
         <div
           class="upload-area"
           v-if="!selectedFile"
@@ -15,28 +12,27 @@
           @drop.prevent="handleDrop"
         >
           <div class="upload-box">
-            <i class="bi bi-cloud-arrow-up"></i>
+            <i class="bi bi-music-note-list"></i>
             <h3>点击选择文件或将文件拖入此处</h3>
-            <p>支持 mp4、flv、avi、mov、wmv、mpg、mkv 等格式</p>
+            <p>支持 mp3、wav、flac、aac 等格式</p>
             <div class="upload-limits">
-              <span><i class="bi bi-clock"></i> 视频最长60分钟</span>
-              <span><i class="bi bi-hdd"></i> 文件最大8GB</span>
+              <span><i class="bi bi-clock"></i> 音频最长30分钟</span>
+              <span><i class="bi bi-hdd"></i> 文件最大500MB</span>
             </div>
             <input
               type="file"
               ref="fileInput"
               @change="handleFileSelect"
-              accept="video/*"
+              accept="audio/*"
               class="file-input"
             />
             <button class="select-btn" @click="triggerFileInput">选择文件</button>
           </div>
         </div>
 
-        <!-- 视频信息表单 -->
-        <div class="video-form" v-else>
+        <div class="audio-form" v-else>
           <div class="form-header">
-            <h2>视频投稿</h2>
+            <h2>音频投稿</h2>
             <button class="cancel-btn" @click="resetUpload">
               <i class="bi bi-x"></i>
               取消投稿
@@ -44,70 +40,45 @@
           </div>
 
           <div class="form-content">
-            <!-- 基本信息 -->
             <div class="form-section">
               <h3>基本信息</h3>
               <div class="form-group">
                 <label>标题 <span class="required">*</span></label>
                 <input
                   type="text"
-                  v-model="videoInfo.title"
-                  placeholder="请输入稿件标题"
+                  v-model="audioInfo.title"
+                  placeholder="请输入音频标题"
                   maxlength="80"
                 />
-                <span class="char-count">{{ videoInfo.title.length }}/80</span>
+                <span class="char-count">{{ audioInfo.title.length }}/80</span>
               </div>
 
               <div class="form-group">
-                <label>分区 <span class="required">*</span></label>
-                <select v-model="videoInfo.category">
-                  <option value="">请选择分区</option>
-                  <option value="animation">动画</option>
+                <label>分类 <span class="required">*</span></label>
+                <select v-model="audioInfo.category">
+                  <option value="">请选择分类</option>
                   <option value="music">音乐</option>
-                  <option value="dance">舞蹈</option>
-                  <option value="game">游戏</option>
-                  <option value="knowledge">知识</option>
-                  <option value="tech">科技</option>
-                  <option value="sports">运动</option>
-                  <option value="car">汽车</option>
-                  <option value="life">生活</option>
-                  <option value="food">美食</option>
+                  <option value="podcast">播客</option>
+                  <option value="asmr">ASMR</option>
+                  <option value="voice">配音</option>
                 </select>
               </div>
 
               <div class="form-group">
                 <label>简介</label>
                 <textarea
-                  v-model="videoInfo.description"
-                  placeholder="填写更全面的相关信息，让更多人找到你的视频吧"
+                  v-model="audioInfo.description"
+                  placeholder="填写更全面的相关信息，让更多人找到你的音频吧"
                   rows="4"
                 ></textarea>
               </div>
-
-              <div class="form-group">
-                <label>标签</label>
-                <div class="tags-input">
-                  <div class="tag" v-for="(tag, index) in videoInfo.tags" :key="index">
-                    {{ tag }}
-                    <i class="bi bi-x" @click="removeTag(index)"></i>
-                  </div>
-                  <input
-                    type="text"
-                    v-model="tagInput"
-                    @keydown.enter.prevent="addTag"
-                    placeholder="输入标签按回车添加，最多10个"
-                    :disabled="videoInfo.tags.length >= 10"
-                  />
-                </div>
-              </div>
             </div>
 
-            <!-- 封面设置 -->
             <div class="form-section">
               <h3>封面设置</h3>
               <div class="cover-upload">
-                <div class="cover-preview" v-if="videoInfo.cover">
-                  <img :src="videoInfo.cover" alt="视频封面" />
+                <div class="cover-preview" v-if="audioInfo.cover">
+                  <img :src="audioInfo.cover" alt="音频封面" />
                   <div class="cover-actions">
                     <button @click="removeCover"><i class="bi bi-trash"></i></button>
                   </div>
@@ -125,38 +96,9 @@
                 </div>
               </div>
             </div>
-
-            <!-- 发布设置 -->
-            <div class="form-section">
-              <h3>发布设置</h3>
-              <div class="form-group">
-                <label>发布时间</label>
-                <div class="radio-group">
-                  <label class="radio">
-                    <input type="radio" v-model="videoInfo.publishType" value="now" />
-                    <span>立即发布</span>
-                  </label>
-                  <label class="radio">
-                    <input
-                      type="radio"
-                      v-model="videoInfo.publishType"
-                      value="schedule"
-                    />
-                    <span>定时发布</span>
-                  </label>
-                </div>
-                <input
-                  type="datetime-local"
-                  v-if="videoInfo.publishType === 'schedule'"
-                  v-model="videoInfo.scheduleTime"
-                  class="schedule-time"
-                />
-              </div>
-            </div>
           </div>
 
-          <!-- 提交按钮 -->
-          <div class="form-actions" @click="submitVideo">
+          <div class="form-actions">
             <button class="draft-btn">保存草稿</button>
             <button class="submit-btn">立即投稿</button>
           </div>
@@ -169,10 +111,9 @@
 <script>
 import VideoBar from "@/components/navBar/VideoBar.vue";
 import DataNav from "@/components/navBar/DataNav.vue";
-import { videoInfos } from "@/data/videoInfos";
 
 export default {
-  name: "UpLoadView",
+  name: "AudioView",
   components: {
     VideoBar,
     DataNav,
@@ -180,16 +121,12 @@ export default {
   data() {
     return {
       selectedFile: null,
-      videoUrl: null,
-      tagInput: "",
-      videoInfo: {
+      audioUrl: null,
+      audioInfo: {
         title: "",
         category: "",
         description: "",
-        tags: [],
         cover: null,
-        publishType: "now",
-        scheduleTime: null,
       },
     };
   },
@@ -202,12 +139,11 @@ export default {
     },
     handleDrop(e) {
       const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith("video/")) {
+      if (file && file.type.startsWith("audio/")) {
         this.selectedFile = file;
-        // 将文件转换为Base64
         const reader = new FileReader();
         reader.onload = (e) => {
-          this.videoUrl = e.target.result;
+          this.audioUrl = e.target.result;
         };
         reader.readAsDataURL(file);
       }
@@ -216,10 +152,9 @@ export default {
       const file = e.target.files[0];
       if (file) {
         this.selectedFile = file;
-        // 将文件转换为Base64
         const reader = new FileReader();
         reader.onload = (e) => {
-          this.videoUrl = e.target.result;
+          this.audioUrl = e.target.result;
         };
         reader.readAsDataURL(file);
       }
@@ -229,99 +164,35 @@ export default {
       if (file) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          this.videoInfo.cover = e.target.result;
+          this.audioInfo.cover = e.target.result;
         };
         reader.readAsDataURL(file);
       }
     },
     removeCover() {
-      this.videoInfo.cover = null;
-    },
-    addTag() {
-      if (this.tagInput && this.videoInfo.tags.length < 10) {
-        this.videoInfo.tags.push(this.tagInput);
-        this.tagInput = "";
-      }
-    },
-    removeTag(index) {
-      this.videoInfo.tags.splice(index, 1);
+      this.audioInfo.cover = null;
     },
     resetUpload() {
       this.selectedFile = null;
-      this.videoUrl = null;
-      this.videoInfo = {
+      this.audioUrl = null;
+      this.audioInfo = {
         title: "",
         category: "",
         description: "",
-        tags: [],
         cover: null,
-        publishType: "now",
-        scheduleTime: null,
       };
-    },
-    submitVideo() {
-      // 验证必填字段
-      if (!this.videoInfo.title.trim()) {
-        alert("请输入视频标题");
-        return;
-      }
-      if (!this.videoInfo.category) {
-        alert("请选择视频分区");
-        return;
-      }
-
-      // 创建新的视频对象
-      const newVideo = {
-        id: Date.now(),
-        title: this.videoInfo.title,
-        views: "0",
-        comments: "0",
-        time: new Date().toLocaleString(),
-        description: this.videoInfo.description,
-        avatar: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-        video_url: this.videoUrl,
-        image: this.videoInfo.cover || "http://113.45.69.13:9000/image/lucy_moon.jpg",
-        show_right: false,
-        author: "当前用户",
-        follow: "0",
-        is_like: false,
-        is_dislike: false,
-        is_collect: false,
-        is_share: false,
-        duration: "00:00",
-        isCoined: false,
-        like_count: 0,
-        collect_count: 0,
-        coin_count: 0,
-        share_count: 0,
-        category: this.videoInfo.category,
-        tags: [...this.videoInfo.tags],
-        publishType: this.videoInfo.publishType,
-        scheduleTime: this.videoInfo.scheduleTime,
-      };
-
-      // 将新视频添加到videoInfos数组
-      videoInfos.push(newVideo);
-
-      // 提示成功并重置表单
-      alert("视频投稿成功！");
-      this.resetUpload();
-
-      // 可以选择跳转到首页或其他页面
-      this.$router.push("/");
-      console.log(videoInfos);
     },
   },
 };
 </script>
 
 <style scoped>
-.upload-view {
+.audio-view {
   min-height: 100vh;
   background-color: #f4f4f4;
 }
 
-.upload-container {
+.container {
   max-width: 1600px;
   margin: 0 auto;
   padding: 20px;
@@ -329,15 +200,13 @@ export default {
   gap: 20px;
 }
 
-/* 主内容区样式 */
-.upload-main {
+.main-content {
   flex: 1;
   background: white;
   border-radius: 8px;
   padding: 24px;
 }
 
-/* 上传区域样式 */
 .upload-area {
   height: 400px;
   display: flex;
@@ -400,7 +269,6 @@ export default {
   background: #0095cc;
 }
 
-/* 表单样式 */
 .form-header {
   display: flex;
   justify-content: space-between;
@@ -469,39 +337,6 @@ textarea {
   font-size: 12px;
 }
 
-/* 标签输入样式 */
-.tags-input {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.tag {
-  background: #f4f4f4;
-  padding: 4px 8px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-}
-
-.tag i {
-  cursor: pointer;
-}
-
-.tags-input input {
-  border: none;
-  outline: none;
-  padding: 4px;
-  flex: 1;
-  min-width: 100px;
-}
-
-/* 封面上传样式 */
 .cover-upload {
   width: 240px;
 }
@@ -547,27 +382,6 @@ textarea {
   margin-bottom: 8px;
 }
 
-/* 发布设置样式 */
-.radio-group {
-  display: flex;
-  gap: 24px;
-  margin-bottom: 16px;
-}
-
-.radio {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.schedule-time {
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-/* 表单操作按钮 */
 .form-actions {
   display: flex;
   justify-content: flex-end;

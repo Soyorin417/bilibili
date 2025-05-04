@@ -106,43 +106,15 @@
             role="button"
             aria-expanded="false"
             :class="{ avatar: isAvatarVisible }"
-            ><img
-              :src="userData.avatar"
-              alt=""
-              class="avart-img"
-              v-if="isAvatarVisible"
-            />
+          >
+            <img :src="userData.avatar" alt="" class="avart-img" v-if="isAvatarVisible" />
           </a>
 
-          <div class="dropdown-menu card">
-            <div class="card-body">
-              <ul class="list-group list-group-flush">
-                <li
-                  class="list-group-item position-absolute top-0 start-50 translate-middle bg-transparent"
-                >
-                  <router-link :to="right_tags[0]" class="custom-link"
-                    ><img
-                      class="avart-card"
-                      src="http://113.45.69.13:9000/image/lucy_moon.jpg"
-                      alt=""
-                  /></router-link>
-                </li>
-                <li class="list-group-item">
-                  <div>name</div>
-                  <div>message</div>
-                </li>
-                <li class="list-group-item">
-                  <div>level</div>
-                  <div>message</div>
-                </li>
-                <li class="list-group-item">activite</li>
-                <li class="list-group-item">look</li>
-                <li class="list-group-item">个人中心</li>
-                <li class="list-group-item">投稿管理</li>
-                <li class="list-group-item">推荐服务</li>
-                <li class="list-group-item">退出登录</li>
-              </ul>
-            </div>
+          <div
+            class="dropdown-menu card"
+            style="padding: 0; border: none; box-shadow: none"
+          >
+            <UserProfileCardMini :user="userData" />
           </div>
         </li>
         <li class="nav-item dropdown">
@@ -249,8 +221,8 @@
           >
         </li>
         <li class="nav-item mt-1 me-1">
-          <button type="submit" class="btn btn-primary ms-3">
-            <upload theme="outline" size="20" fill="#ffffff" @click="handleUpload" />
+          <button type="submit" class="btn btn-primary ms-3" @click="handleUpload">
+            <upload theme="outline" size="20" fill="#ffffff" />
             <small class="ms-1">投稿</small>
           </button>
         </li>
@@ -270,6 +242,7 @@ import { Tips } from "@icon-park/vue-next";
 import { Tv } from "@icon-park/vue-next";
 import { Upload } from "@icon-park/vue-next";
 import userData from "@/data/userData";
+import UserProfileCardMini from "@/components/user/UserProfileCardMini.vue";
 
 export default {
   name: "NavBar",
@@ -283,6 +256,7 @@ export default {
     Tips,
     Tv,
     Upload,
+    UserProfileCardMini,
   },
   data() {
     return {

@@ -110,7 +110,12 @@
 
           <!-- Right Navigation Items -->
           <li v-for="(tag, index) in right_tags" :key="`right-${index}`" class="nav-item">
-            <a class="nav-link" :class="{ active: isActive(tag) }" href="#">{{ tag }}</a>
+            <router-link
+              class="nav-link"
+              :class="{ active: isActive(tag) }"
+              :to="getRouteByTag(tag)"
+              >{{ tag }}</router-link
+            >
           </li>
 
           <!-- Upload Button -->
@@ -147,8 +152,8 @@ export default {
         消息: "/message",
         动态: "/activity",
         收藏: "/collection",
-        历史: "/history",
-        创作中心: "/create",
+        历史: "/watch-history",
+        创作中心: "/Article",
       },
       activeItem: "首页",
       // 搜索相关

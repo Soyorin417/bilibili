@@ -42,13 +42,18 @@ import UserView from '@/views/UserView.vue';
 import VipView from '@/views/VipView.vue';
 import MessageView from '@/views/MessageView.vue';
 import CollectionView from '@/views/CollectionView.vue';
-import HistoryView from '@/views/HistoryView.vue';
+import WatchHistoryView from '@/views/WatchHistoryView.vue';
+import UploadHistoryView from '@/views/UploadHistoryView.vue';
 import CreateView from '@/views/CreateView.vue';
 import VideoView from '@/views/VideoView.vue';
 import HotView from '@/views/HotView.vue';
 import SearchView from '@/views/SearchView.vue';
 import UpLoadView from '@/views/UpLoadView.vue';
 import DataView from '@/views/DataView.vue';
+import AudioView from '@/views/AudioView.vue';
+import ContentView from '@/views/ContentView.vue';
+import ArticleView from '@/views/ArticleView.vue';
+import LoginView from '@/views/LoginView.vue';
 // 定义路由配置数组
 const routes = [
   // 首页路由
@@ -57,6 +62,7 @@ const routes = [
     name: 'home',
     component: HomeView
   },
+  
   // 动漫页面路由
   {
     path: '/Anime',
@@ -216,11 +222,17 @@ const routes = [
     name: 'CollectionView',
     component: CollectionView
   },
-  // 历史记录页面路由
+  // 观看历史页面路由
   {
-    path: '/history',
-    name: 'HistoryView',
-    component: HistoryView
+    path: '/watch-history',
+    name: 'WatchHistoryView',
+    component: WatchHistoryView
+  },
+  // 上传历史记录页面路由
+  {
+    path: '/upload-history',
+    name: 'UploadHistoryView',
+    component: UploadHistoryView
   },
   // 创作中心页面路由
   {
@@ -261,6 +273,32 @@ const routes = [
     name: 'DataView',
     component: DataView,
   },
+  // 音频投稿页面路由
+  {
+    path: '/audio',
+    name: 'AudioView',
+    component: AudioView,
+  },
+  // 内容管理页面路由
+  {
+    path: '/content',
+    name: 'ContentView',
+    component: ContentView,
+  },
+  // 专栏投稿页面路由
+  {
+    path: '/article',
+    name: 'ArticleView',
+    component: ArticleView,
+  },
+  // 登录页面路由
+  {
+    path: '/login',
+    name: 'LoginView',
+    component: LoginView,
+  },
+  
+  
 ]
 
 // 创建路由实例

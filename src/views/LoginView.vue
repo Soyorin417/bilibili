@@ -1,5 +1,6 @@
 <template>
   <div class="login-view">
+    <StarfieldBackground />
     <div class="login-container">
       <div class="login-title">登录</div>
       <div class="login-form">
@@ -18,23 +19,17 @@
 </template>
 
 <script>
-import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-
-let scene = null;
-let camera = null;
-let renderer = null;
-let geometry = null;
-let material = null;
-let points = null;
-let animationId = null;
-let controls = null;
+import StarfieldBackground from "@/components/three/StarfieldBackground.vue";
+import axios from "axios";
+import userData from "@/data/userData";
 
 export default {
+  components: { StarfieldBackground },
   data() {
     return {
       username: "",
       password: "",
+      isLogin: !!localStorage.getItem("token"),
       galaxyParams: {
         count: 2000,
         size: 0.012,
@@ -43,138 +38,68 @@ export default {
     };
   },
   mounted() {
-    this.initThree();
     window.addEventListener("resize", this.handleResize);
   },
   beforeUnmount() {
-    this.cleanupThree();
     window.removeEventListener("resize", this.handleResize);
   },
   methods: {
-    login() {
-      this.$router.push("/");
-      console.log(this.$el);
-    },
-    initThree() {
-      if (animationId) cancelAnimationFrame(animationId);
-      // 移除已有canvas
-      const oldCanvas = document.querySelector("canvas[data-threejs-bg]");
-      if (oldCanvas) oldCanvas.parentNode.removeChild(oldCanvas);
+    async login() {
+      const url = "http://127.0.0.1:8081/login";
+      try {
+        const response = await axios.post(url, {
+          username: this.username,
+          password: this.password,
+        });
 
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x000000); // 黑色背景
-      camera = new THREE.PerspectiveCamera(
-        75,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        100
-      );
-      camera.position.z = 5;
+        console.log("Response data:", response.data);
 
-      renderer = new THREE.WebGLRenderer({ alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.domElement.style.position = "fixed";
-      renderer.domElement.style.left = "0";
-      renderer.domElement.style.top = "0";
-      renderer.domElement.style.width = "100vw";
-      renderer.domElement.style.height = "100vh";
-      renderer.domElement.style.zIndex = "0";
-      renderer.domElement.setAttribute("data-threejs-bg", "1");
-      document.body.appendChild(renderer.domElement);
+        if (response.data.error_message === "success") {
+          const token = response.data.token;
+          const userInfo = userData || {}; // 假设接口返回了用户信息
 
-      controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
-      controls.enablePan = false;
-      controls.minDistance = 2;
-      controls.maxDistance = 30;
+          // 使用 Vuex 的 login action
+          this.$store.dispatch("user/login", {
+            token,
+            userInfo,
+          });
 
-      this.generateGalaxy();
+          // 设置 Axios 默认请求头
+          axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      const animate = () => {
-        if (points) points.rotation.y += 0.0015;
-        if (controls) controls.update();
-        renderer.render(scene, camera);
-        animationId = requestAnimationFrame(animate);
-      };
-      animate();
-    },
-    generateGalaxy() {
-      if (points) {
-        geometry.dispose();
-        material.dispose();
-        scene.remove(points);
+          // 跳转页面，不需要强制刷新
+          this.$router.push("/");
+
+          // 调试信息
+          console.log(this.username, "用户名");
+          console.log(this.password, "密码");
+          console.log(token, "token");
+        }
+      } catch (error) {
+        if (error.response) {
+          console.error("响应错误：", error.response.data);
+        } else {
+          console.error("请求错误：", error.message);
+        }
       }
-      // 星空参数
-      const starCount = 2500;
-      const starSize = 0.008;
-      const starRadius = 4.5;
-      geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(starCount * 3);
-      const colors = new Float32Array(starCount * 3);
-      for (let i = 0; i < starCount; i++) {
-        const i3 = i * 3;
-        // 均匀分布在球体表面
-        const r = Math.random() * starRadius;
-        const theta = Math.random() * 2 * Math.PI;
-        const phi = Math.acos(2 * Math.random() - 1);
-        positions[i3 + 0] = r * Math.sin(phi) * Math.cos(theta);
-        positions[i3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-        positions[i3 + 2] = r * Math.cos(phi);
-        // 随机颜色（完全随机RGB）
-        const color = new THREE.Color();
-        color.setRGB(Math.random(), Math.random(), Math.random());
-        colors[i3 + 0] = color.r;
-        colors[i3 + 1] = color.g;
-        colors[i3 + 2] = color.b;
-      }
-      geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-      material = new THREE.PointsMaterial({
-        size: starSize,
-        sizeAttenuation: true,
-        vertexColors: true, // 启用每个点的颜色
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      });
-      points = new THREE.Points(geometry, material);
-      scene.add(points);
     },
     handleResize() {
-      if (!camera || !renderer) return;
-      const container = this.$el.querySelector(".login-view");
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
+      // 处理窗口大小变化的逻辑
     },
-    cleanupThree() {
-      if (animationId) cancelAnimationFrame(animationId);
-      if (
-        renderer &&
-        renderer.domElement &&
-        document.body.contains(renderer.domElement)
-      ) {
-        document.body.removeChild(renderer.domElement);
-        renderer.dispose();
+    logout() {
+      // 1. 清除本地 token
+      localStorage.removeItem("token");
+      // 2. 清除 axios 默认请求头（如果有设置）
+      if (window.axios) {
+        delete window.axios.defaults.headers.common["Authorization"];
       }
-      if (points) {
-        geometry.dispose();
-        material.dispose();
-        scene.remove(points);
-      }
-      scene = null;
-      camera = null;
-      renderer = null;
-      geometry = null;
-      material = null;
-      points = null;
-      animationId = null;
-      if (controls) {
-        controls.dispose();
-        controls = null;
-      }
+      // 3. 跳转到登录页
+      this.$router.push("/login");
+      // 4. 可选：清除用户信息等其他本地状态
+      // this.username = "";
+      // this.password = "";
+
+      this.isLogin = false; // 登出
     },
   },
 };

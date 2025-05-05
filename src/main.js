@@ -1,33 +1,59 @@
-// 导入 Vue 核心库和创建应用的方法
 import { createApp } from "vue";
-// 导入根组件
 import App from "./App.vue";
-// 导入路由配置
 import router from "./router";
-// 导入状态管理配置
 import store from "./store";
-// 导入 Element Plus UI 组件库
 import ElementPlus from "element-plus";
-// 导入 Element Plus 样式
 import "element-plus/dist/index.css";
-// 导入 Element Plus 图标组件
 import * as ElementPlusIconsVue from "@element-plus/icons-vue";
-// 导入 Bootstrap 图标样式
 import "bootstrap-icons/font/bootstrap-icons.css";
+import axios from 'axios'
 
-// 创建 Vue 应用实例
+
 const app = createApp(App);
+const defaultAvatar = "http://113.45.69.13:9000/image/default-avatar.jpg";
 
-// 注册所有 Element Plus 图标组件
+// 恢复 token 和用户信息
+const token = localStorage.getItem("token");
+if (token) {
+  const savedUserInfo = JSON.parse(localStorage.getItem("userInfo")) || {
+    avatar: defaultAvatar,
+    nickname: "未登录",
+    level: 0,
+    exp: 0,
+    nextExp: 0,
+    coin: 0,
+    bcoin: 0,
+    following: 0,
+    fans: 0,
+    dynamic: 0,
+  };
+  store.commit("user/SET_TOKEN", token);
+  store.commit("user/SET_USER_INFO", savedUserInfo);
+}
+
+
+
+axios.defaults.baseURL = 'http://127.0.0.1:8081'
+
+
+axios.interceptors.request.use(
+  config => {
+
+    const token = localStorage.getItem('token')
+    if (token) {
+
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  error => {
+    return Promise.reject(error)
+  }
+)
+
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component);
 }
 
-// 使用状态管理
-app.use(store);
-// 使用路由
-app.use(router);
-// 使用 Element Plus UI 组件库
-app.use(ElementPlus);
-// 挂载应用到 DOM
-app.mount("#app");
+
+app.use(store).use(router).use(ElementPlus).mount("#app");

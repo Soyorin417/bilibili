@@ -2,7 +2,7 @@
 <template>
   <div>
     <!-- 路由视图，用于显示当前路由对应的组件 -->
-    <router-view />
+    <router-view :key="token" />
   </div>
 </template>
 

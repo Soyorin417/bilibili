@@ -107,14 +107,14 @@
             aria-expanded="false"
             :class="{ avatar: isAvatarVisible }"
           >
-            <img :src="userData.avatar" alt="" class="avart-img" v-if="isAvatarVisible" />
+            <img :src="avatar" alt="用户头像" class="avart-img" v-if="isAvatarVisible" />
           </a>
 
           <div
             class="dropdown-menu card"
             style="padding: 0; border: none; box-shadow: none"
           >
-            <UserProfileCardMini :user="userData" />
+            <UserProfileCardMini :user="userInfo" :is-login="isLogin" @logout="logout" />
           </div>
         </li>
         <li class="nav-item dropdown">
@@ -241,8 +241,8 @@ import { Star } from "@icon-park/vue-next";
 import { Tips } from "@icon-park/vue-next";
 import { Tv } from "@icon-park/vue-next";
 import { Upload } from "@icon-park/vue-next";
-import userData from "@/data/userData";
 import UserProfileCardMini from "@/components/user/UserProfileCardMini.vue";
+import { mapGetters, mapActions } from "vuex";
 
 export default {
   name: "NavBar",
@@ -260,7 +260,6 @@ export default {
   },
   data() {
     return {
-      userData,
       tags: [
         ["番剧", "/Anime"],
         ["直播", "/Broadcast"],
@@ -367,6 +366,13 @@ export default {
     };
   },
   computed: {
+    ...mapGetters("user", ["userInfo", "isLogin"]),
+    user() {
+      return this.userInfo; // 这里返回的是 Vuex 中存储的 userInfo
+    },
+    avatar() {
+      return this.user.avatar; // 返回头像
+    },
     hotTagsColumns() {
       const columns = [[], []];
       this.hotTags.forEach((column, index) => {
@@ -375,7 +381,9 @@ export default {
       return columns;
     },
   },
+
   methods: {
+    ...mapActions("user", ["logout"]),
     handleUpload() {
       this.$router.push({
         path: "/upload",

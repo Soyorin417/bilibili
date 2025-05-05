@@ -127,6 +127,7 @@ import VideoCard from "@/components/homeView/VideoCard.vue";
 import NavBar from "@/components/navBar/NavBar.vue";
 import { videoInfos } from "@/data/videoInfos.js";
 import TopNav from "@/components/navBar/TopNav.vue";
+
 export default {
   name: "HomeView",
   components: {
@@ -134,6 +135,7 @@ export default {
     NavBar,
     TopNav,
   },
+
   data() {
     return {
       loop_videoCards: [

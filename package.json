@@ -18,6 +18,7 @@
     "core-js": "^3.8.3",
     "element-plus": "^2.9.8",
     "emoji-mart-vue-fast": "^15.0.4",
+    "sweetalert2": "^11.21.0",
     "three": "^0.174.0",
     "vue": "^3.2.13",
     "vue-router": "^4.0.3",

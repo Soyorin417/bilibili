@@ -1,6 +1,4 @@
-// 导入 Vue Router 相关方法
 import { createRouter, createWebHashHistory } from 'vue-router'
-// 导入所有视图组件
 import HomeView from '../views/HomeView.vue'
 import AnimeView from '@/views/AnimeView.vue'
 import CaricatureView from '@/views/CaricatureView.vue'
@@ -53,7 +51,8 @@ import DataView from '@/views/DataView.vue';
 import AudioView from '@/views/AudioView.vue';
 import ContentView from '@/views/ContentView.vue';
 import ArticleView from '@/views/ArticleView.vue';
-import LoginView from '@/views/LoginView.vue';
+import LoginView from '@/views/user/account/LoginView.vue';
+import RegisterView from '@/views/user/account/RegisterView.vue';
 // 定义路由配置数组
 const routes = [
   // 首页路由
@@ -297,17 +296,18 @@ const routes = [
     name: 'LoginView',
     component: LoginView,
   },
-  
-  
+  // 注册页面路由
+  {
+    path: '/register',
+    name: 'RegisterView',
+    component: RegisterView,
+  },
 ]
 
-// 创建路由实例
+
 const router = createRouter({
-  // 使用 hash 模式的路由历史
   history: createWebHashHistory(),
-  // 配置路由表
   routes
 })
 
-// 导出路由实例
 export default router

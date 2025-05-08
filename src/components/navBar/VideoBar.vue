@@ -132,11 +132,12 @@
 </template>
 
 <script>
+const userInfo = JSON.parse(localStorage.getItem("userInfo"));
 export default {
   name: "VideoBar",
   data() {
     return {
-      avatar: "http://113.45.69.13:9000/image/lucy_moon.jpg",
+      avatar: userInfo ? userInfo.avatar : "",
       left_tags: ["首页", "番剧", "直播", "游戏中心", "会员购", "漫画", "赛事", "读书日"],
       right_tags: ["大会员", "消息", "动态", "收藏", "历史", "创作中心"],
       tagToRoute: {

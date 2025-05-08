@@ -8,48 +8,29 @@ import * as ElementPlusIconsVue from "@element-plus/icons-vue";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from 'axios'
 
-
-const app = createApp(App);
-const defaultAvatar = "http://113.45.69.13:9000/image/default-avatar.jpg";
-
-// 恢复 token 和用户信息
 const token = localStorage.getItem("token");
+
 if (token) {
-  const savedUserInfo = JSON.parse(localStorage.getItem("userInfo")) || {
-    avatar: defaultAvatar,
-    nickname: "未登录",
-    level: 0,
-    exp: 0,
-    nextExp: 0,
-    coin: 0,
-    bcoin: 0,
-    following: 0,
-    fans: 0,
-    dynamic: 0,
-  };
-  store.commit("user/SET_TOKEN", token);
-  store.commit("user/SET_USER_INFO", savedUserInfo);
+  axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+  axios.get("http://127.0.0.1:8081/user")
+    .then(res => {
+      const userInfo = res.data;
+      console.log("main.js 获取 userInfo:", userInfo);
+      localStorage.setItem("userInfo", JSON.stringify(userInfo));
+
+      // 如果使用 Vuex，可以提交 mutation 保存用户信息
+      store.commit("setUserInfo", userInfo);
+    })
+    .catch(err => {
+      console.error("main.js 获取用户信息失败", err);
+      localStorage.removeItem("token");
+      localStorage.removeItem("userInfo");
+    });
 }
 
 
-
-axios.defaults.baseURL = 'http://127.0.0.1:8081'
-
-
-axios.interceptors.request.use(
-  config => {
-
-    const token = localStorage.getItem('token')
-    if (token) {
-
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  error => {
-    return Promise.reject(error)
-  }
-)
+const app = createApp(App);
 
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component);

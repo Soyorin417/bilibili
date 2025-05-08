@@ -357,7 +357,7 @@ export default {
       isAvatarVisible: true,
       isSearchFocused: false,
       historyTags: [
-        "译之空",
+        "缘之空",
         "bilibili icon",
         "icon图标",
         "明日方舟",

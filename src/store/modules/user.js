@@ -10,7 +10,7 @@ const defaultUserInfo = {
   bcoin: 0,
   following: 0,
   fans: 0,
-  dynamic: 1,
+  dynamic: 0,
 };
 
 const state = {
@@ -19,8 +19,8 @@ const state = {
 };
 
 const getters = {
-  isLogin: (state) => !!state.token,
-  userInfo: (state) => state.userInfo,
+  isLogin: (state) => !!state.token && !!state.userInfo,
+  userInfo: (state) => state.userInfo || defaultUserInfo,
   avatar: (state) => state.userInfo.avatar || defaultAvatar,
 };
 

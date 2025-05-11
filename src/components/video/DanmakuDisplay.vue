@@ -52,7 +52,6 @@ export default {
     return {
       danmakus: [],
       activeDanmakus: [],
-      videoUrl: this.url,
       currentTime: 0,
       nextIndex: 0,
       duration: 8,
@@ -71,6 +70,11 @@ export default {
     } catch (error) {
       console.error("获取弹幕数据失败:", error);
     }
+  },
+  computed: {
+    videoUrl() {
+      return this.url ? encodeURI(this.url) : "";
+    },
   },
   methods: {
     onSeek() {

@@ -47,16 +47,15 @@ export default {
   },
   props: {
     videoId: {
-      type: Number,
+      type: String,
       required: true,
       validator: (value) => {
         return !isNaN(value) && value > 0;
       },
     },
-    danmakuPool: {
-      type: Array,
+    danmakuUrl: {
+      type: String,
       required: true,
-      default: () => [],
     },
   },
   data() {
@@ -66,8 +65,35 @@ export default {
     };
   },
   methods: {
+    async getDanmakuList(videoId) {
+      if (!videoId) {
+        console.error("无效的 videoId:", videoId);
+        return;
+      }
+
+      const url = `http://127.0.0.1:8081/danmaku/getDanmakuList?id=${videoId}`;
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.error("Token is missing");
+        return;
+      }
+
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.data) {
+          this.danmakuList = response.data;
+        }
+      } catch (error) {
+        console.error("Error fetching danmaku list:", error);
+      }
+    },
     toggleShow() {
-      console.log(this.danmakuList, "danmakuList");
       this.isShow = !this.isShow;
     },
     formatTime(time) {
@@ -75,15 +101,13 @@ export default {
       const seconds = Math.floor(time % 60);
       return `${minutes}:${seconds.toString().padStart(2, "0")}`;
     },
+
     async loadDanmaku() {
-      console.log("videoId:", this.videoId);
-      console.log("danmakuPool:", this.danmakuPool);
-      const danmakuInfo = this.danmakuPool.find((d) => d.id === this.videoId);
-      console.log("danmakuInfo:", danmakuInfo);
+      const danmakuInfo = this.danmakuUrl;
 
       if (danmakuInfo) {
         try {
-          const response = await axios.get(danmakuInfo.url, {
+          const response = await axios.get(danmakuInfo, {
             transformResponse: [(data) => data],
           });
 
@@ -102,7 +126,15 @@ export default {
   watch: {
     videoId: {
       immediate: true,
-      handler() {
+      handler(newVal) {
+        console.log("videoId changed:", newVal);
+        this.loadDanmaku();
+      },
+    },
+    danmakuUrl: {
+      immediate: true,
+      handler(newVal) {
+        console.log("danmakuUrl changed:", newVal);
         this.loadDanmaku();
       },
     },
@@ -111,8 +143,6 @@ export default {
 </script>
 
 <style scoped>
-/* 弹幕列表样式 */
-/* 弹幕列表样式 */
 .danmaku-container {
   border: 1px solid #eee;
   border-radius: 3px;

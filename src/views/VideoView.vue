@@ -35,7 +35,7 @@
             <!-- 视频播放器 -->
             <div class="mt-4" id="videoStatus">
               <DanmakuDisplay
-                :url="videoInfo.video_url"
+                :url="videoInfo.videoUrl"
                 :videoId="videoId"
                 :isVisible="isDanmakuVisible"
                 ref="danmakuDisplay"
@@ -70,7 +70,7 @@
                     :strokeWidth="3"
                     strokeLinecap="square"
                   />
-                  {{ videoInfo.like_count }}
+                  {{ videoInfo.likeCount }}
                 </div>
 
                 <div class="d-flex align-items-center me-4">
@@ -110,7 +110,7 @@
                       fill="currentColor"
                     ></path>
                   </svg>
-                  {{ videoInfo.coin_count }}
+                  {{ videoInfo.coinCount }}
                 </div>
                 <div class="d-flex align-items-center me-4">
                   <star
@@ -131,7 +131,7 @@
                     :strokeWidth="3"
                     strokeLinecap="square"
                   />
-                  {{ videoInfo.collect_count }}
+                  {{ videoInfo.collectCount }}
                 </div>
                 <div class="d-flex align-items-center me-4">
                   <share-two
@@ -181,13 +181,7 @@
             />
 
             <!-- 弹幕列表 -->
-            <DanmakuList
-              :videoId="parseInt(videoId)"
-              :danmakuPool="danmakuPool"
-              @danmaku-loaded="handleDanmakuLoaded"
-              class="mb-1"
-            />
-
+            <DanmakuList :videoId="videoId" :danmakuUrl="danmakuList.url || ''" />
             <!-- 推荐视频列表 -->
             <RecommendedVideos
               :recommendedVideos="recommendedVideos"
@@ -210,20 +204,17 @@ import {
   Star,
   ShareTwo,
 } from "@icon-park/vue-next";
-import { danmakuPool } from "@/data/danmakuPool";
 import { userInfo } from "@/data/userInfoData";
-import { videoInfos } from "@/data/videoInfos";
 import { commentData } from "@/data/commentData";
 import RecommendedVideos from "@/components/video/RecommendedVideos.vue";
 import AuthorInfo from "@/components/video/AuthorInfo.vue";
-import DanmakuList from "@/components/video/DanmakuList.vue";
 import DanmakuControl from "@/components/video/DanmakuControl.vue";
 import DanmakuDisplay from "@/components/video/DanmakuDisplay.vue";
 import CommentInput from "@/components/video/CommentInput.vue";
 import CommentList from "@/components/video/CommentList.vue";
 import axios from "axios";
 import userData from "@/data/userData";
-import { parseDanmakuXml } from "@/components/danmaku/danmakuParser";
+import DanmakuList from "@/components/video/DanmakuList.vue";
 
 export default {
   components: {
@@ -233,7 +224,6 @@ export default {
     Forbid,
     RecommendedVideos,
     AuthorInfo,
-    DanmakuList,
     DanmakuControl,
     DanmakuDisplay,
     ThumbsUp,
@@ -241,6 +231,7 @@ export default {
     ShareTwo,
     CommentInput,
     CommentList,
+    DanmakuList,
   },
   props: {
     id: {
@@ -256,9 +247,8 @@ export default {
       currentTime: 0,
       currentDanmakuType: "scroll",
       danmakuList: [],
-      danmakuPool,
       userInfo,
-      videoInfos,
+      videoInfos: [],
       commentData,
       recommendedVideos: [],
       activeDanmaku: [],
@@ -283,12 +273,130 @@ export default {
           }
           // 加载新数据
           this.loadVideoData(to.params.id);
-          this.selectDanmakuList();
+          this.getDanmakuList(to.params.id);
         }
       },
     },
   },
   methods: {
+    async getCommentList() {
+      const url = `http://127.0.0.1:8081/api/comments/video/${this.videoId}`;
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.error("Token is missing");
+        return;
+      }
+
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log("Response data:", response.data);
+
+        if (response.data && Array.isArray(response.data)) {
+          // 过滤掉 createTime 为 null 的数据，或者给它设置默认值
+          this.commentData = response.data.map((comment) => ({
+            ...comment,
+            createTime: comment.createTime || "未知时间", // 设置默认时间
+          }));
+        } else {
+          console.error("Invalid comment data format:", response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching comment list:", error);
+      }
+    },
+
+    async getVideoInfos() {
+      const url = "http://127.0.0.1:8081/video/getAllVideo";
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.error("Token is missing");
+        return;
+      }
+
+      this.isLoading = true;
+
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        // 处理成功响应
+        this.videoInfos = response.data;
+      } catch (error) {
+        console.error("Error fetching video infos:", error);
+        alert("获取视频信息失败，请稍后再试");
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async getVideoById(videoId) {
+      const url = `http://127.0.0.1:8081/video/getVideoById?id=${videoId}`;
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.error("Token is missing");
+        return;
+      }
+
+      this.isLoading = true;
+
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.data) {
+          this.videoInfo = response.data; // 存储返回的视频信息
+        } else {
+          console.error("No video data received.");
+        }
+      } catch (error) {
+        console.error("Error fetching video info:", error);
+        alert("获取视频信息失败，请稍后再试");
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async getDanmakuList(videoId) {
+      if (!videoId) {
+        console.error("无效的 videoId:", videoId);
+        return;
+      }
+
+      const url = `http://127.0.0.1:8081/danmaku/getDanmakuList?id=${videoId}`;
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.error("Token is missing");
+        return;
+      }
+
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.data) {
+          this.danmakuList = response.data;
+        }
+      } catch (error) {
+        console.error("Error fetching danmaku list:", error);
+      }
+    },
     handleNewComment(newComment) {
       this.commentData.unshift(newComment);
     },
@@ -302,40 +410,40 @@ export default {
     },
     videoLike() {
       this.videoInfo.is_like = !this.videoInfo.is_like;
-      this.videoInfo.like_count++;
+      this.videoInfo.likeCount++;
     },
     videoDislike() {
       this.videoInfo.is_like = !this.videoInfo.is_like;
-      this.videoInfo.like_count--;
+      this.videoInfo.likeCount--;
     },
     videoCollect() {
       this.videoInfo.is_collect = !this.videoInfo.is_collect;
-      this.videoInfo.collect_count++;
+      this.videoInfo.collectCount++;
     },
     videoDiscollect() {
       this.videoInfo.is_collect = !this.videoInfo.is_collect;
-      this.videoInfo.collect_count--;
+      this.videoInfo.collectCount--;
     },
     videoShare() {
       this.videoInfo.is_share = !this.videoInfo.is_share;
-      this.videoInfo.share_count++;
+      this.videoInfo.shareCount++;
     },
     videoDisshare() {
       this.videoInfo.is_share = !this.videoInfo.is_share;
-      this.videoInfo.share_count--;
+      this.videoInfo.shareCount--;
     },
     videoCoin() {
       this.videoInfo.is_coin = true;
-      this.videoInfo.coin_count++;
+      this.videoInfo.coinCount++;
     },
     videoDiscoin() {
       this.videoInfo.is_coin = false;
-      this.videoInfo.coin_count--;
+      this.videoInfo.coinCount--;
     },
-    loadVideoData(id) {
+    async loadVideoData(id) {
+      await this.getVideoInfos();
       // 首先从 videoInfos 中查找
       let video = this.videoInfos.find((v) => v.id === parseInt(id));
-
       if (video) {
         this.videoInfo = {
           ...video,
@@ -378,36 +486,6 @@ export default {
       }
     },
 
-    async selectDanmakuList() {
-      let danmakuId = this.videoInfo.id;
-
-      // 根据视频ID加载对应的弹幕数据
-      const danmakuInfo = danmakuPool.find((d) => d.id === danmakuId);
-
-      if (danmakuInfo) {
-        try {
-          // 使用axios获取远程数据
-          const response = await axios.get(danmakuInfo.url, {
-            transformResponse: [
-              (data) => {
-                // 不自动转换响应数据
-                return data;
-              },
-            ],
-          });
-
-          // 使用danmakuParser解析XML数据
-          this.danmakuList = parseDanmakuXml(response.data);
-          console.log("解析后的弹幕数据:", this.danmakuList);
-        } catch (error) {
-          console.error("获取弹幕数据失败:", error);
-          this.danmakuList = [];
-        }
-      } else {
-        this.danmakuList = [];
-      }
-    },
-
     is_follow() {
       this.userInfo.is_follow = !this.userInfo.is_follow;
     },
@@ -445,7 +523,7 @@ export default {
         }
       });
     },
-    showNewDanmaku(danmaku) {
+    async showNewDanmaku(danmaku) {
       if (danmaku.isAdvanced) {
         // 高级弹幕
         const id = Date.now() + Math.random();
@@ -512,34 +590,28 @@ export default {
     handleToggleDanmaku(value) {
       this.isDanmakuVisible = value;
     },
-    handleDanmakuLoaded(parsedDanmaku) {
-      this.danmakuList = parsedDanmaku;
-    },
   },
   computed: {
     videoId() {
       return this.$route.params.id;
     },
-    danmakuUrl() {
-      const danmakuInfo = this.danmakuPool.find((d) => d.id === this.videoInfo.id);
-      return danmakuInfo?.url || "";
-    },
   },
   created() {
-    // 确保 videoInfos 正确初始化
     if (!Array.isArray(this.videoInfos)) {
       this.videoInfos = [];
     }
   },
   mounted() {
     this.loadVideoData(this.videoId);
-    this.selectDanmakuList();
-    // 添加全局点击事件监听器
+    this.getDanmakuList(this.videoId);
+    this.getVideoById(this.videoId);
+    this.getCommentList();
+
     document.addEventListener("click", this.handleClickOutside);
   },
   beforeUnmount() {
     this.activeDanmaku = [];
-    // 移除全局点击事件监听器
+
     document.removeEventListener("click", this.handleClickOutside);
   },
 };

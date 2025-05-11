@@ -16,10 +16,8 @@ if (token) {
   axios.get("http://127.0.0.1:8081/user")
     .then(res => {
       const userInfo = res.data;
-      console.log("main.js 获取 userInfo:", userInfo);
       localStorage.setItem("userInfo", JSON.stringify(userInfo));
-
-      // 如果使用 Vuex，可以提交 mutation 保存用户信息
+      // 提交 mutation 保存用户信息
       store.commit("setUserInfo", userInfo);
     })
     .catch(err => {

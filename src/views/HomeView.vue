@@ -127,7 +127,7 @@ import VideoCard from "@/components/homeView/VideoCard.vue";
 import NavBar from "@/components/navBar/NavBar.vue";
 import { videoInfos } from "@/data/videoInfos.js";
 import TopNav from "@/components/navBar/TopNav.vue";
-
+import axios from "axios";
 export default {
   name: "HomeView",
   components: {
@@ -180,6 +180,37 @@ export default {
     const totalVideos = this.videoCards.length + this.otherVideos.length;
     this.loadedVideos = Array(totalVideos).fill(false);
   },
+  methods: {
+    async getVideoInfos() {
+      const url = "http://127.0.0.1:8081/video/getAllVideo";
+      const token = localStorage.getItem("token"); // 获取 token
+
+      if (!token) {
+        console.error("Token is missing");
+        return;
+      }
+
+      this.isLoading = true; // 开始加载
+
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`, // 添加 Authorization header
+          },
+        });
+
+        // 处理成功响应
+        this.videoInfos = response.data;
+        console.log(this.videoInfos, "this.videoInfos");
+      } catch (error) {
+        // 错误处理
+        console.error("Error fetching video infos:", error);
+        alert("获取视频信息失败，请稍后再试");
+      } finally {
+        this.isLoading = false; // 完成加载
+      }
+    },
+  },
   mounted() {
     // 模拟网络延迟
     this.videoCards.forEach((item, index) => {
@@ -194,6 +225,8 @@ export default {
         this.loadedVideos[this.videoCards.length + index] = true;
       }, 300 * (index + 1)); // 每个视频卡片延迟3秒加载
     });
+
+    this.getVideoInfos();
   },
 };
 </script>

@@ -3,7 +3,7 @@
     <div
       class="recommended-header d-flex justify-content-between align-items-center mb-2"
     >
-      <h7 class="mb-0">接下来播放</h7>
+      <h6 class="mb-0">接下来播放</h6>
       <button class="btn btn-link text-secondary p-0">
         <i class="bi bi-three-dots"></i>
       </button>

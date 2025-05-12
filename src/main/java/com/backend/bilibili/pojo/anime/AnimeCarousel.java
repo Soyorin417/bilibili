@@ -1,4 +1,4 @@
-package com.backend.bilibili.pojo.user;
+package com.backend.bilibili.pojo.anime;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -10,10 +10,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("user")
-public class User {
+@TableName("anime_carousel")
+public class AnimeCarousel {
     @TableId(type = IdType.AUTO)
     private Integer id;
-    private String username;
-    private String password;
+    private String url;
 }

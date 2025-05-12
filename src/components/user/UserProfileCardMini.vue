@@ -43,7 +43,7 @@
 
     <!-- 菜单列表 -->
     <div class="menu-list">
-      <router-link to="/user/profile" class="menu-item nav-link">
+      <router-link to="/profile" class="menu-item nav-link">
         <i class="bi bi-person me-2"></i> 个人中心
       </router-link>
       <router-link to="/upload" class="menu-item nav-link">
@@ -80,10 +80,10 @@ export default {
 
   methods: {
     logout() {
-      this.$store.dispatch("user/logout"); // 触发登出
+      this.$emit("logout"); // 告诉父组件你要登出
     },
     login() {
-      this.$router.push("/login"); // 跳转到登录页面
+      this.$router.push("/login");
     },
   },
 };

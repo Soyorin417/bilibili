@@ -140,12 +140,12 @@
         <div class="anime-list">
           <div v-for="anime in animeList" :key="anime.id" class="anime-card">
             <div class="card-image">
-              <img :src="anime.image" :alt="anime.alt" />
+              <img :src="anime.url" :alt="anime.alt" />
               <span class="score">{{ anime.score }}</span>
             </div>
             <div class="card-info">
               <h4 class="title">{{ anime.title }}</h4>
-              <p class="subtitle">{{ anime.subtitle }}</p>
+              <p class="subtitle">{{ anime.description }}</p>
             </div>
           </div>
         </div>
@@ -159,7 +159,7 @@
 import AnimeBar from "@/components/navBar/AnimeBar.vue";
 import AnimeSchedule from "@/components/AnimeSchedule.vue";
 import AnimeRanking from "@/components/AnimeRanking.vue";
-
+import axios from "axios";
 export default {
   name: "AnimeView",
   components: {
@@ -167,98 +167,18 @@ export default {
     AnimeSchedule,
     AnimeRanking,
   },
+  methods: {
+    async getAnimeList() {
+      const response = await axios.get("http://localhost:8081/getAllAnime");
+      this.animeList = response.data;
+    },
+  },
+  mounted() {
+    this.getAnimeList();
+  },
   data() {
     return {
-      loopUrl: [
-        "http://113.45.69.13:9000/image/lucy_moon.jpg",
-        "http://113.45.69.13:9000/image/c668fac037823764abe2023427cb50a2437cdf0b.jpg",
-        "http://113.45.69.13:9000/image/35d43d37454c820e9d994445e8edd348a0a2233c.jpg",
-        "http://113.45.69.13:9000/image/laoba.jpg",
-        "http://113.45.69.13:9000/image/arknights.webp",
-      ],
-      animeList: [
-        {
-          id: 1,
-          image:
-            "http://113.45.69.13:9000/image/e55865e7a58c374e0dd5c13f552146f716ff026f.jpg",
-          alt: "少女乐队的呐喊",
-          score: "9.7",
-          title: "少女乐队的呐喊",
-          subtitle: "少女乐队，摇滚万岁",
-        },
-        {
-          id: 2,
-          image:
-            "http://113.45.69.13:9000/image/9d731a02054c4807cc0a01fc7768f87d0bab10c1.png",
-          alt: "坂本日常",
-          score: "8.8",
-          title: "坂本日常",
-          subtitle: "这个男主太太太帅了",
-        },
-        {
-          id: 3,
-          image:
-            "http://113.45.69.13:9000/image/7f5c1d29ede597590cbfab7820a5096469b6030e.png@560w_746h_!web-ogv-anime-ranking-card.webp",
-          alt: "只有我不存在的城市",
-          score: "9.7",
-          title: "只有我不存在的城市",
-          subtitle: "重来一次，拯救她",
-        },
-        {
-          id: 4,
-          image:
-            "http://113.45.69.13:9000/image/23fabc7d3b53912eb53672ffb6b5379d77b97980.png@560w_746h_!web-ogv-anime-ranking-card.webp",
-          alt: "颂乐人偶",
-          score: "6.5",
-          title: "颂乐人偶",
-          subtitle: "末日萝莉，绝望万岁",
-        },
-        {
-          id: 5,
-          image:
-            "http://113.45.69.13:9000/image/d9d6284e0919ecfda41981c1f9119f993db62935.jpg@560w_746h_!web-ogv-anime-ranking-card.webp",
-          alt: "孤独摇滚",
-          score: "9.9",
-          title: "孤独摇滚！",
-          subtitle: "女孩的摇滚梦想",
-        },
-        {
-          id: 6,
-          image:
-            "http://113.45.69.13:9000/image/41a63442ba47c07f3edeb8169b4d0cc217812e7f.png@560w_746h_!web-ogv-anime-ranking-card.webp",
-          alt: "我独自升级",
-          score: "9.7",
-          title: "我独自升级 第二季",
-          subtitle: "猎杀者王的归来！",
-        },
-        {
-          id: 7,
-          image:
-            "http://113.45.69.13:9000/image/5d07b0a76dcbf7766df4bb498edfae15d52cbbc2.png@560w_746h_!web-ogv-anime-ranking-card.webp",
-          alt: "ReLIFE",
-          score: "9.9",
-          title: "ReLIFE",
-          subtitle: "社畜重返17岁",
-        },
-        {
-          id: 8,
-          image:
-            "http://113.45.69.13:9000/image/9dc89cedb3d03174de8bfd24cceab74ce6b4ce0b.png@560w_746h_!web-ogv-anime-ranking-card.webp",
-          alt: "摇滚乃是淑女的爱好",
-          score: "9.4",
-          title: "摇滚乃是淑女的爱好",
-          subtitle: "填补过去，重生生活",
-        },
-        {
-          id: 9,
-          image:
-            "http://113.45.69.13:9000/image/5ce66f68d54052e3a305524b9b06a76977e974fc.jpg@560w_746h_!web-ogv-anime-ranking-card.webp",
-          alt: "月色真美",
-          score: "9.8",
-          title: "月色真美",
-          subtitle: "小学生的侦探生活",
-        },
-      ],
+      animeList: [],
     };
   },
 };
@@ -456,17 +376,17 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  }
+}
 
 .schedule-ranking-container {
   display: flex;
   gap: 20px;
   margin: 20px 0;
-  }
+}
 
 .schedule-section {
   flex: 1;
-  }
+}
 
 .ranking-section {
   flex: 1;

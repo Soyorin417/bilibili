@@ -102,13 +102,24 @@
         </div>
 
         <ul class="navbar-nav">
-          <li class="nav-item">
-            <a class="nav-link" href="#">
+          <li class="nav-item dropdown">
+            <a class="nav-link" href="#" aria-expanded="false">
               <img class="avatar" :src="avatar" alt="用户头像" />
             </a>
+            <!-- 下拉菜单 -->
+            <div
+              class="dropdown-menu card"
+              style="padding: 0; border: none; box-shadow: none"
+            >
+              <UserProfileCardMini
+                :user="userInfo"
+                :is-login="isLogin"
+                @logout="logout"
+              />
+            </div>
           </li>
 
-          <!-- Right Navigation Items -->
+          <!-- 右侧导航项 -->
           <li v-for="(tag, index) in right_tags" :key="`right-${index}`" class="nav-item">
             <router-link
               class="nav-link"
@@ -118,13 +129,17 @@
             >
           </li>
 
-          <!-- Upload Button -->
+          <!-- 上传按钮 -->
           <li class="nav-item">
-            <a class="nav-link upload-btn" :class="{ active: isActive('投稿') }" href="#"
-              >投稿</a
+            <router-link
+              class="nav-link upload-btn"
+              :class="{ active: isActive('投稿') }"
+              to="/upload"
+              >投稿</router-link
             >
           </li>
         </ul>
+
         <!-- User Avatar -->
       </div>
     </div>
@@ -132,12 +147,21 @@
 </template>
 
 <script>
-const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+import UserProfileCardMini from "@/components/user/UserProfileCardMini.vue";
+import { mapGetters, mapActions } from "vuex";
 export default {
   name: "VideoBar",
+  computed: {
+    ...mapGetters("user", ["userInfo", "isLogin"]),
+    avatar() {
+      return this.userInfo.avatar;
+    },
+  },
+  components: {
+    UserProfileCardMini,
+  },
   data() {
     return {
-      avatar: userInfo ? userInfo.avatar : "",
       left_tags: ["首页", "番剧", "直播", "游戏中心", "会员购", "漫画", "赛事", "读书日"],
       right_tags: ["大会员", "消息", "动态", "收藏", "历史", "创作中心"],
       tagToRoute: {
@@ -182,6 +206,7 @@ export default {
     };
   },
   methods: {
+    ...mapActions("user", ["logout"]),
     getRouteByTag(tag) {
       return this.tagToRoute[tag] || "/";
     },
@@ -192,7 +217,6 @@ export default {
       this.isSearchFocused = true;
     },
     handleSearchBlur() {
-      // 延迟关闭下拉框，以便点击下拉框内容
       setTimeout(() => {
         this.isSearchFocused = false;
       }, 200);
@@ -498,5 +522,40 @@ export default {
   .form-floating {
     width: 100%;
   }
+}
+
+/* 下拉菜单 */
+.nav-item.dropdown {
+  position: relative; /* 确保下拉菜单相对于父项定位 */
+}
+
+.nav-item.dropdown:hover .dropdown-menu {
+  display: block; /* 鼠标悬浮时显示 */
+  opacity: 1;
+  visibility: visible;
+}
+
+.input-group.dropdown-toggle:focus-within .dropdown-menu {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+}
+
+.dropdown-menu {
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 </style>

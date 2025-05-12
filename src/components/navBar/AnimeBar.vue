@@ -109,43 +109,15 @@
             role="button"
             aria-expanded="false"
             :class="{ avatar: isAvatarVisible }"
-            ><img
-              :src="userData.avatar"
-              alt=""
-              class="avart-img"
-              v-if="isAvatarVisible"
-            />
+          >
+            <img :src="avatar" alt="用户头像" class="avart-img" v-if="isAvatarVisible" />
           </a>
 
-          <div class="dropdown-menu card">
-            <div class="card-body">
-              <ul class="list-group list-group-flush">
-                <li
-                  class="list-group-item position-absolute top-0 start-50 translate-middle bg-transparent"
-                >
-                  <router-link :to="right_tags[0]" class="custom-link"
-                    ><img
-                      class="avart-card"
-                      src="http://113.45.69.13:9000/image/lucy_moon.jpg"
-                      alt=""
-                  /></router-link>
-                </li>
-                <li class="list-group-item">
-                  <div>name</div>
-                  <div>message</div>
-                </li>
-                <li class="list-group-item">
-                  <div>level</div>
-                  <div>message</div>
-                </li>
-                <li class="list-group-item">activite</li>
-                <li class="list-group-item">look</li>
-                <li class="list-group-item">个人中心</li>
-                <li class="list-group-item">投稿管理</li>
-                <li class="list-group-item">推荐服务</li>
-                <li class="list-group-item">退出登录</li>
-              </ul>
-            </div>
+          <div
+            class="user-dropdown-menu"
+            style="padding: 0; border: none; box-shadow: none"
+          >
+            <UserProfileCardMini :user="userInfo" :is-login="isLogin" @logout="logout" />
           </div>
         </li>
         <li class="nav-item dropdown">
@@ -252,7 +224,7 @@
           >
         </li>
         <li class="nav-item mt-1 me-1">
-          <button type="submit" class="btn btn-primary ms-3">
+          <button type="submit" class="btn btn-primary ms-3" @click="handleUpload">
             <upload theme="outline" size="20" fill="#ffffff" />
             <small class="ms-1">投稿</small>
           </button>
@@ -288,7 +260,9 @@ import { Tv } from "@icon-park/vue-next";
 import { Upload } from "@icon-park/vue-next";
 import { Search } from "@icon-park/vue-next";
 import userData from "@/data/userData";
-
+import UserProfileCardMini from "@/components/user/UserProfileCardMini.vue";
+import { mapGetters, mapActions } from "vuex";
+import axios from "axios";
 export default {
   name: "AnimeBar",
   components: {
@@ -302,6 +276,7 @@ export default {
     Tv,
     Upload,
     Search,
+    UserProfileCardMini,
   },
   props: {
     url: {
@@ -415,15 +390,7 @@ export default {
         "明日方舟",
         "妈妈妈妈你看我有",
       ],
-      images: [
-        "http://113.45.69.13:9000/image/lucy.png",
-        "http://113.45.69.13:9000/image/Florian.jpg",
-        "http://113.45.69.13:9000/image/fulilian.png",
-        "http://113.45.69.13:9000/image/d1183a9170bd267f19f748ad874ad5467b4dcca2.jpg",
-        "http://113.45.69.13:9000/image/lucy.png",
-        "http://113.45.69.13:9000/image/amiya.jpg",
-        "http://113.45.69.13:9000/image/amiya.jpg",
-      ],
+      images: [],
       currentBackground: "",
       currentIndex: 0,
       timer: null,
@@ -431,6 +398,10 @@ export default {
     };
   },
   computed: {
+    ...mapGetters("user", ["userInfo", "isLogin"]),
+    avatar() {
+      return this.userInfo.avatar;
+    },
     hotTagsColumns() {
       const columns = [[], []];
       this.hotTags.forEach((column, index) => {
@@ -442,11 +413,28 @@ export default {
   mounted() {
     this.currentBackground = this.url;
     this.startAutoSwitch();
+    this.getImages();
   },
   beforeUnmount() {
     this.stopAutoSwitch();
   },
   methods: {
+    async getImages() {
+      const url = "http://localhost:8081/getAllCarousel";
+      const token = localStorage.getItem("token");
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        this.images = response.data.map((item) => item.url);
+        console.log(this.images, "images");
+      } catch (error) {
+        console.error("获取轮播图失败:", error);
+      }
+    },
+    ...mapActions("user", ["logout"]),
     toggleCard() {
       this.isCardVisible = !this.isCardVisible;
       console.log(this.isCardVisible);
@@ -519,7 +507,7 @@ export default {
 /* 导航栏容器样式 */
 .navbar {
   padding: 0.5rem 1rem;
-  height: 600px;
+  height: 700px;
   position: relative;
   overflow: hidden;
   background-size: cover;
@@ -530,13 +518,13 @@ export default {
 /* 底部轮播图容器 */
 .carousel {
   position: absolute;
-  bottom: 20px; /* 距离底部距离 */
+  bottom: 10px; /* 距离底部距离 */
   left: 0;
   right: 0;
   display: flex;
   justify-content: center;
   gap: 20px; /* 卡片之间的间距 */
-  z-index: 2;
+  z-index: 1;
 }
 
 /* 轮播图卡片样式 */
@@ -677,6 +665,34 @@ export default {
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* 登录卡片专用下拉菜单样式 */
+.user-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  min-width: 400px;
+  padding: 0;
+  margin-top: 10px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.nav-item.dropdown:hover .user-dropdown-menu {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 其他下拉菜单样式 */
+.nav-item.dropdown:hover .dropdown-menu:not(.user-dropdown-menu) {
+  display: block;
+  opacity: 1;
+  visibility: visible;
 }
 
 .custom-search {
@@ -889,5 +905,75 @@ export default {
   font-size: 0.7rem;
   margin-left: 0.5rem;
   display: inline-block;
+}
+
+/* 统一 dropdown 父容器定位 */
+.nav-item.dropdown {
+  position: relative;
+}
+
+/* 鼠标悬浮显示下拉菜单 */
+.nav-item.dropdown:hover .dropdown-menu,
+.nav-item.dropdown:hover .user-dropdown-menu {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 用户菜单样式 */
+.user-dropdown-menu,
+.dropdown-menu {
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  position: absolute;
+  top: 100%; /* 紧贴下方 */
+  left: 0;
+  z-index: 9999;
+  background-color: white;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  min-width: 180px;
+  padding: 0.5rem 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 头像样式 */
+.avatar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+/* 下拉项样式 */
+.dropdown-item {
+  padding: 0.5rem 1rem;
+  color: #333;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+  color: #000;
+}
+
+/* 自定义图标导航样式 */
+.custom-link {
+  text-decoration: none;
+  color: white;
+}
+
+.custom-link:hover {
+  color: #ccc;
+}
+
+.nav-text {
+  text-align: center;
+  font-size: 12px;
+  margin-top: 2px;
 }
 </style>

@@ -12,12 +12,12 @@
         <div class="rank-number" :class="{ 'top-three': index < 3 }">{{ index + 1 }}</div>
         <div class="anime-card">
           <div class="card-image">
-            <img :src="anime.image" :alt="anime.title" />
+            <img :src="anime.url" :alt="anime.title" />
             <span class="score">{{ anime.score }}</span>
           </div>
           <div class="card-info">
             <h4 class="title">{{ anime.title }}</h4>
-            <p class="subtitle">{{ anime.subtitle }}</p>
+            <p class="subtitle">{{ anime.description }}</p>
           </div>
         </div>
       </div>
@@ -26,61 +26,22 @@
 </template>
 
 <script>
+import axios from "axios";
 export default {
   name: "AnimeRanking",
   data() {
     return {
-      rankingList: [
-        {
-          id: 1,
-          image:
-            "http://113.45.69.13:9000/image/41a63442ba47c07f3edeb8169b4d0cc217812e7f.png@560w_746h_!web-ogv-anime-ranking-card.webp",
-          title: "我独自升级 第二季",
-          subtitle: "超影·更新至第2话",
-          score: "9.7",
-        },
-        {
-          id: 2,
-          image:
-            "http://113.45.69.13:9000/image/d9d6284e0919ecfda41981c1f9119f993db62935.jpg@560w_746h_!web-ogv-anime-ranking-card.webp",
-          title: "刺客信条：王朝",
-          subtitle: "超影·更新至第2话",
-          score: "9.9",
-        },
-        {
-          id: 3,
-          image:
-            "http://113.45.69.13:9000/image/5d07b0a76dcbf7766df4bb498edfae15d52cbbc2.png@560w_746h_!web-ogv-anime-ranking-card.webp",
-          title: "打了300年的史莱姆",
-          subtitle: "超影·更新至第2话",
-          score: "9.7",
-        },
-        {
-          id: 4,
-          image:
-            "http://113.45.69.13:9000/image/9dc89cedb3d03174de8bfd24cceab74ce6b4ce0b.png@560w_746h_!web-ogv-anime-ranking-card.webp",
-          title: "假面骑士布布",
-          subtitle: "超影·更新至第2话",
-          score: "9.9",
-        },
-        {
-          id: 5,
-          image:
-            "http://113.45.69.13:9000/image/5ce66f68d54052e3a305524b9b06a76977e974fc.jpg@560w_746h_!web-ogv-anime-ranking-card.webp",
-          title: "地缚少年花子君 第二季",
-          subtitle: "超影·更新至第2话",
-          score: "9.8",
-        },
-        {
-          id: 6,
-          image:
-            "http://113.45.69.13:9000/image/23fabc7d3b53912eb53672ffb6b5379d77b97980.png@560w_746h_!web-ogv-anime-ranking-card.webp",
-          title: "香格里拉边境 第二季",
-          subtitle: "超影·更新至第2话",
-          score: "9.4",
-        },
-      ],
+      rankingList: [],
     };
+  },
+  mounted() {
+    this.getAnimeRanking();
+  },
+  methods: {
+    async getAnimeRanking() {
+      const response = await axios.get("http://localhost:8081/getAllAnime");
+      this.rankingList = response.data.slice(0, 5);
+    },
   },
 };
 </script>

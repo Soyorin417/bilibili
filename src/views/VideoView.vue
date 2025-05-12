@@ -301,7 +301,7 @@ export default {
           // 过滤掉 createTime 为 null 的数据，或者给它设置默认值
           this.commentData = response.data.map((comment) => ({
             ...comment,
-            createTime: comment.createTime || "未知时间", // 设置默认时间
+            createTime: comment.createTime || "未知时间",
           }));
         } else {
           console.error("Invalid comment data format:", response.data);
@@ -489,99 +489,7 @@ export default {
     is_follow() {
       this.userInfo.is_follow = !this.userInfo.is_follow;
     },
-    timeToSeconds(timeStr) {
-      const parts = timeStr.split(":");
-      return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-    },
-    onTimeUpdate() {
-      if (!this.$refs.videoPlayer) return;
 
-      const video = this.$refs.videoPlayer;
-      this.currentTime = video.currentTime;
-
-      if (!video.paused && this.isDanmakuVisible) {
-        const now = Date.now();
-        if (now - this.lastCheckTime >= this.checkInterval) {
-          this.checkDanmakuTiming();
-          this.lastCheckTime = now;
-        }
-      }
-    },
-    checkVideoStatus() {
-      const video = this.$refs.videoPlayer;
-      if (video) {
-        this.danmakuEnabled = !video.ended;
-      }
-    },
-    checkDanmakuTiming() {
-      const currentTime = this.$refs.videoPlayer.currentTime;
-      const targetTime = Math.floor(currentTime * 10) / 10;
-
-      this.danmakuList.forEach((d) => {
-        if (Math.abs(d.time - targetTime) < 0.3) {
-          this.showNewDanmaku(d);
-        }
-      });
-    },
-    async showNewDanmaku(danmaku) {
-      if (danmaku.isAdvanced) {
-        // 高级弹幕
-        const id = Date.now() + Math.random();
-        const activeDanmaku = {
-          id,
-          text: danmaku.text,
-          type: "advanced",
-          time: danmaku.time,
-          style: {
-            top: `${danmaku.position.y}%`,
-            left: `${danmaku.position.x}%`,
-            color: danmaku.position.color || danmaku.color,
-            animationDuration: `${danmaku.position.duration}s`,
-            fontSize: `${danmaku.position.size || danmaku.fontSize}px`,
-            transform: `scale(${danmaku.position.scaleX}, ${danmaku.position.scaleY}) rotate(${danmaku.position.rotation}deg)`,
-            opacity: danmaku.position.alpha,
-            fontFamily: danmaku.position.fontFamily,
-            whiteSpace: "pre-wrap",
-            textAlign: "center",
-            transformOrigin: "center center",
-          },
-        };
-        this.activeDanmaku.push(activeDanmaku);
-      } else if (danmaku.type === 1) {
-        // 滚动弹幕
-        const id = Date.now() + Math.random();
-        const activeDanmaku = {
-          id,
-          text: danmaku.text,
-          type: danmaku.type,
-          time: danmaku.time,
-          style: {
-            top: `${Math.random() * 100}%`,
-            color: danmaku.color,
-            animationDuration: `${this.duration}s`,
-            fontSize: `${danmaku.fontSize}px`,
-          },
-        };
-        this.activeDanmaku.push(activeDanmaku);
-      } else {
-        // 固定弹幕（顶部或底部）
-        const id = Date.now() + Math.random();
-        const isTop = danmaku.type === 5;
-        const activeDanmaku = {
-          id,
-          text: danmaku.text,
-          type: danmaku.type,
-          time: danmaku.time,
-          style: {
-            top: isTop ? `${Math.random() * 20}%` : `${80 + Math.random() * 20}%`,
-            color: danmaku.color,
-            animationDuration: `${this.duration}s`,
-            fontSize: `${danmaku.fontSize}px`,
-          },
-        };
-        this.activeDanmaku.push(activeDanmaku);
-      }
-    },
     handleSendDanmaku(danmakuData) {
       if (this.$refs.danmakuDisplay) {
         this.$refs.danmakuDisplay.addNewDanmaku(danmakuData);
@@ -661,7 +569,6 @@ export default {
   margin-bottom: 12px;
 }
 
-/* 视频互动区域 */
 .video-actions {
   margin-top: 20px;
   padding: 15px 0;
@@ -689,7 +596,6 @@ export default {
   font-size: 24px;
   font-weight: 600;
   text-align: left;
-  /* 添加以下属性来优化中文显示 */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   letter-spacing: 0.2px;
@@ -709,10 +615,10 @@ export default {
 }
 h4 {
   font-family: "PingFang SC", "Microsoft YaHei", "Helvetica", "Arial", sans-serif;
-  font-size: 20px; /* 保持适中的大小 */
-  font-weight: 600; /* 加点粗体 */
-  line-height: 1.4; /* 行高正常一点 */
-  letter-spacing: 0.5px; /* 字距微微拉开，中英文更自然 */
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
 }
 
 .video-coin-icon {

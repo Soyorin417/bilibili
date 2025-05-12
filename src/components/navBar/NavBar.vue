@@ -3,9 +3,7 @@
     <div class="container-fluid mt-1 position-absolute top-0 start-0">
       <ul class="navbar-nav me-auto">
         <li class="nav-item">
-          <a class="nav-link" href="#"
-            ><tv theme="outline" size="20" fill="#ffffff" class="me-1" />首页</a
-          >
+          <a class="nav-link" href="#"><i class="bi bi-tv me-2"></i>首页</a>
         </li>
         <li class="nav-item" v-for="i in tags" :key="i">
           <router-link class="nav-link" :to="i[1]">{{ i[0] }}</router-link>
@@ -239,7 +237,6 @@ import { WindmillTwo } from "@icon-park/vue-next";
 import { VipOne } from "@icon-park/vue-next";
 import { Star } from "@icon-park/vue-next";
 import { Tips } from "@icon-park/vue-next";
-import { Tv } from "@icon-park/vue-next";
 import { Upload } from "@icon-park/vue-next";
 import UserProfileCardMini from "@/components/user/UserProfileCardMini.vue";
 import { mapGetters, mapActions } from "vuex";
@@ -254,7 +251,6 @@ export default {
     VipOne,
     Star,
     Tips,
-    Tv,
     Upload,
     UserProfileCardMini,
   },

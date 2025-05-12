@@ -17,23 +17,41 @@
           v-for="day in weekDays"
           :key="day.value"
           :class="['week-day', { active: currentDay === day.value }]"
-          @click="currentDay = day.value"
+          @click="handleDayChange(day.value)"
         >
           {{ day.label }}
         </a>
       </div>
-      <a class="view-all" href="#">查看全部 ></a>
+      <div class="header-actions">
+        <a class="view-all" href="#">查看全部 ></a>
+        <button class="refresh-btn" @click="refreshData" :disabled="isLoading">
+          <span v-if="isLoading">加载中...</span>
+          <span v-else>刷新</span>
+        </button>
+      </div>
     </div>
-    <div class="anime-schedule-list">
-      <div v-for="anime in currentDayAnimes" :key="anime.id" class="schedule-card">
+
+    <div v-if="error" class="error-message">
+      {{ error }}
+      <button @click="refreshData">重试</button>
+    </div>
+
+    <div v-else-if="isLoading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <span>加载中...</span>
+    </div>
+
+    <div v-else class="anime-schedule-list">
+      <div v-if="currentDayAnimes.length === 0" class="no-data">当前日期暂无更新</div>
+      <div v-else v-for="anime in currentDayAnimes" :key="anime.id" class="schedule-card">
         <div class="card-image">
-          <img :src="anime.image" :alt="anime.title" />
+          <img :src="anime.url" :alt="anime.title" @error="handleImageError" />
           <span class="score">{{ anime.score }}</span>
-          <span class="time">{{ anime.time }}</span>
         </div>
         <div class="card-info">
           <h4 class="title">{{ anime.title }}</h4>
-          <p class="subtitle">{{ anime.subtitle }}</p>
+          <p class="subtitle">更新至{{ anime.episode }}话</p>
+          <p class="description">{{ anime.description }}</p>
         </div>
       </div>
     </div>
@@ -42,6 +60,8 @@
 
 <script>
 import { AlarmClock } from "@icon-park/vue-next";
+import axios from "axios";
+
 export default {
   name: "AnimeSchedule",
   components: {
@@ -49,64 +69,90 @@ export default {
   },
   data() {
     return {
-      currentDay: "周一",
+      currentDay: "Monday",
+      isLoading: false,
+      error: null,
       weekDays: [
-        { label: "最近更新", value: "最近更新" },
-        { label: "周一", value: "周一" },
-        { label: "周二", value: "周二" },
-        { label: "周三", value: "周三" },
-        { label: "周四", value: "周四" },
-        { label: "周五", value: "周五" },
-        { label: "周六", value: "周六" },
-        { label: "周日", value: "周日" },
+        { label: "最近更新", value: "recent" },
+        { label: "周一", value: "Monday" },
+        { label: "周二", value: "Tuesday" },
+        { label: "周三", value: "Wednesday" },
+        { label: "周四", value: "Thursday" },
+        { label: "周五", value: "Friday" },
+        { label: "周六", value: "Saturday" },
+        { label: "周日", value: "Sunday" },
       ],
       scheduleData: {
-        周一: [
-          {
-            id: 1,
-            image:
-              "http://113.45.69.13:9000/image/e55865e7a58c374e0dd5c13f552146f716ff026f.jpg",
-            title: "末日后宿舍",
-            subtitle: "更新至第2话",
-            score: "9.8",
-            time: "01:40",
-          },
-          {
-            id: 2,
-            image:
-              "http://113.45.69.13:9000/image/9d731a02054c4807cc0a01fc7768f87d0bab10c1.png",
-            title: "直至魔女消逝",
-            subtitle: "更新至第2话",
-            score: "9.4",
-            time: "22:30",
-          },
-          {
-            id: 3,
-            image:
-              "http://113.45.69.13:9000/image/7f5c1d29ede597590cbfab7820a5096469b6030e.png@560w_746h_!web-ogv-anime-ranking-card.webp",
-            title: "最强王者的第二人生",
-            subtitle: "更新至第2话",
-            score: "9.5",
-            time: "19:00",
-          },
-          {
-            id: 4,
-            image:
-              "http://113.45.69.13:9000/image/41a63442ba47c07f3edeb8169b4d0cc217812e7f.png@560w_746h_!web-ogv-anime-ranking-card.webp",
-            title: "青之驱魔师 岛根篇",
-            subtitle: "更新至第2话",
-            score: "9.5",
-            time: "18:30",
-          },
-        ],
-        // 其他日期的数据可以按需添加
+        Monday: [],
+        Tuesday: [],
+        Wednesday: [],
+        Thursday: [],
+        Friday: [],
+        Saturday: [],
+        Sunday: [],
       },
     };
   },
+  methods: {
+    async getAnimeList() {
+      this.isLoading = true;
+      this.error = null;
+      try {
+        const response = await axios.get("http://localhost:8081/getAllAnimeSchedule");
+        const animeList = response.data;
+
+        // 按星期几对数据进行分组
+        const groupedData = {};
+        animeList.forEach((anime) => {
+          const day = anime.time.charAt(0).toUpperCase() + anime.time.slice(1);
+          if (!groupedData[day]) {
+            groupedData[day] = [];
+          }
+          groupedData[day].push({
+            id: anime.id,
+            url: anime.url,
+            title: anime.title,
+            episode: anime.episode.toString(),
+            score: anime.score.toString(),
+            time: anime.time,
+            description: anime.description,
+          });
+        });
+
+        this.scheduleData = { ...this.scheduleData, ...groupedData };
+        console.log("Anime schedule data updated:", this.scheduleData);
+      } catch (error) {
+        console.error("Error fetching anime schedule:", error);
+        this.error = "获取数据失败，请稍后重试";
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    handleDayChange(day) {
+      this.currentDay = day;
+    },
+
+    async refreshData() {
+      await this.getAnimeList();
+    },
+
+    handleImageError(event) {
+      event.target.src = "https://via.placeholder.com/240x336?text=图片加载失败";
+    },
+  },
   computed: {
     currentDayAnimes() {
+      if (this.currentDay === "recent") {
+        // 获取所有动漫并按更新时间排序
+        const allAnimes = Object.values(this.scheduleData).flat();
+        return allAnimes.sort((a, b) => b.episode - a.episode).slice(0, 8);
+      }
       return this.scheduleData[this.currentDay] || [];
     },
+  },
+  mounted() {
+    this.getAnimeList();
   },
 };
 </script>
@@ -125,6 +171,75 @@ export default {
   justify-content: space-between;
   margin-bottom: 20px;
   position: relative;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.refresh-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  background: #00a1d6;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.refresh-btn:hover {
+  background: #0091c2;
+}
+
+.refresh-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  text-align: center;
+  color: #ff4d4f;
+  padding: 20px;
+  background: #fff2f0;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #666;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #00a1d6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-size: 16px;
 }
 
 .section-title {
@@ -213,17 +328,6 @@ export default {
   font-weight: bold;
 }
 
-.time {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
 .card-info {
   padding: 12px;
 }
@@ -250,5 +354,16 @@ export default {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.description {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

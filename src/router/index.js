@@ -53,8 +53,72 @@ import ContentView from '@/views/ContentView.vue';
 import ArticleView from '@/views/ArticleView.vue';
 import LoginView from '@/views/user/account/LoginView.vue';
 import RegisterView from '@/views/user/account/RegisterView.vue';
+import ProfileView from '@/views/user/account/ProfileView.vue';
+import FaceView from '@/views/user/account/FaceView.vue';
+import SettingView from '@/views/user/account/SettingView.vue';
+import BlacklistView from '@/views/user/account/BlacklistView.vue';
+import PointsView from '@/views/user/account/PointsView.vue';
+import LiveFansmedalWall from '@/views/user/account/LiveFansmedalWall.vue';
+import AchievementView from '@/views/user/account/AchievementView.vue';
+import SecurityView from '@/views/user/account/SecurityView.vue';
+import CoinView from '@/views/user/account/CoinView.vue';
+import SpaceView from '@/views/user/account/SpaceView.vue';
 // 定义路由配置数组
 const routes = [
+  //个人空间
+  {
+    path: '/profile/space',
+    name: 'SpaceView',
+    component: SpaceView,
+  },
+  //硬币
+  {
+    path: '/profile/coin',
+    name: 'CoinView',
+    component: CoinView,
+  },
+  //账户安全
+  {
+    path: '/profile/security',
+    name: 'SecurityView',
+    component: SecurityView,
+  },
+  // 成就页面路由
+  {
+    path: '/profile/achievement',
+    name: 'AchievementView',
+    component: AchievementView,
+  },
+  // 直播粉丝墙页面路由
+  {
+    path: '/profile/livefansmedalwall',
+    name: 'LiveFansmedalWall',
+    component: LiveFansmedalWall,
+  },
+  // 积分页面路由
+  {
+    path: '/profile/points',
+    name: 'PointsView',
+    component: PointsView,
+  },
+  // 黑名单页面路由
+  {
+    path: '/profile/blacklist',
+    name: 'BlacklistView',
+    component: BlacklistView,
+  },
+  // 设置页面路由
+  {
+    path: '/profile/message',
+    name: 'SettingView',
+    component: SettingView,
+  },
+  // 头像
+  {
+    path: '/profile/face',
+    name: 'FaceView',
+    component: FaceView,
+  },
   // 首页路由
   {
     path: '/',
@@ -301,6 +365,12 @@ const routes = [
     path: '/register',
     name: 'RegisterView',
     component: RegisterView,
+  },
+  // 个人中心页面路由
+  {
+    path: '/profile',
+    name: 'ProfileView',
+    component: ProfileView,
   },
 ]
 

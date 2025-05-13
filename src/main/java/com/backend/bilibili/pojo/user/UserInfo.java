@@ -13,8 +13,8 @@ import lombok.NoArgsConstructor;
 @TableName("userinfo")
 public class UserInfo {
     @TableId(type = IdType.AUTO)
-    private Integer id;
-    private Integer uid;
+    private Long id;
+    private Long uid;
     private String avatar;
     private String username;
     private int level;

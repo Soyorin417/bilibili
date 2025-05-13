@@ -17,8 +17,9 @@ if (token) {
     .then(res => {
       const userInfo = res.data;
       localStorage.setItem("userInfo", JSON.stringify(userInfo));
-      // 提交 mutation 保存用户信息
-      store.commit("setUserInfo", userInfo);
+
+      store.commit("user/SET_USER_INFO", userInfo);
+
     })
     .catch(err => {
       console.error("main.js 获取用户信息失败", err);
@@ -26,6 +27,7 @@ if (token) {
       localStorage.removeItem("userInfo");
     });
 }
+
 
 
 const app = createApp(App);

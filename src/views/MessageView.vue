@@ -10,7 +10,11 @@
           :sessions="sessions"
           :selected="selectedSession"
         />
-        <MessageDetail class="detail" :session="selectedSession" />
+        <MessageDetail
+          class="detail"
+          :session="selectedSession"
+          @send-message="sendMessage"
+        />
       </div>
     </div>
   </div>
@@ -21,39 +25,105 @@ import MessageNav from "@/components/message/MessageNav.vue";
 import MessageList from "@/components/message/MessageList.vue";
 import MessageDetail from "@/components/message/MessageDetail.vue";
 import VideoBar from "@/components/navBar/VideoBar.vue";
+import axios from "axios";
+
 export default {
   name: "MessageView",
   components: { MessageNav, MessageList, MessageDetail, VideoBar },
   data() {
     return {
-      sessions: [
-        {
-          id: 1,
-          avatar: "xxx.png",
-          name: "UP主小助手",
-          summary: "本周达成【收藏飙升】成就...",
-          messages: [
-            {
-              id: 1,
-              time: "2025年4月26日 13:32",
-              content: "本周达成【收藏飙升】成就，快来看...",
-              type: "system",
-            },
-            // ...更多消息
-          ],
-        },
-        // ...更多会话
-      ],
+      sessions: [],
       selectedSession: null,
+      currentUser: localStorage.getItem("username") || "",
     };
   },
   methods: {
+    async getAllSessions() {
+      const url = "http://localhost:8081/sessions";
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Token is missing");
+        return;
+      }
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        this.sessions = response.data;
+        console.log(this.sessions, "this.sessions");
+        if (this.sessions.length > 0) {
+          this.selectSession(this.sessions[0]);
+        }
+      } catch (error) {
+        console.error("Error fetching sessions:", error);
+      }
+    },
+
+    async getMessages(fromUser, toUser) {
+      const url = `http://localhost:8081/messages/private?user1=${fromUser}&user2=${toUser}`;
+      const token = localStorage.getItem("token");
+
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const messages = response.data;
+        const session = this.sessions.find(
+          (s) =>
+            (s.user1Id === fromUser && s.user2Id === toUser) ||
+            (s.user1Id === toUser && s.user2Id === fromUser)
+        );
+
+        if (session) {
+          session.messages = messages;
+          this.selectedSession = { ...session };
+        }
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    },
+
     selectSession(session) {
       this.selectedSession = session;
+      const userInfoStr = JSON.parse(localStorage.getItem("userInfo"));
+      const userId = parseInt(userInfoStr.id);
+
+      let targetUserId = null;
+      if (userId === session.user1Id) {
+        targetUserId = session.user2Id;
+      } else {
+        targetUserId = session.user1Id;
+      }
+
+      if (!userId || !targetUserId) {
+        console.error("Invalid user IDs", userId, targetUserId);
+        return;
+      }
+
+      this.getMessages(userId, targetUserId);
+    },
+
+    sendMessage(newMsg) {
+      if (!this.selectedSession) return;
+
+      const session = this.sessions.find((s) => s.id === this.selectedSession.id);
+      if (session) {
+        if (!session.messages) {
+          session.messages = [];
+        }
+        session.messages.push(newMsg);
+        this.selectedSession = { ...session };
+      }
     },
   },
-  created() {
-    this.selectedSession = this.sessions[0];
+
+  mounted() {
+    this.getAllSessions();
   },
 };
 </script>
@@ -85,7 +155,7 @@ export default {
 }
 .detail {
   flex: 1;
-  background: #fff;
+  background: #f4f5f7;
   overflow-y: auto;
 }
 </style>

@@ -1,4 +1,4 @@
-package com.backend.bilibili.service.impl;
+package com.backend.bilibili.service.user.impl;
 
 import com.backend.bilibili.mapper.user.UserInfoMapper;
 import com.backend.bilibili.pojo.user.User;
@@ -62,5 +62,28 @@ public class InfoServiceImpl implements InfoService {
         return queryWrapper;
     }
 
+    public Map<String, Object> decreaseCoin(int amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("减少金额必须大于0");
+        }
+
+        QueryWrapper<UserInfo> queryWrapper = getUserInfoQueryWrapper();
+        UserInfo userInfo = userInfoMapper.selectOne(queryWrapper);
+        if (userInfo == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        if (userInfo.getCoin() < amount) {
+            throw new RuntimeException("硬币不足");
+        }
+
+        userInfo.setCoin(userInfo.getCoin() - amount);
+        userInfoMapper.updateById(userInfo);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("error_message", "success");
+        result.put("remaining_coin", userInfo.getCoin());
+        return result;
+    }
 
 }

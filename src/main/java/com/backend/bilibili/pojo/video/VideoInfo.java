@@ -25,11 +25,6 @@ public class VideoInfo {
     private boolean showRight;
     private String author;
     private String follow;
-    private boolean isLike;
-    private boolean isDislike;
-    private boolean isCollect;
-    private boolean isCoined;
-    private boolean isShare;
     private String duration;
     private int likeCount;
     private int collectCount;

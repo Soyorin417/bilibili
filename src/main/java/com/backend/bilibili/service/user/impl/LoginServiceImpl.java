@@ -1,4 +1,4 @@
-package com.backend.bilibili.service.impl;
+package com.backend.bilibili.service.user.impl;
 
 import com.backend.bilibili.pojo.user.User;
 import com.backend.bilibili.service.user.account.LoginService;

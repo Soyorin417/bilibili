@@ -5,4 +5,6 @@ import java.util.Map;
 
 public interface InfoService {
     Map<String, Object> getinfo();
+
+    Map<String, Object> decreaseCoin(int amount);
 }

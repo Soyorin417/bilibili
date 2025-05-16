@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import userData from "@/data/userData";
+import { mapGetters } from "vuex";
 
 export default {
   name: "CommentInput",
@@ -33,8 +33,16 @@ export default {
     return {
       showButton: false,
       content: "",
-      userData,
     };
+  },
+  computed: {
+    ...mapGetters("user", ["userInfo"]),
+    user() {
+      return this.userInfo;
+    },
+    avatar() {
+      return this.user.avatar;
+    },
   },
   mounted() {
     document.addEventListener("click", this.handleClickOutside);
@@ -52,15 +60,13 @@ export default {
       if (!this.content.trim()) return;
 
       const newComment = {
-        id: Date.now(),
-        user: {
-          name: this.userData.name,
-          avatar: this.userData.avatar,
-          isUp: this.userData.isUp,
-          level: this.userData.level,
-        },
+        commentId: Date.now(),
+        userName: this.userInfo.username,
+        avatar: this.userInfo.avatar,
+        isUp: false,
+        userLevel: this.userInfo.level || 0,
         content: this.content,
-        time: new Date().toLocaleString(),
+        createTime: new Date().toLocaleString(),
         likeCount: 0,
         isLiked: false,
         replyCount: 0,

@@ -108,7 +108,7 @@ export default {
       this.getMessages(userId, targetUserId);
     },
 
-    sendMessage(newMsg) {
+    async sendMessage(newMsg) {
       if (!this.selectedSession) return;
 
       const session = this.sessions.find((s) => s.id === this.selectedSession.id);
@@ -118,6 +118,15 @@ export default {
         }
         session.messages.push(newMsg);
         this.selectedSession = { ...session };
+        console.log(this.selectedSession, "this.selectedSession");
+        const url = `http://localhost:8081/messages`;
+        const token = localStorage.getItem("token");
+        const response = await axios.post(url, newMsg, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log(response.data, "response.data");
       }
     },
   },

@@ -49,112 +49,13 @@
             />
 
             <!-- 视频互动区域 -->
-            <div class="video-actions d-flex align-items-center mt-3 pb-3 border-bottom">
-              <div class="d-flex align-items-center me-4">
-                <div class="d-flex align-items-center me-4">
-                  <thumbs-up
-                    @click="videoLike"
-                    v-if="!videoInfo.is_like"
-                    theme="filled"
-                    size="32"
-                    fill="#61666d"
-                    :strokeWidth="3"
-                    strokeLinecap="square"
-                  />
-                  <thumbs-up
-                    @click="videoDislike"
-                    v-else
-                    theme="filled"
-                    size="32"
-                    fill="#00aeec"
-                    :strokeWidth="3"
-                    strokeLinecap="square"
-                  />
-                  {{ videoInfo.likeCount }}
-                </div>
-
-                <div class="d-flex align-items-center me-4">
-                  <svg
-                    @click="videoCoin"
-                    v-if="!videoInfo.is_coin"
-                    width="28"
-                    height="28"
-                    viewBox="0 0 28 28"
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="video-coin-icon video-toolbar-item-icon"
-                    data-v-b72e4a72=""
-                    style="color: #61666d"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      clip-rule="evenodd"
-                      d="M14.045 25.5454C7.69377 25.5454 2.54504 20.3967 2.54504 14.0454C2.54504 7.69413 7.69377 2.54541 14.045 2.54541C20.3963 2.54541 25.545 7.69413 25.545 14.0454C25.545 17.0954 24.3334 20.0205 22.1768 22.1771C20.0201 24.3338 17.095 25.5454 14.045 25.5454ZM9.66202 6.81624H18.2761C18.825 6.81624 19.27 7.22183 19.27 7.72216C19.27 8.22248 18.825 8.62807 18.2761 8.62807H14.95V10.2903C17.989 10.4444 20.3766 12.9487 20.3855 15.9916V17.1995C20.3854 17.6997 19.9799 18.1052 19.4796 18.1052C18.9793 18.1052 18.5738 17.6997 18.5737 17.1995V15.9916C18.5667 13.9478 16.9882 12.2535 14.95 12.1022V20.5574C14.95 21.0577 14.5444 21.4633 14.0441 21.4633C13.5437 21.4633 13.1382 21.0577 13.1382 20.5574V12.1022C11.1 12.2535 9.52148 13.9478 9.51448 15.9916V17.1995C9.5144 17.6997 9.10883 18.1052 8.60856 18.1052C8.1083 18.1052 7.70273 17.6997 7.70265 17.1995V15.9916C7.71158 12.9487 10.0992 10.4444 13.1382 10.2903V8.62807H9.66202C9.11309 8.62807 8.66809 8.22248 8.66809 7.72216C8.66809 7.22183 9.11309 6.81624 9.66202 6.81624Z"
-                      fill="currentColor"
-                    ></path>
-                  </svg>
-                  <svg
-                    @click="videoDiscoin"
-                    v-else
-                    width="28"
-                    height="28"
-                    viewBox="0 0 28 28"
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="video-coin-icon video-toolbar-item-icon"
-                    data-v-b72e4a72=""
-                    style="color: #00aeec"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      clip-rule="evenodd"
-                      d="M14.045 25.5454C7.69377 25.5454 2.54504 20.3967 2.54504 14.0454C2.54504 7.69413 7.69377 2.54541 14.045 2.54541C20.3963 2.54541 25.545 7.69413 25.545 14.0454C25.545 17.0954 24.3334 20.0205 22.1768 22.1771C20.0201 24.3338 17.095 25.5454 14.045 25.5454ZM9.66202 6.81624H18.2761C18.825 6.81624 19.27 7.22183 19.27 7.72216C19.27 8.22248 18.825 8.62807 18.2761 8.62807H14.95V10.2903C17.989 10.4444 20.3766 12.9487 20.3855 15.9916V17.1995C20.3854 17.6997 19.9799 18.1052 19.4796 18.1052C18.9793 18.1052 18.5738 17.6997 18.5737 17.1995V15.9916C18.5667 13.9478 16.9882 12.2535 14.95 12.1022V20.5574C14.95 21.0577 14.5444 21.4633 14.0441 21.4633C13.5437 21.4633 13.1382 21.0577 13.1382 20.5574V12.1022C11.1 12.2535 9.52148 13.9478 9.51448 15.9916V17.1995C9.5144 17.6997 9.10883 18.1052 8.60856 18.1052C8.1083 18.1052 7.70273 17.6997 7.70265 17.1995V15.9916C7.71158 12.9487 10.0992 10.4444 13.1382 10.2903V8.62807H9.66202C9.11309 8.62807 8.66809 8.22248 8.66809 7.72216C8.66809 7.22183 9.11309 6.81624 9.66202 6.81624Z"
-                      fill="currentColor"
-                    ></path>
-                  </svg>
-                  {{ videoInfo.coinCount }}
-                </div>
-                <div class="d-flex align-items-center me-4">
-                  <star
-                    @click="videoCollect"
-                    v-if="!videoInfo.is_collect"
-                    theme="filled"
-                    size="32"
-                    fill="#61666d"
-                    :strokeWidth="3"
-                    strokeLinecap="square"
-                  />
-                  <star
-                    @click="videoDiscollect"
-                    v-else
-                    theme="filled"
-                    size="32"
-                    fill="#00aeec"
-                    :strokeWidth="3"
-                    strokeLinecap="square"
-                  />
-                  {{ videoInfo.collectCount }}
-                </div>
-                <div class="d-flex align-items-center me-4">
-                  <share-two
-                    @click="videoShare"
-                    v-if="!videoInfo.is_share"
-                    theme="filled"
-                    size="32"
-                    fill="#61666d"
-                    :strokeWidth="3"
-                    strokeLinecap="square"
-                  />
-                  <share-two
-                    @click="videoDisshare"
-                    v-else
-                    theme="filled"
-                    size="32"
-                    fill="#00aeec"
-                    :strokeWidth="3"
-                    strokeLinecap="square"
-                  />{{ videoInfo.share_count }}
-                </div>
-              </div>
-            </div>
+            <VideoActions
+              :video-id="videoId"
+              :initial-like-count="videoInfo.likeCount"
+              :initial-collect-count="videoInfo.collectCount"
+              :initial-coin-count="videoInfo.coinCount"
+              :initial-share-count="videoInfo.share_count"
+            />
 
             <!--视频简介-->
             <div class="video-info mt-3">
@@ -167,7 +68,11 @@
             <div class="comments-section mt-4">
               <h5 class="mb-3">评论 ({{ commentData.length }})</h5>
               <CommentInput @send-comment="handleNewComment" />
-              <CommentList :comments="commentData" @like="handleLike" />
+              <CommentList
+                :comments="commentData"
+                @like="handleLike"
+                @comment-deleted="getCommentList"
+              />
             </div>
           </div>
 
@@ -196,16 +101,8 @@
 
 <script>
 import VideoBar from "@/components/navBar/VideoBar.vue";
-import {
-  PlayTwo,
-  CommentOne,
-  Forbid,
-  ThumbsUp,
-  Star,
-  ShareTwo,
-} from "@icon-park/vue-next";
-import { userInfo } from "@/data/userInfoData";
-import { commentData } from "@/data/commentData";
+import { PlayTwo, CommentOne, Forbid } from "@icon-park/vue-next";
+import { mapGetters } from "vuex";
 import RecommendedVideos from "@/components/video/RecommendedVideos.vue";
 import AuthorInfo from "@/components/video/AuthorInfo.vue";
 import DanmakuControl from "@/components/video/DanmakuControl.vue";
@@ -215,6 +112,7 @@ import CommentList from "@/components/video/CommentList.vue";
 import axios from "axios";
 import userData from "@/data/userData";
 import DanmakuList from "@/components/video/DanmakuList.vue";
+import VideoActions from "@/components/video/VideoActions.vue";
 
 export default {
   components: {
@@ -226,12 +124,10 @@ export default {
     AuthorInfo,
     DanmakuControl,
     DanmakuDisplay,
-    ThumbsUp,
-    Star,
-    ShareTwo,
     CommentInput,
     CommentList,
     DanmakuList,
+    VideoActions,
   },
   props: {
     id: {
@@ -247,9 +143,8 @@ export default {
       currentTime: 0,
       currentDanmakuType: "scroll",
       danmakuList: [],
-      userInfo,
       videoInfos: [],
-      commentData,
+      commentData: [],
       recommendedVideos: [],
       activeDanmaku: [],
       lastCheckTime: 0,
@@ -279,38 +174,6 @@ export default {
     },
   },
   methods: {
-    async getCommentList() {
-      const url = `http://127.0.0.1:8081/api/comments/video/${this.videoId}`;
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.error("Token is missing");
-        return;
-      }
-
-      try {
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        console.log("Response data:", response.data);
-
-        if (response.data && Array.isArray(response.data)) {
-          // 过滤掉 createTime 为 null 的数据，或者给它设置默认值
-          this.commentData = response.data.map((comment) => ({
-            ...comment,
-            createTime: comment.createTime || "未知时间",
-          }));
-        } else {
-          console.error("Invalid comment data format:", response.data);
-        }
-      } catch (error) {
-        console.error("Error fetching comment list:", error);
-      }
-    },
-
     async getVideoInfos() {
       const url = "http://127.0.0.1:8081/video/getAllVideo";
       const token = localStorage.getItem("token");
@@ -331,8 +194,35 @@ export default {
 
         // 处理成功响应
         this.videoInfos = response.data;
+
+        // 获取每个视频的互动状态
+        if (this.userInfo && this.userInfo.id) {
+          await Promise.all(
+            this.videoInfos.map(async (video) => {
+              try {
+                const actionResponse = await axios.get(
+                  `http://127.0.0.1:8081/video/action/status/${video.id}?userUid=${this.userInfo.id}`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+                if (actionResponse.data) {
+                  // 更新视频的互动状态
+                  video.isLiked = actionResponse.data.isLiked;
+                  video.isCollected = actionResponse.data.isCollected;
+                  video.isCoined = actionResponse.data.isCoined;
+                  video.isShared = actionResponse.data.isShared;
+                }
+              } catch (error) {
+                console.error(`获取视频 ${video.id} 的互动状态失败:`, error);
+              }
+            })
+          );
+        }
       } catch (error) {
-        console.error("Error fetching video infos:", error);
+        console.error("获取视频列表失败:", error);
         alert("获取视频信息失败，请稍后再试");
       } finally {
         this.isLoading = false;
@@ -397,8 +287,118 @@ export default {
         console.error("Error fetching danmaku list:", error);
       }
     },
-    handleNewComment(newComment) {
-      this.commentData.unshift(newComment);
+    async getCommentList() {
+      const url = `http://127.0.0.1:8081/comments/list?videoId=${this.videoId}`;
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.error("Token is missing");
+        return;
+      }
+
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.data && Array.isArray(response.data)) {
+          // 处理每条评论的数据
+          this.commentData = response.data.map((comment) => ({
+            ...comment,
+            showReplies: false,
+            replyContent: "",
+            replies: [],
+            replyCount: comment.replyCount || 0,
+            isLiked: comment.isLiked || false,
+            likeCount: comment.likeCount || 0,
+          }));
+        } else {
+          console.error("Invalid comment data format:", response.data);
+          this.commentData = [];
+        }
+      } catch (error) {
+        console.error("Error fetching comment list:", error);
+        this.commentData = [];
+      }
+    },
+
+    async handleNewComment(newComment) {
+      try {
+        const url = `http://127.0.0.1:8081/comments/add`;
+        const token = localStorage.getItem("token");
+
+        console.log("=== 评论发送调试信息 ===");
+        console.log("1. 用户信息:", {
+          userInfo: this.userInfo,
+          uid: this.userInfo?.id,
+          username: this.userInfo?.username,
+        });
+        console.log("2. 评论内容:", newComment);
+        console.log("3. 视频ID:", this.videoId);
+        console.log("4. Token状态:", token ? "存在" : "不存在");
+
+        if (!token) {
+          console.error("Token is missing");
+          return;
+        }
+
+        if (!this.userInfo || !this.userInfo.id) {
+          console.error("用户信息不完整:", this.userInfo);
+          return;
+        }
+
+        const commentData = {
+          videoId: parseInt(this.videoId),
+          content: newComment.content,
+          userUid: this.userInfo.id,
+          createTime: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
+          likeCount: 0,
+          replyCount: 0,
+        };
+
+        console.log(
+          "5. 准备发送的评论数据:",
+          commentData,
+          "时间",
+          new Date(Date.now() + 8 * 60 * 60 * 1000)
+        );
+
+        const response = await axios.post(url, commentData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        console.log("6. 服务器响应:", {
+          status: response.status,
+          data: response.data,
+          headers: response.headers,
+        });
+
+        if (response.data === "评论发布成功") {
+          console.log("7. 评论发布成功，开始刷新评论列表");
+          await this.getCommentList();
+          console.log("8. 评论列表刷新完成");
+        } else {
+          console.error("评论发布失败，响应数据:", response.data);
+        }
+      } catch (error) {
+        console.error("=== 评论发送错误详情 ===", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          config: {
+            url: error.config?.url,
+            method: error.config?.method,
+            headers: error.config?.headers,
+            data: error.config?.data,
+          },
+        });
+        alert("评论发送失败，请稍后重试");
+      }
     },
     handleLike(item) {
       item.isLiked = !item.isLiked;
@@ -442,6 +442,7 @@ export default {
     },
     async loadVideoData(id) {
       await this.getVideoInfos();
+
       // 首先从 videoInfos 中查找
       let video = this.videoInfos.find((v) => v.id === parseInt(id));
       if (video) {
@@ -462,7 +463,43 @@ export default {
         // 更新推荐视频列表
         this.refreshRecommendedVideos();
       } else {
-        console.error(`Video with id ${id} not found`);
+        // 如果本地没有找到视频，直接从服务器获取
+        try {
+          const token = localStorage.getItem("token");
+          const [videoResponse, actionResponse] = await Promise.all([
+            axios.get(`http://127.0.0.1:8081/video/getVideoById?id=${id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+            this.userInfo && this.userInfo.id
+              ? axios.get(
+                  `http://127.0.0.1:8081/video/action/status/${id}?userUid=${this.userInfo.id}`,
+                  {
+                    headers: { Authorization: `Bearer ${token}` },
+                  }
+                )
+              : Promise.resolve({ data: null }),
+          ]);
+
+          if (videoResponse.data) {
+            const videoData = {
+              ...videoResponse.data,
+              id: parseInt(id),
+            };
+
+            // 如果有互动状态数据，更新状态
+            if (actionResponse.data) {
+              videoData.isLiked = actionResponse.data.isLiked;
+              videoData.isCollected = actionResponse.data.isCollected;
+              videoData.isCoined = actionResponse.data.isCoined;
+              videoData.isShared = actionResponse.data.isShared;
+            }
+
+            this.videoInfo = videoData;
+            this.refreshRecommendedVideos();
+          }
+        } catch (error) {
+          console.error(`获取视频 ${id} 信息失败:`, error);
+        }
       }
     },
 
@@ -476,6 +513,7 @@ export default {
 
     refreshRecommendedVideos() {
       const currentId = this.videoInfo.id;
+
       // 确保 videoInfos 是数组且有数据
       if (Array.isArray(this.videoInfos) && this.videoInfos.length > 0) {
         this.recommendedVideos = this.videoInfos.filter(
@@ -487,7 +525,9 @@ export default {
     },
 
     is_follow() {
-      this.userInfo.is_follow = !this.userInfo.is_follow;
+      if (this.userInfo) {
+        this.userInfo.is_follow = !this.userInfo.is_follow;
+      }
     },
 
     handleSendDanmaku(danmakuData) {
@@ -498,8 +538,30 @@ export default {
     handleToggleDanmaku(value) {
       this.isDanmakuVisible = value;
     },
+
+    // 添加获取视频互动状态的方法
+    async getVideoActionStatus(videoId) {
+      if (!this.userInfo || !this.userInfo.id) return null;
+
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          `http://127.0.0.1:8081/video/action/status/${videoId}?userUid=${this.userInfo.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error(`获取视频 ${videoId} 的互动状态失败:`, error);
+        return null;
+      }
+    },
   },
   computed: {
+    ...mapGetters("user", ["userInfo"]),
     videoId() {
       return this.$route.params.id;
     },

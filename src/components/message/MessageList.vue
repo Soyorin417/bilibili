@@ -1,7 +1,7 @@
 <template>
   <div>
     <div
-      v-for="session in sessions"
+      v-for="session in filteredSessions"
       :key="session.id"
       :class="['session', { active: session === selected }]"
       @click="$emit('select', session)"
@@ -24,6 +24,13 @@ export default {
     ...mapGetters("user", ["userInfo"]),
     currentUser() {
       return this.userInfo;
+    },
+    filteredSessions() {
+      return this.sessions.filter(
+        (session) =>
+          session.user1Id === this.currentUser.id ||
+          session.user2Id === this.currentUser.id
+      );
     },
   },
   methods: {

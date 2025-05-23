@@ -169,7 +169,7 @@
 <script>
 import VideoBar from "@/components/navBar/VideoBar.vue";
 import DataNav from "@/components/navBar/DataNav.vue";
-import { videoInfos } from "@/data/videoInfos";
+import axios from "axios";
 
 export default {
   name: "UpLoadView",
@@ -259,7 +259,7 @@ export default {
         scheduleTime: null,
       };
     },
-    submitVideo() {
+    async submitVideo() {
       // 验证必填字段
       if (!this.videoInfo.title.trim()) {
         alert("请输入视频标题");
@@ -269,47 +269,105 @@ export default {
         alert("请选择视频分区");
         return;
       }
+      if (!this.selectedFile) {
+        alert("请选择要上传的视频文件");
+        return;
+      }
 
-      // 创建新的视频对象
-      const newVideo = {
-        id: Date.now(),
-        title: this.videoInfo.title,
-        views: "0",
-        comments: "0",
-        time: new Date().toLocaleString(),
-        description: this.videoInfo.description,
-        avatar: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-        video_url: this.videoUrl,
-        image: this.videoInfo.cover || "http://113.45.69.13:9000/image/lucy_moon.jpg",
-        show_right: false,
-        author: "当前用户",
-        follow: "0",
-        is_like: false,
-        is_dislike: false,
-        is_collect: false,
-        is_share: false,
-        duration: "00:00",
-        isCoined: false,
-        like_count: 0,
-        collect_count: 0,
-        coin_count: 0,
-        share_count: 0,
-        category: this.videoInfo.category,
-        tags: [...this.videoInfo.tags],
-        publishType: this.videoInfo.publishType,
-        scheduleTime: this.videoInfo.scheduleTime,
-      };
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("请先登录");
+        this.$router.push("/login");
+        return;
+      }
 
-      // 将新视频添加到videoInfos数组
-      videoInfos.push(newVideo);
+      try {
+        // 1. 先上传视频文件到云端 MinIO
+        const videoFormData = new FormData();
+        videoFormData.append("file", this.selectedFile);
 
-      // 提示成功并重置表单
-      alert("视频投稿成功！");
-      this.resetUpload();
+        const videoResponse = await axios.post("/api/upload", videoFormData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 30000, // 30秒超时
+        });
 
-      // 可以选择跳转到首页或其他页面
-      this.$router.push("/");
-      console.log(videoInfos);
+        if (videoResponse.status !== 200) {
+          throw new Error("视频文件上传失败");
+        }
+
+        const videoUrl = videoResponse.data;
+
+        // 2. 上传封面图片到云端 MinIO（如果有）
+        let coverUrl = null;
+        if (this.videoInfo.cover) {
+          const coverFormData = new FormData();
+          coverFormData.append("file", this.videoInfo.cover);
+
+          const coverResponse = await axios.post("/api/upload", coverFormData, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+            timeout: 30000, // 30秒超时
+          });
+
+          if (coverResponse.status === 200) {
+            coverUrl = coverResponse.data;
+          }
+        }
+
+        // 3. 提交视频信息到本地后端
+        const videoData = {
+          title: this.videoInfo.title,
+          category: this.videoInfo.category,
+          description: this.videoInfo.description,
+          tags: this.videoInfo.tags,
+          publishType: this.videoInfo.publishType,
+          scheduleTime: this.videoInfo.scheduleTime,
+          view_count: 0,
+          danmaku_count: 0,
+          like_count: 0,
+          collect_count: 0,
+          coin_count: 0,
+          share_count: 0,
+          create_time: new Date().toISOString(),
+          video_url: videoUrl,
+          image: coverUrl || "http://113.45.69.13:9000/image/lucy_moon.jpg", // 默认封面
+        };
+
+        const submitResponse = await axios.post("/api/submit", videoData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          timeout: 10000, // 10秒超时
+        });
+
+        if (submitResponse.status === 200) {
+          alert("视频投稿成功！");
+          this.resetUpload();
+          this.$router.push("/");
+        } else {
+          throw new Error(submitResponse.data || "投稿失败");
+        }
+      } catch (error) {
+        console.error("投稿失败:", error);
+        if (error.code === 'ECONNABORTED') {
+          alert("请求超时，请检查网络连接");
+        } else if (error.response) {
+          // 服务器响应了错误状态码
+          alert(`投稿失败: ${error.response.data || error.message}`);
+        } else if (error.request) {
+          // 请求已发送但没有收到响应
+          alert("服务器无响应，请检查网络连接");
+        } else {
+          // 请求配置出错
+          alert(`请求错误: ${error.message}`);
+        }
+      }
     },
   },
 };

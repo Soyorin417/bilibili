@@ -62,7 +62,18 @@
               <p class="mt-2">{{ videoInfo.introduction }}</p>
             </div>
 
-            <div class="divider"></div>
+            <!-- 视频标签 -->
+            <div class="video-tags mt-3">
+              <div class="tags-wrapper">
+                <span v-for="(tag, index) in tags" :key="index" class="tag-item">
+                  {{ tag }}
+                </span>
+              </div>
+            </div>
+
+            <div class="divider">
+              <div class="divider-line"></div>
+            </div>
 
             <!-- 评论列表 -->
             <div class="comments-section mt-4">
@@ -150,6 +161,7 @@ export default {
       lastCheckTime: 0,
       checkInterval: 50,
       videoInfo: {},
+      tags: [],
       userData,
       isDanmakuVisible: true,
     };
@@ -228,9 +240,39 @@ export default {
         this.isLoading = false;
       }
     },
+
+    async getVideoTags(videoId) {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Token is missing");
+        return [];
+      }
+
+      try {
+        const tagsResponse = await axios.get(
+          `http://127.0.0.1:8081/api/tags/video/${videoId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (tagsResponse.data && Array.isArray(tagsResponse.data)) {
+          const tags = tagsResponse.data.map((tag) => tag.name);
+          this.tags = tags;
+          return tags;
+        } else {
+          console.warn("Tags data is not in expected format:", tagsResponse.data);
+          return [];
+        }
+      } catch (error) {
+        console.error("Error fetching tags:", error);
+        return [];
+      }
+    },
     async getVideoById(videoId) {
       const url = `http://127.0.0.1:8081/video/getVideoById?id=${videoId}`;
-
       const token = localStorage.getItem("token");
 
       if (!token) {
@@ -248,7 +290,10 @@ export default {
         });
 
         if (response.data) {
-          this.videoInfo = response.data; // 存储返回的视频信息
+          // 获取视频基本信息
+          this.videoInfo = {
+            ...response.data,
+          };
         } else {
           console.error("No video data received.");
         }
@@ -572,6 +617,7 @@ export default {
     }
   },
   mounted() {
+    this.getVideoTags(this.videoId);
     this.loadVideoData(this.videoId);
     this.getDanmakuList(this.videoId);
     this.getVideoById(this.videoId);
@@ -706,6 +752,29 @@ h4 {
       .reply-content {
         flex: 1;
       }
+    }
+  }
+}
+
+.video-tags {
+  .tags-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tag-item {
+    background-color: #f6f7f8;
+    color: #61666d;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: #e3e5e7;
+      color: #00aeec;
     }
   }
 }

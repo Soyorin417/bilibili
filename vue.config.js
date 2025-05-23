@@ -5,11 +5,14 @@ module.exports = defineConfig({
   devServer: {
     proxy: {
       '/api': {
-        target: 'https://comment.bilibili.com',
+        target: 'http://113.45.69.13:8081',
         changeOrigin: true,
         pathRewrite: {
           '^/api': ''
-        }
+        },
+        ws: true,
+        secure: false,
+        logLevel: 'debug'
       }
     }
   }

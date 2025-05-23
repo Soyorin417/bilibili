@@ -60,9 +60,9 @@
         </div>
         <div v-else class="results-grid">
           <div v-for="(item, index) in results" :key="index" class="result-card">
-            <router-link :to="`/video/${item.id}`" class="video-link">
+            <router-link :to="`/video/${item.id}`" class="video-link" target="_blank">
               <div class="video-thumbnail">
-                <img :src="item.cover" :alt="item.title" />
+                <img :src="item.image" :alt="item.title" />
                 <span class="video-duration">{{ item.duration }}</span>
                 <div class="video-stats">
                   <span><i class="bi bi-play-fill"></i> {{ item.views }}</span>
@@ -112,6 +112,8 @@
 
 <script>
 import VideoBar from "@/components/navBar/VideoBar.vue";
+import { mapGetters } from "vuex";
+import axios from "axios";
 
 export default {
   name: "SearchView",
@@ -125,99 +127,109 @@ export default {
       totalResults: 0,
       currentFilter: "all",
       results: [],
+      videoInfos: [],
     };
+  },
+  computed: {
+    ...mapGetters("user", ["userInfo"]),
   },
   created() {
     this.keyword = this.$route.query.keyword || "";
     this.fetchSearchResults();
   },
   methods: {
-    fetchSearchResults() {
+    async fetchSearchResults() {
       this.loading = true;
-      // 模拟API调用
-      setTimeout(() => {
-        this.results = [
-          {
-            id: 1,
-            title: "【MYGO×麦当劳 联名套餐】",
-            cover: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            duration: "1:27",
-            uploader: "连子721号",
-            uploaderAvatar: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            views: "13.5万",
-            danmaku: "34",
-            date: "2024-12-15",
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.error("Token is missing");
+        return;
+      }
+
+      try {
+        const response = await axios.get("http://127.0.0.1:8081/video/getAllVideo", {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-          {
-            id: 2,
-            title: "明日方舟联动avemujica后续暴雷情况",
-            cover: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            duration: "3:11",
-            uploader: "源皇第四喵",
-            uploaderAvatar: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            views: "1万",
-            danmaku: "5",
-            date: "4-27",
-          },
-          {
-            id: 3,
-            title: "祥子开黑店",
-            cover: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            duration: "2:11",
-            uploader: "H2芽",
-            uploaderAvatar: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            views: "10.2万",
-            danmaku: "146",
-            date: "4-28",
-          },
-          {
-            id: 4,
-            title: "【MYGO×麦当劳 联名套餐】",
-            cover: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            duration: "1:27",
-            uploader: "连子721号",
-            uploaderAvatar: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            views: "13.5万",
-            danmaku: "34",
-            date: "2024-12-15",
-          },
-          {
-            id: 5,
-            title: "【MYGO×麦当劳 联名套餐】",
-            cover: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            duration: "1:27",
-            uploader: "连子721号",
-            uploaderAvatar: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            views: "13.5万",
-            danmaku: "34",
-            date: "2024-12-15",
-          },
-          {
-            id: 6,
-            title: "【MYGO×麦当劳 联名套餐】",
-            cover: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            duration: "1:27",
-            uploader: "连子721号",
-            uploaderAvatar: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            views: "13.5万",
-            danmaku: "34",
-            date: "2024-12-15",
-          },
-          {
-            id: 7,
-            title: "【MYGO×麦当劳 联名套餐】",
-            cover: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            duration: "1:27",
-            uploader: "连子721号",
-            uploaderAvatar: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            views: "13.5万",
-            danmaku: "34",
-            date: "2024-12-15",
-          },
-        ];
+        });
+
+        // 处理成功响应
+        this.videoInfos = response.data;
+        console.log("videoInfos:", this.videoInfos[0].image);
+        this.results = this.videoInfos.map((video) => ({
+          id: video.id,
+          title: video.title,
+          image: video.image,
+          duration: video.duration || "0:00",
+          uploader: video.uploader,
+          uploaderAvatar: video.uploaderAvatar,
+          views: this.formatNumber(video.views || 0),
+          danmaku: this.formatNumber(video.danmaku_count || 0),
+          date: this.formatDate(video.time),
+        }));
+
+        // 获取每个视频的互动状态
+        if (this.userInfo && this.userInfo.id) {
+          await Promise.all(
+            this.videoInfos.map(async (video) => {
+              try {
+                const actionResponse = await axios.get(
+                  `http://127.0.0.1:8081/video/action/status/${video.id}?userUid=${this.userInfo.id}`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+                if (actionResponse.data) {
+                  // 更新视频的互动状态
+                  video.isLiked = actionResponse.data.isLiked;
+                  video.isCollected = actionResponse.data.isCollected;
+                  video.isCoined = actionResponse.data.isCoined;
+                  video.isShared = actionResponse.data.isShared;
+                }
+              } catch (error) {
+                console.error(`获取视频 ${video.id} 的互动状态失败:`, error);
+              }
+            })
+          );
+        }
+
         this.totalResults = this.results.length;
+      } catch (error) {
+        console.error("获取视频列表失败:", error);
+        alert("获取视频信息失败，请稍后再试");
+      } finally {
         this.loading = false;
-      }, 1000);
+      }
+    },
+
+    formatNumber(num) {
+      if (num >= 10000) {
+        return (num / 10000).toFixed(1) + "万";
+      }
+      return num.toString();
+    },
+
+    formatDate(dateString) {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      const now = new Date();
+      const diff = now - date;
+
+      // 小于24小时
+      if (diff < 24 * 60 * 60 * 1000) {
+        const hours = Math.floor(diff / (60 * 60 * 1000));
+        return `${hours}小时前`;
+      }
+      // 小于30天
+      if (diff < 30 * 24 * 60 * 60 * 1000) {
+        const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+        return `${days}天前`;
+      }
+      // 大于30天
+      return `${date.getMonth() + 1}-${date.getDate()}`;
     },
   },
   watch: {
@@ -238,7 +250,7 @@ export default {
 }
 
 .search-container {
-  max-width: 1600px;
+  max-width: 1700px;
   margin: 0 auto;
   padding: 16px;
 }
@@ -292,7 +304,6 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fff;
   padding: 12px 20px;
   border-radius: 8px;
   margin-bottom: 16px;
@@ -335,14 +346,13 @@ export default {
 }
 
 .result-card {
-  background: white;
   border-radius: 8px;
   overflow: hidden;
   transition: all 0.3s ease;
 }
 
 .result-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -354,7 +364,17 @@ export default {
 .video-thumbnail {
   position: relative;
   padding-top: 56.25%;
-  background: #f4f4f4;
+}
+
+.video-thumbnail::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.7));
+  pointer-events: none;
 }
 
 .video-thumbnail img {
@@ -364,6 +384,18 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 8px;
+}
+
+.video-stats {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  font-size: 12px;
+  display: flex;
+  gap: 12px;
+  color: #fff;
+  z-index: 1;
 }
 
 .video-duration {
@@ -371,20 +403,11 @@ export default {
   bottom: 8px;
   right: 8px;
   background: rgba(0, 0, 0, 0.8);
-  color: white;
   padding: 2px 4px;
   border-radius: 4px;
   font-size: 12px;
-}
-
-.video-stats {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  color: white;
-  font-size: 12px;
-  display: flex;
-  gap: 12px;
+  color: #fff;
+  z-index: 1;
 }
 
 .video-info {

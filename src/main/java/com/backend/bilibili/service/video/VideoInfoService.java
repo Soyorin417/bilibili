@@ -9,4 +9,8 @@ public interface VideoInfoService {
 
     VideoInfo getVideoInfoById(int id);
     List<VideoInfo> getAllVideos();
+
+    boolean submitVideo(VideoInfo videoInfo);    // 新增
+    boolean deleteVideoById(int id);             // 删除
+    boolean updateVideo(VideoInfo videoInfo);
 }

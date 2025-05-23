@@ -1,13 +1,15 @@
 package com.backend.bilibili.controller.video;
 
 import com.backend.bilibili.pojo.video.VideoInfo;
+import com.backend.bilibili.service.minio.MinioService;
 import com.backend.bilibili.service.video.VideoInfoService;
+import com.backend.bilibili.utils.MinioUrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 
 @Controller
@@ -16,6 +18,9 @@ public class VideoController {
     @Autowired
     private VideoInfoService videoInfoService;
 
+    @Autowired
+    private MinioService minioService;
+
     @GetMapping("/video/getAllVideo")
     public List<VideoInfo> getAllVideo() {
         return videoInfoService.getAllVideos();
@@ -23,6 +28,63 @@ public class VideoController {
 
     @GetMapping("/video/getVideoById")
     public VideoInfo getVideoById(@RequestParam int id) {
+        return videoInfoService.getVideoInfoById(id);
+    }
+
+    @PostMapping("/submit")
+    public ResponseEntity<String> submitVideo(@RequestParam String title,
+                                              @RequestParam String videoFileName,
+                                              @RequestParam String coverFileName,
+                                              @RequestParam(required = false) String description,
+                                              @RequestParam(required = false) String author) {
+        VideoInfo videoInfo = new VideoInfo();
+        videoInfo.setTitle(title);
+        videoInfo.setVideoUrl(MinioUrlUtil.getUrl(videoFileName));
+        videoInfo.setImage(MinioUrlUtil.getUrl(coverFileName));
+        videoInfo.setDescription(description);
+        videoInfo.setAuthor(author);
+        videoInfo.setTime(new Date()); // 这里用Date对象
+
+        System.out.println("准备调用service.submitVideo，videoInfo: " + videoInfo);
+
+        boolean success = videoInfoService.submitVideo(videoInfo);
+
+        System.out.println("submitVideo 返回: " + success);
+
+        if (success) {
+            return ResponseEntity.ok("提交成功");
+        } else {
+            return ResponseEntity.status(500).body("提交失败");
+        }
+    }
+
+
+    @PostMapping("/upload")
+    public ResponseEntity<String> saveVideoInfo(@RequestBody VideoInfo videoInfo) {
+        boolean saved = videoInfoService.submitVideo(videoInfo);
+        if (saved) {
+            return ResponseEntity.ok("保存成功");
+        } else {
+            return ResponseEntity.status(500).body("保存失败");
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable int id) {
+        return videoInfoService.deleteVideoById(id)
+                ? ResponseEntity.ok("删除成功")
+                : ResponseEntity.status(404).body("视频不存在");
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<?> update(@RequestBody VideoInfo videoInfo) {
+        return videoInfoService.updateVideo(videoInfo)
+                ? ResponseEntity.ok("更新成功")
+                : ResponseEntity.status(404).body("更新失败");
+    }
+
+    @GetMapping("/{id}")
+    public VideoInfo getById(@PathVariable int id) {
         return videoInfoService.getVideoInfoById(id);
     }
 }

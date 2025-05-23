@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,7 +19,7 @@ public class VideoInfo {
     private String title;
     private String views;
     private String comments;
-    private String time;
+    private Date time;
     private String description;
     private String avatar;
     private String videoUrl;

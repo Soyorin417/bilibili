@@ -24,7 +24,6 @@ public class VideoInfoServiceImpl implements VideoInfoService {
             if (videoInfo == null) {
                 throw new RuntimeException("id不存在");
             }
-            System.out.println("START");
             return videoInfo;
         } catch (Exception e) {
             System.err.println("数据库查询异常：" + e.getMessage());
@@ -38,5 +37,29 @@ public class VideoInfoServiceImpl implements VideoInfoService {
     @Override
     public List<VideoInfo> getAllVideos() {
         return videoInfoMapper.selectList(null);
+    }
+
+    @Override
+    public boolean submitVideo(VideoInfo videoInfo) {
+        try {
+            int result = videoInfoMapper.insert(videoInfo);
+            System.out.println("insert result = " + result);
+            System.out.println("inserted id = " + videoInfo.getId());
+            return result > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
+    @Override
+    public boolean deleteVideoById(int id) {
+        return videoInfoMapper.deleteById(id) > 0;
+    }
+
+    @Override
+    public boolean updateVideo(VideoInfo videoInfo) {
+        return videoInfoMapper.updateById(videoInfo) > 0;
     }
 }

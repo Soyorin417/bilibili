@@ -171,6 +171,72 @@ import VideoBar from "@/components/navBar/VideoBar.vue";
 import DataNav from "@/components/navBar/DataNav.vue";
 import axios from "axios";
 
+// 创建 axios 实例
+const api = axios.create({
+  baseURL: "/api",
+  timeout: 60000, // 增加超时时间到60秒
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// 重试配置
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1秒
+
+// 请求拦截器
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    // 添加重试计数
+    config.retryCount = config.retryCount || 0;
+    return config;
+  },
+  (error) => {
+    console.error("Request error:", error);
+    return Promise.reject(error);
+  }
+);
+
+// 响应拦截器
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+
+    // 如果配置了重试，并且还没有超过最大重试次数
+    if (config && config.retryCount < MAX_RETRIES) {
+      config.retryCount += 1;
+
+      // 延迟重试
+      await new Promise((resolve) =>
+        setTimeout(resolve, RETRY_DELAY * config.retryCount)
+      );
+
+      console.log(
+        `Retrying request (${config.retryCount}/${MAX_RETRIES}): ${config.url}`
+      );
+      return api(config);
+    }
+
+    console.error("Response error:", error);
+    if (error.code === "ECONNABORTED") {
+      alert("请求超时，请检查网络连接");
+    } else if (error.response) {
+      alert(`请求失败: ${error.response.data || error.message}`);
+    } else if (error.request) {
+      alert("服务器无响应，请检查网络连接");
+    } else {
+      alert(`请求错误: ${error.message}`);
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default {
   name: "UpLoadView",
   components: {
@@ -260,7 +326,6 @@ export default {
       };
     },
     async submitVideo() {
-      // 验证必填字段
       if (!this.videoInfo.title.trim()) {
         alert("请输入视频标题");
         return;
@@ -282,68 +347,89 @@ export default {
       }
 
       try {
-        // 1. 先上传视频文件到云端 MinIO
-        const videoFormData = new FormData();
-        videoFormData.append("file", this.selectedFile);
-
-        const videoResponse = await axios.post("/api/upload", videoFormData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-          timeout: 30000, // 30秒超时
-        });
-
-        if (videoResponse.status !== 200) {
-          throw new Error("视频文件上传失败");
-        }
-
-        const videoUrl = videoResponse.data;
-
-        // 2. 上传封面图片到云端 MinIO（如果有）
-        let coverUrl = null;
+        // 1. 上传封面图片
+        let coverFileName = "lucy_moon.jpg";
         if (this.videoInfo.cover) {
           const coverFormData = new FormData();
-          coverFormData.append("file", this.videoInfo.cover);
+          // 将Base64图片转换为Blob
+          const coverBlob = await fetch(this.videoInfo.cover).then((r) => r.blob());
+          // 使用原始文件名
+          const coverFile = new File([coverBlob], "封面.jpg", { type: "image/jpeg" });
+          coverFormData.append("file", coverFile);
 
-          const coverResponse = await axios.post("/api/upload", coverFormData, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-            timeout: 30000, // 30秒超时
-          });
+          const coverResponse = await axios.post(
+            "http://localhost:8081/minio/upload",
+            coverFormData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+                Authorization: `Bearer ${token}`,
+              },
+              timeout: 300000,
+            }
+          );
 
           if (coverResponse.status === 200) {
-            coverUrl = coverResponse.data;
+            coverFileName = "封面.jpg";
+            console.log("封面上传成功");
           }
         }
 
-        // 3. 提交视频信息到本地后端
-        const videoData = {
-          title: this.videoInfo.title,
-          category: this.videoInfo.category,
-          description: this.videoInfo.description,
-          tags: this.videoInfo.tags,
-          publishType: this.videoInfo.publishType,
-          scheduleTime: this.videoInfo.scheduleTime,
-          view_count: 0,
-          danmaku_count: 0,
-          like_count: 0,
-          collect_count: 0,
-          coin_count: 0,
-          share_count: 0,
-          create_time: new Date().toISOString(),
-          video_url: videoUrl,
-          image: coverUrl || "http://113.45.69.13:9000/image/lucy_moon.jpg", // 默认封面
-        };
+        // 2. 上传视频文件
+        const videoFormData = new FormData();
+        videoFormData.append("file", this.selectedFile);
 
-        const submitResponse = await axios.post("/api/submit", videoData, {
+        const videoResponse = await axios.post(
+          "http://localhost:8081/minio/upload",
+          videoFormData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${token}`,
+            },
+            timeout: 300000,
+            onUploadProgress: (progressEvent) => {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              console.log(`视频上传进度: ${percentCompleted}%`);
+            },
+          }
+        );
+
+        if (videoResponse.status !== 200) {
+          throw new Error("视频上传失败");
+        }
+
+        // 使用原始文件名
+        const videoFileName = this.selectedFile.name;
+        console.log("视频上传成功，文件名:", videoFileName);
+
+        // 3. 提交视频信息
+        const formDataSubmit = new FormData();
+        formDataSubmit.append("title", this.videoInfo.title);
+        formDataSubmit.append("videoFileName", videoFileName);
+        formDataSubmit.append("coverFileName", coverFileName);
+        formDataSubmit.append("description", this.videoInfo.description || "");
+        formDataSubmit.append("author", localStorage.getItem("username") || "未知用户");
+
+        console.log("提交的表单数据:", {
+          title: this.videoInfo.title,
+          videoFileName: videoFileName,
+          coverFileName: coverFileName,
+          description: this.videoInfo.description || "",
+          author: localStorage.getItem("username") || "未知用户",
+        });
+
+        const submitResponse = await axios({
+          method: "post",
+          url: "http://localhost:8081/submit",
+          data: formDataSubmit,
           headers: {
+            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
           },
-          timeout: 10000, // 10秒超时
+          timeout: 10000,
         });
 
         if (submitResponse.status === 200) {
@@ -351,20 +437,17 @@ export default {
           this.resetUpload();
           this.$router.push("/");
         } else {
-          throw new Error(submitResponse.data || "投稿失败");
+          throw new Error(submitResponse.data || "提交失败");
         }
       } catch (error) {
         console.error("投稿失败:", error);
-        if (error.code === 'ECONNABORTED') {
+        if (error.code === "ECONNABORTED") {
           alert("请求超时，请检查网络连接");
         } else if (error.response) {
-          // 服务器响应了错误状态码
-          alert(`投稿失败: ${error.response.data || error.message}`);
+          alert(`服务器响应错误: ${error.response.data || error.message}`);
         } else if (error.request) {
-          // 请求已发送但没有收到响应
-          alert("服务器无响应，请检查网络连接");
+          alert("无法连接到服务器，请确保后端服务已启动");
         } else {
-          // 请求配置出错
           alert(`请求错误: ${error.message}`);
         }
       }

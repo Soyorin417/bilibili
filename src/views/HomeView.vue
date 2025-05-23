@@ -75,8 +75,8 @@
                   <VideoCard
                     v-else
                     :url="item.image"
-                    :playCount="item.playCount"
-                    :comment="item.comment"
+                    :playCount="item.views"
+                    :comment="item.comments"
                     :time="item.duration"
                     :title="item.title"
                     :message="item.author"
@@ -108,8 +108,8 @@
                 v-else
                 class="mb-3"
                 :url="item.image"
-                :playCount="item.playCount"
-                :comment="item.comment"
+                :playCount="item.views"
+                :comment="item.comments"
                 :time="item.duration"
                 :title="item.title"
                 :message="item.author"
@@ -183,31 +183,69 @@ export default {
   methods: {
     async getVideoInfos() {
       const url = "http://127.0.0.1:8081/video/getAllVideo";
-      const token = localStorage.getItem("token"); // 获取 token
+      const token = localStorage.getItem("token");
 
       if (!token) {
         console.error("Token is missing");
         return;
       }
 
-      this.isLoading = true; // 开始加载
+      this.isLoading = true;
 
       try {
         const response = await axios.get(url, {
           headers: {
-            Authorization: `Bearer ${token}`, // 添加 Authorization header
+            Authorization: `Bearer ${token}`,
           },
         });
 
-        // 处理成功响应
-        this.videoInfos = response.data;
-        console.log(this.videoInfos, "this.videoInfos");
+        if (response.data && Array.isArray(response.data)) {
+          // 处理视频数据
+          this.videoInfos = response.data.map((video) => ({
+            id: video.id,
+            title: video.title || "未知标题",
+            views: video.views || "0",
+            comments: video.comments || "0",
+            time: video.time || new Date().toISOString().slice(0, 19).replace("T", " "),
+            description: video.description || "",
+            avatar: video.avatar || "http://113.45.69.13:9000/image/lucy_moon.jpg",
+            video_url: video.video_url || "",
+            image:
+              video.image ||
+              video.avatar ||
+              "http://113.45.69.13:9000/image/lucy_moon.jpg",
+            show_right: video.show_right === undefined ? 1 : video.show_right,
+            author: video.author || "未知作者",
+            follow: video.follow || "0",
+            like_count: video.like_count || 0,
+            collect_count: video.collect_count || 0,
+            coin_count: video.coin_count || 0,
+            share_count: video.share_count || 0,
+            duration: video.duration || "00:00",
+            introduction: video.introduction || video.description || "",
+          }));
+
+          // 更新视频卡片数据
+          this.videoCards = this.videoInfos.slice(0, 6);
+          this.otherVideos = this.videoInfos.slice(6);
+
+          // 更新加载状态
+          this.loadedVideos = Array(this.videoInfos.length).fill(false);
+          this.videoInfos.forEach((_, index) => {
+            setTimeout(() => {
+              this.loadedVideos[index] = true;
+            }, 200 * (index + 1));
+          });
+
+          console.log("获取到的视频数据:", this.videoInfos);
+        } else {
+          console.error("Invalid video data format:", response.data);
+        }
       } catch (error) {
-        // 错误处理
-        console.error("Error fetching video infos:", error);
+        console.error("获取视频列表失败:", error);
         alert("获取视频信息失败，请稍后再试");
       } finally {
-        this.isLoading = false; // 完成加载
+        this.isLoading = false;
       }
     },
   },

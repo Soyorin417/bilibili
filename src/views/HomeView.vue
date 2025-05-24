@@ -148,23 +148,20 @@ export default {
         },
         {
           id: "2",
-          url:
-            "http://113.45.69.13:9000/image/5ab6f52da55a05594087e4631c241cf46796ea12.jpg",
+          url: "http://113.45.69.13:9000/image/91953835_p3_master1200.jpg",
           title:
             "小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥",
           message: "红宝石戒指",
         },
         {
           id: "3",
-          url:
-            "http://113.45.69.13:9000/image/35d43d37454c820e9d994445e8edd348a0a2233c.jpg",
+          url: "http://113.45.69.13:9000/image/91953835_p4_master1200.jpg",
           title: "【芙莉莲/静止系MAD】想不想看花海盛开",
           message: "红宝石戒指",
         },
         {
           id: "4",
-          url:
-            "http://113.45.69.13:9000/image/23b06d02882bcf31d6d044339796693b7d02ed2a.jpg",
+          url: "http://113.45.69.13:9000/image/91953835_p1_master1200.jpg",
           title: "三秒喜欢不上486的都是神人",
           message: "白小鱼",
         },
@@ -182,54 +179,24 @@ export default {
   },
   methods: {
     async getVideoInfos() {
-      const url = "http://127.0.0.1:8081/video/getAllVideo";
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.error("Token is missing");
-        return;
-      }
-
-      this.isLoading = true;
-
+      const url = "http://127.0.0.1:8081/video/cards";
       try {
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
+        const response = await axios.get(url);
         if (response.data && Array.isArray(response.data)) {
-          // 处理视频数据
+          // 直接用新接口字段
           this.videoInfos = response.data.map((video) => ({
             id: video.id,
             title: video.title || "未知标题",
-            views: video.views || "0",
-            comments: video.comments || "0",
-            time: video.time || new Date().toISOString().slice(0, 19).replace("T", " "),
-            description: video.description || "",
-            avatar: video.avatar || "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            video_url: video.video_url || "",
-            image:
-              video.image ||
-              video.avatar ||
-              "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            show_right: video.show_right === undefined ? 1 : video.show_right,
-            author: video.author || "未知作者",
-            follow: video.follow || "0",
-            like_count: video.like_count || 0,
-            collect_count: video.collect_count || 0,
-            coin_count: video.coin_count || 0,
-            share_count: video.share_count || 0,
+            views: video.views || 0,
+            comments: video.comments || 0,
+            image: video.image || "http://113.45.69.13:9000/image/lucy_moon.jpg",
             duration: video.duration || "00:00",
-            introduction: video.introduction || video.description || "",
+            author: video.author || "未知作者",
           }));
 
-          // 更新视频卡片数据
           this.videoCards = this.videoInfos.slice(0, 6);
           this.otherVideos = this.videoInfos.slice(6);
 
-          // 更新加载状态
           this.loadedVideos = Array(this.videoInfos.length).fill(false);
           this.videoInfos.forEach((_, index) => {
             setTimeout(() => {
@@ -244,8 +211,6 @@ export default {
       } catch (error) {
         console.error("获取视频列表失败:", error);
         alert("获取视频信息失败，请稍后再试");
-      } finally {
-        this.isLoading = false;
       }
     },
   },

@@ -224,6 +224,15 @@
             <small class="ms-1">投稿</small>
           </button>
         </li>
+        <li class="nav-item">
+          <router-link
+            v-if="userInfo && userInfo.role === 'admin'"
+            to="/admin"
+            class="btn btn-danger ms-2 mt-1"
+            style="color: #fff; font-weight: bold"
+            >后台管理</router-link
+          >
+        </li>
       </ul>
     </div>
   </nav>

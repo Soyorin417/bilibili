@@ -63,6 +63,8 @@ import AchievementView from '@/views/user/account/AchievementView.vue';
 import SecurityView from '@/views/user/account/SecurityView.vue';
 import CoinView from '@/views/user/account/CoinView.vue';
 import SpaceView from '@/views/user/account/SpaceView.vue';
+import AdminView from '@/views/AdminView.vue'
+
 // 定义路由配置数组
 const routes = [
   //个人空间
@@ -371,6 +373,12 @@ const routes = [
     path: '/profile',
     name: 'ProfileView',
     component: ProfileView,
+  },
+  // 管理员页面路由
+  {
+    path: '/admin',
+    name: 'AdminView',
+    component: AdminView,
   },
 ]
 

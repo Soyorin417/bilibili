@@ -7,6 +7,14 @@
 
       <!-- 主内容区 -->
       <div class="upload-main">
+        <!-- 上传进度条 -->
+        <div class="upload-progress" v-if="uploadProgress > 0 && uploadProgress < 100">
+          <div class="progress-bar">
+            <div class="progress" :style="{ width: uploadProgress + '%' }"></div>
+          </div>
+          <div class="progress-text">上传进度: {{ uploadProgress }}%</div>
+        </div>
+
         <!-- 上传区域 -->
         <div
           class="upload-area"
@@ -170,6 +178,7 @@
 import VideoBar from "@/components/navBar/VideoBar.vue";
 import DataNav from "@/components/navBar/DataNav.vue";
 import axios from "axios";
+import { mapGetters } from "vuex";
 
 // 创建 axios 实例
 const api = axios.create({
@@ -243,11 +252,15 @@ export default {
     VideoBar,
     DataNav,
   },
+  computed: {
+    ...mapGetters("user", ["userInfo"]),
+  },
   data() {
     return {
       selectedFile: null,
       videoUrl: null,
       tagInput: "",
+      uploadProgress: 0,
       videoInfo: {
         title: "",
         category: "",
@@ -260,6 +273,15 @@ export default {
     };
   },
   methods: {
+    extractFileNameFromUrl(url) {
+      try {
+        const decoded = decodeURIComponent(url);
+        return decoded.substring(decoded.lastIndexOf("/") + 1);
+      } catch (e) {
+        console.warn("无法解析URL，返回原值");
+        return url;
+      }
+    },
     triggerFileInput() {
       this.$refs.fileInput.click();
     },
@@ -270,7 +292,6 @@ export default {
       const file = e.dataTransfer.files[0];
       if (file && file.type.startsWith("video/")) {
         this.selectedFile = file;
-        // 将文件转换为Base64
         const reader = new FileReader();
         reader.onload = (e) => {
           this.videoUrl = e.target.result;
@@ -282,7 +303,6 @@ export default {
       const file = e.target.files[0];
       if (file) {
         this.selectedFile = file;
-        // 将文件转换为Base64
         const reader = new FileReader();
         reader.onload = (e) => {
           this.videoUrl = e.target.result;
@@ -347,37 +367,13 @@ export default {
       }
 
       try {
-        // 1. 上传封面图片
-        let coverFileName = "lucy_moon.jpg";
-        if (this.videoInfo.cover) {
-          const coverFormData = new FormData();
-          // 将Base64图片转换为Blob
-          const coverBlob = await fetch(this.videoInfo.cover).then((r) => r.blob());
-          // 使用原始文件名
-          const coverFile = new File([coverBlob], "封面.jpg", { type: "image/jpeg" });
-          coverFormData.append("file", coverFile);
-
-          const coverResponse = await axios.post(
-            "http://localhost:8081/minio/upload",
-            coverFormData,
-            {
-              headers: {
-                "Content-Type": "multipart/form-data",
-                Authorization: `Bearer ${token}`,
-              },
-              timeout: 300000,
-            }
-          );
-
-          if (coverResponse.status === 200) {
-            coverFileName = "封面.jpg";
-            console.log("封面上传成功");
-          }
-        }
-
-        // 2. 上传视频文件
         const videoFormData = new FormData();
         videoFormData.append("file", this.selectedFile);
+        console.log("准备上传视频文件:", {
+          fileName: this.selectedFile.name,
+          fileType: this.selectedFile.type,
+          fileSize: this.selectedFile.size,
+        });
 
         const videoResponse = await axios.post(
           "http://localhost:8081/minio/upload",
@@ -392,18 +388,115 @@ export default {
               const percentCompleted = Math.round(
                 (progressEvent.loaded * 100) / progressEvent.total
               );
+              this.uploadProgress = percentCompleted;
               console.log(`视频上传进度: ${percentCompleted}%`);
             },
           }
         );
 
+        console.log("视频上传响应:", videoResponse.data);
+
         if (videoResponse.status !== 200) {
           throw new Error("视频上传失败");
         }
 
-        // 使用原始文件名
-        const videoFileName = this.selectedFile.name;
-        console.log("视频上传成功，文件名:", videoFileName);
+        // 重置进度条
+        this.uploadProgress = 0;
+
+        // 使用URL对象解析视频文件路径
+        let videoFileName = "";
+        try {
+          const videoUrl = videoResponse.data;
+          console.log("视频上传返回数据:", videoUrl);
+          console.log("视频上传返回数据类型:", typeof videoUrl);
+
+          if (typeof videoUrl === "object" && videoUrl !== null) {
+            // 后端返回了结构化的响应对象
+            const { fileName } = videoUrl;
+            const extractedFileName = this.extractFileNameFromUrl(fileName);
+            videoFileName = extractedFileName;
+            console.log("视频文件名:", videoFileName);
+          } else {
+            console.error("视频上传返回数据格式不正确:", videoUrl);
+            throw new Error("视频上传返回数据格式不正确");
+          }
+
+          if (!videoFileName || videoFileName === "undefined") {
+            console.error("无效的文件名:", videoFileName);
+            throw new Error("无法获取有效的视频文件名");
+          }
+
+          console.log("视频上传成功，文件名:", videoFileName);
+        } catch (error) {
+          console.error("解析视频URL失败:", error);
+          console.error("返回的数据:", videoResponse.data);
+          throw new Error("视频URL解析失败");
+        }
+
+        // 生成随机文件名
+        const generateRandomFileName = (prefix) => {
+          const timestamp = new Date().getTime();
+          const randomStr = Math.random().toString(36).substring(2, 8);
+          return `${prefix}_${timestamp}_${randomStr}.jpg`;
+        };
+
+        let coverFileName = generateRandomFileName("default_cover");
+        if (this.videoInfo.cover) {
+          const coverFormData = new FormData();
+          // 将Base64图片转换为Blob
+          const coverBlob = await fetch(this.videoInfo.cover).then((r) => r.blob());
+          // 生成唯一的文件名
+          coverFileName = generateRandomFileName("cover");
+          const coverFile = new File([coverBlob], coverFileName, {
+            type: coverBlob.type,
+          });
+          coverFormData.append("file", coverFile);
+
+          const coverResponse = await axios.post(
+            "http://localhost:8081/minio/upload",
+            coverFormData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+                Authorization: `Bearer ${token}`,
+              },
+              timeout: 300000,
+            }
+          );
+
+          console.log("封面上传响应:", coverResponse.data);
+
+          if (coverResponse.status === 200) {
+            try {
+              const coverUrl = coverResponse.data;
+              console.log("封面上传返回数据:", coverUrl);
+              console.log("封面上传返回数据类型:", typeof coverUrl);
+
+              if (typeof coverUrl === "object" && coverUrl !== null) {
+                // 后端返回了结构化的响应对象
+                const { fileName: coverFileNameRaw } = coverUrl;
+                const extractedCoverFileName = this.extractFileNameFromUrl(
+                  coverFileNameRaw
+                );
+                coverFileName = extractedCoverFileName;
+                console.log("封面文件名:", coverFileName);
+              } else {
+                console.error("封面上传返回数据格式不正确:", coverUrl);
+                coverFileName = generateRandomFileName("default_cover");
+              }
+
+              if (!coverFileName || coverFileName === "undefined") {
+                console.error("无效的封面文件名:", coverFileName);
+                coverFileName = generateRandomFileName("default_cover");
+              }
+
+              console.log("封面上传成功，文件名:", coverFileName);
+            } catch (error) {
+              console.error("解析封面URL失败:", error);
+              coverFileName = generateRandomFileName("default_cover");
+            }
+          }
+        }
 
         // 3. 提交视频信息
         const formDataSubmit = new FormData();
@@ -411,14 +504,16 @@ export default {
         formDataSubmit.append("videoFileName", videoFileName);
         formDataSubmit.append("coverFileName", coverFileName);
         formDataSubmit.append("description", this.videoInfo.description || "");
-        formDataSubmit.append("author", localStorage.getItem("username") || "未知用户");
+        formDataSubmit.append("author", this.userInfo?.username || "未知用户");
+        formDataSubmit.append("avatar", this.userInfo?.avatar || "");
 
-        console.log("提交的表单数据:", {
+        console.log("准备提交视频信息:", {
           title: this.videoInfo.title,
           videoFileName: videoFileName,
           coverFileName: coverFileName,
           description: this.videoInfo.description || "",
-          author: localStorage.getItem("username") || "未知用户",
+          author: this.userInfo.username || "未知用户",
+          avatar: this.userInfo.avatar || "",
         });
 
         const submitResponse = await axios({
@@ -737,5 +832,33 @@ textarea {
 
 .submit-btn:hover {
   background: #0095cc;
+}
+
+/* 上传进度条样式 */
+.upload-progress {
+  margin-bottom: 20px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.progress-bar {
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress {
+  height: 100%;
+  background: #00aeec;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 14px;
+  color: #61666d;
+  text-align: center;
 }
 </style>

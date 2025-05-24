@@ -10,7 +10,7 @@
           <!-- 视频区 -->
           <div>
             <div class="d-flex align-items-center mb-2">
-              <span class="fw-bold fs-5 me-3">视频 · 48</span>
+              <span class="fw-bold fs-5 me-3">视频 · {{ videos.length }}</span>
               <button type="button" class="btn btn-info me-2">最新发布</button>
               <button type="button" class="btn btn-outline-secondary me-2">
                 最多播放
@@ -24,20 +24,30 @@
               </button>
             </div>
             <div class="row mt-4">
-              <div class="col-md-3 mb-4" v-for="video in videos" :key="video.id">
-                <div class="card">
-                  <img :src="video.cover" class="card-img-top" />
+              <div
+                class="col-2-4 mb-2"
+                v-for="video in videos.slice(0, 10)"
+                :key="video.id"
+              >
+                <div
+                  class="card no-border video-card-hover"
+                  @click="goToVideo(video.id)"
+                  style="cursor: pointer"
+                >
+                  <div class="image-wrapper">
+                    <img :src="video.image" class="card-img-top video-img" />
+                    <div class="img-info-bar">
+                      <span class="me-2">
+                        <i class="bi bi-play-fill"></i> {{ video.playCount }}
+                      </span>
+                      <span class="me-2">
+                        <i class="bi bi-chat"></i> {{ video.commentCount }}
+                      </span>
+                      <span> <i class="bi bi-clock"></i> {{ video.duration }} </span>
+                    </div>
+                  </div>
                   <div class="card-body p-2">
                     <div class="video-title text-truncate mb-1">{{ video.title }}</div>
-                    <div class="d-flex text-muted small">
-                      <span class="me-2"
-                        ><i class="bi bi-play-fill"></i> {{ video.play }}</span
-                      >
-                      <span class="me-2"
-                        ><i class="bi bi-chat"></i> {{ video.comment }}</span
-                      >
-                      <span><i class="bi bi-clock"></i> {{ video.duration }}</span>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -46,7 +56,7 @@
         </div>
         <!-- 右侧卡片区 -->
         <div class="col-lg-3 col-md-4">
-          <div class="card mb-3">
+          <div class="card mb-3 profile-card">
             <div class="card-body">
               <div class="fw-bold mb-2 d-flex justify-content-between align-items-center">
                 直播间
@@ -56,7 +66,7 @@
               <a href="#" class="text-info small">前往TA的直播间 &gt;</a>
             </div>
           </div>
-          <div class="card">
+          <div class="card profile-card">
             <div class="card-body">
               <div class="fw-bold mb-2">个人资料</div>
               <div class="text-muted small">UID 596505986</div>
@@ -72,20 +82,37 @@
 <script>
 import NavBar from "@/components/navBar/NavBar.vue";
 import SpaceTopBar from "@/components/user/SpaceTopBar.vue";
+import axios from "axios";
+
 export default {
   name: "SpaceView",
   components: { NavBar, SpaceTopBar },
   data() {
     return {
-      videos: Array.from({ length: 8 }).map((_, i) => ({
-        id: i + 1,
-        cover: "http://113.45.69.13:9000/image/amiya.jpg", // 占位图
-        title: `示例视频${i + 1}`,
-        play: Math.floor(Math.random() * 1000),
-        comment: Math.floor(Math.random() * 10),
-        duration: "03:20",
-      })),
+      videos: [],
     };
+  },
+  async created() {
+    try {
+      const response = await axios.get("http://localhost:8081/video/cards");
+
+      if (response.status === 200) {
+        this.videos = response.data.map((video) => ({
+          ...video,
+          playCount: video.playCount || 0,
+          commentCount: video.commentCount || 0,
+          duration: video.duration || "00:00",
+        }));
+        console.log(response.data);
+      }
+    } catch (error) {
+      console.error("获取视频列表失败:", error);
+    }
+  },
+  methods: {
+    goToVideo(id) {
+      this.$router.push(`/video/${id}`);
+    },
   },
 };
 </script>
@@ -108,5 +135,76 @@ export default {
 .video-title {
   font-size: 14px;
   font-weight: 500;
+}
+.card {
+  width: 100%;
+  transition: transform 0.2s;
+  border: none;
+  box-shadow: none;
+}
+
+.card-img-top {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px !important;
+}
+.card-body {
+  height: 80px;
+  overflow: hidden;
+}
+.col-2-4 {
+  flex: 0 0 20%;
+  max-width: 20%;
+  padding-right: 10px;
+  padding-left: 10px;
+}
+.profile-card {
+  width: 100%;
+  height: 160px;
+  min-height: 160px;
+  max-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  box-sizing: border-box;
+  border: 1px solid #e3e6eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: #fff;
+}
+.image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 160px;
+}
+.img-info-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 32px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 13px;
+  z-index: 2;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+.img-info-bar i {
+  color: #fff;
+  font-size: 15px;
+  vertical-align: middle;
+}
+.no-border {
+  border: none !important;
+  box-shadow: none !important;
+}
+.video-img {
+  border-radius: 12px !important;
 }
 </style>

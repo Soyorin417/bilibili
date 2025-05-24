@@ -2,7 +2,10 @@ package com.backend.bilibili.controller;
 
 
 
+import com.backend.bilibili.pojo.UploadResponse;
 import com.backend.bilibili.service.minio.MinioService;
+import com.backend.bilibili.utils.MinioUrlUtil;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletResponse;
@@ -19,9 +22,17 @@ public class MinioController {
     }
 
     @PostMapping("/upload")
-    public String upload(@RequestParam("file") MultipartFile multipartFile) throws Exception {
-        return minioService.putObject(multipartFile);
+    public ResponseEntity<UploadResponse> upload(@RequestParam("file") MultipartFile multipartFile) throws Exception {
+
+        String fileName = minioService.putObject(multipartFile);
+
+        String url = MinioUrlUtil.getUrl(fileName);
+
+        UploadResponse response = new UploadResponse(fileName, url);
+
+        return ResponseEntity.ok(response);
     }
+
 
     @GetMapping("/download")
     public void download(@RequestParam("fileName") String fileName, HttpServletResponse response) {

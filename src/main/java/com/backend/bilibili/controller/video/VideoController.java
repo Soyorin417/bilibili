@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Date;
 import java.util.List;
 
@@ -32,23 +31,26 @@ public class VideoController {
     }
 
     @PostMapping("/submit")
-    public ResponseEntity<String> submitVideo(@RequestParam String title,
-                                              @RequestParam String videoFileName,
-                                              @RequestParam String coverFileName,
-                                              @RequestParam(required = false) String description,
-                                              @RequestParam(required = false) String author) {
+    public ResponseEntity<String> submitVideo(
+            @RequestParam String title,
+            @RequestParam String videoFileName,
+            @RequestParam String coverFileName,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String author) {
+
+        String cleanVideoFileName = extractFileName(videoFileName);
+        String cleanCoverFileName = extractFileName(coverFileName);
+
         VideoInfo videoInfo = new VideoInfo();
         videoInfo.setTitle(title);
-        videoInfo.setVideoUrl(MinioUrlUtil.getUrl(videoFileName));
-        videoInfo.setImage(MinioUrlUtil.getUrl(coverFileName));
+        videoInfo.setVideoUrl(MinioUrlUtil.getUrl(cleanVideoFileName));
+        videoInfo.setImage(MinioUrlUtil.getUrl(cleanCoverFileName));
         videoInfo.setDescription(description);
-        videoInfo.setAuthor(author);
-        videoInfo.setTime(new Date()); // 这里用Date对象
+        videoInfo.setTime(new Date());
 
         System.out.println("准备调用service.submitVideo，videoInfo: " + videoInfo);
 
         boolean success = videoInfoService.submitVideo(videoInfo);
-
         System.out.println("submitVideo 返回: " + success);
 
         if (success) {
@@ -58,16 +60,21 @@ public class VideoController {
         }
     }
 
-
-    @PostMapping("/upload")
-    public ResponseEntity<String> saveVideoInfo(@RequestBody VideoInfo videoInfo) {
-        boolean saved = videoInfoService.submitVideo(videoInfo);
-        if (saved) {
-            return ResponseEntity.ok("保存成功");
-        } else {
-            return ResponseEntity.status(500).body("保存失败");
+    private String extractFileName(String fullPath) {
+        if (fullPath == null) {
+            return "";
         }
+        String hostPrefix = "113.45.69.13:9000";
+        if (fullPath.startsWith(hostPrefix)) {
+            return fullPath.substring(hostPrefix.length());
+        }
+        int lastSlashIndex = fullPath.lastIndexOf('/');
+        if (lastSlashIndex >= 0 && lastSlashIndex < fullPath.length() - 1) {
+            return fullPath.substring(lastSlashIndex + 1);
+        }
+        return fullPath;
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable int id) {

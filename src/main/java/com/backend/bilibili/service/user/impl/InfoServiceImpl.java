@@ -40,6 +40,7 @@ public class InfoServiceImpl implements InfoService {
         responseMap.put("following", userInfo.getFollowing());
         responseMap.put("fans", userInfo.getFans());
         responseMap.put("dynamic", userInfo.getDynamic());
+        responseMap.put("role", userInfo.getRole());
 
         return responseMap;
     }

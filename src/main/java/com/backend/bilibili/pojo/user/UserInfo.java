@@ -24,4 +24,5 @@ public class UserInfo {
     private int following;
     private int fans;
     private int dynamic;
+    private String role;
 }

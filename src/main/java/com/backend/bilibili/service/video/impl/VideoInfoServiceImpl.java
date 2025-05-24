@@ -36,7 +36,9 @@ public class VideoInfoServiceImpl implements VideoInfoService {
 
     @Override
     public List<VideoInfo> getAllVideos() {
-        return videoInfoMapper.selectList(null);
+        QueryWrapper<VideoInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("status", "approved");
+        return videoInfoMapper.selectList(queryWrapper);
     }
 
     @Override

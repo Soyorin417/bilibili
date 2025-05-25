@@ -126,12 +126,6 @@
             </div>
             <div class="nav-text">大会员</div>
           </router-link>
-
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Profile</a></li>
-            <li><a class="dropdown-item" href="#">Settings</a></li>
-            <li><a class="dropdown-item" href="#">Logout</a></li>
-          </ul>
         </li>
         <li class="nav-item dropdown">
           <router-link :to="right_tags[2]" class="custom-link"
@@ -146,9 +140,11 @@
           >
 
           <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Profile</a></li>
-            <li><a class="dropdown-item" href="#">Settings</a></li>
-            <li><a class="dropdown-item" href="#">Logout</a></li>
+            <li><a class="dropdown-item" href="#">回复我的</a></li>
+            <li><a class="dropdown-item" href="#">@我的</a></li>
+            <li><a class="dropdown-item" href="#">收到的赞</a></li>
+            <li><a class="dropdown-item" href="#">系统消息</a></li>
+            <li><a class="dropdown-item" href="#">我的消息</a></li>
           </ul>
         </li>
         <li class="nav-item dropdown">
@@ -163,10 +159,10 @@
             <div class="nav-text">动态</div></router-link
           >
 
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Profile</a></li>
-            <li><a class="dropdown-item" href="#">Settings</a></li>
-            <li><a class="dropdown-item" href="#">Logout</a></li>
+          <ul class="dropdown-menu" style="width: 320px">
+            <li>
+              <DynamicList :dynamics="navbarDynamics" />
+            </li>
           </ul>
         </li>
         <li class="nav-item dropdown">
@@ -182,9 +178,9 @@
           >
 
           <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Profile</a></li>
-            <li><a class="dropdown-item" href="#">Settings</a></li>
-            <li><a class="dropdown-item" href="#">Logout</a></li>
+            <li><a class="dropdown-item" href="#">个人资料</a></li>
+            <li><a class="dropdown-item" href="#">设置</a></li>
+            <li><a class="dropdown-item" href="#">退出登录</a></li>
           </ul>
         </li>
         <li class="nav-item dropdown">
@@ -200,9 +196,9 @@
           >
 
           <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Profile</a></li>
-            <li><a class="dropdown-item" href="#">Settings</a></li>
-            <li><a class="dropdown-item" href="#">Logout</a></li>
+            <li><a class="dropdown-item" href="#">个人资料</a></li>
+            <li><a class="dropdown-item" href="#">设置</a></li>
+            <li><a class="dropdown-item" href="#">退出登录</a></li>
           </ul>
         </li>
 
@@ -249,6 +245,7 @@ import { Tips } from "@icon-park/vue-next";
 import { Upload } from "@icon-park/vue-next";
 import UserProfileCardMini from "@/components/user/UserProfileCardMini.vue";
 import { mapGetters, mapActions } from "vuex";
+import DynamicList from "@/components/dynamic/DynamicList.vue";
 
 export default {
   name: "NavBar",
@@ -262,6 +259,7 @@ export default {
     Tips,
     Upload,
     UserProfileCardMini,
+    DynamicList,
   },
   data() {
     return {
@@ -367,6 +365,17 @@ export default {
         "icon图标",
         "明日方舟",
         "妈妈妈妈你看我有",
+      ],
+      navbarDynamics: [
+        {
+          id: 1,
+          user: "怎么都有人取名了",
+          avatar: "https://example.com/avatar1.jpg",
+          content: "海豚小时候退出乐队...",
+          date: "2024-05-21",
+          thumb: "https://example.com/thumb1.jpg",
+        },
+        // ...更多动态
       ],
     };
   },
@@ -717,5 +726,11 @@ export default {
   font-size: 0.7rem;
   margin-left: 0.5rem;
   display: inline-block;
+}
+
+.dropdown-item {
+  font-size: 14px;
+  text-align: center;
+  color: #61666d;
 }
 </style>

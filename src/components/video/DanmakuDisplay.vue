@@ -5,6 +5,7 @@
       class="video-player"
       controls
       :src="videoUrl"
+      @play="onPlay"
       @timeupdate="onTimeUpdate"
       @seeked="onSeek"
     ></video>
@@ -65,8 +66,6 @@ export default {
       );
       const xmlText = await response.text();
       this.danmakus = parseDanmakuXml(xmlText);
-      console.log("弹幕数据：", this.danmakus);
-      console.log("弹幕数量：", this.danmakus.length);
     } catch (error) {
       console.error("获取弹幕数据失败:", error);
     }
@@ -230,6 +229,17 @@ export default {
       };
 
       this.activeDanmakus.push(activeDanmaku);
+    },
+    getAuthorId() {
+      return (
+        this.videoInfo.authorId ||
+        this.videoInfo.author_id ||
+        this.videoInfo.author?.id ||
+        this.videoInfo.author?.uid
+      );
+    },
+    onPlay() {
+      this.$emit("play");
     },
   },
   watch: {

@@ -18,8 +18,6 @@ export function parseDanmakuXml(xmlText) {
       dNodes = xml.getElementsByTagName("d");
     }
     
-    console.log("找到弹幕节点数量:", dNodes.length);
-    
     const danmakus = [];
 
     // 统计弹幕类型
@@ -81,7 +79,6 @@ export function parseDanmakuXml(xmlText) {
             typeStats[7]++; // 统计类型7的高级弹幕
 
             // 解析高级弹幕数据
-            // [x,y,scale,duration,text,alpha,rotation,size,color,type,font,style,fontFamily,isAdvanced]
             text = jsonData[4] || content; // 弹幕文本
 
             // 解析缩放比例
@@ -106,14 +103,7 @@ export function parseDanmakuXml(xmlText) {
               isAdvanced: jsonData[13] || 1, // 是否高级弹幕
             };
 
-            console.log("高级弹幕数据:", {
-              text,
-              position,
-              time,
-              type,
-              fontSize,
-              color,
-            });
+            
           } catch (e) {
             console.warn("高级弹幕解析失败:", content, e);
             // 解析失败时，将其视为普通弹幕
@@ -150,29 +140,12 @@ export function parseDanmakuXml(xmlText) {
           isScrolling: type === 1 || type === 7, // 标记是否为滚动弹幕
         };
 
-        // 详细日志
-        if (isAdvanced) {
-          console.log("解析高级弹幕:", {
-            time,
-            text,
-            position,
-            fontSize,
-            color,
-          });
-        }
 
         danmakus.push(danmaku);
       } catch (e) {
         console.warn("弹幕解析失败:", e);
       }
     }
-
-    // 输出统计信息
-    console.log("弹幕类型统计:", typeStats);
-    console.log("轨道使用统计:", trackStats);
-    console.log("成功解析弹幕数量:", danmakus.length);
-    console.log("高级弹幕数量:", typeStats.advanced);
-    console.log("类型7弹幕数量:", typeStats[7]);
 
     return danmakus;
   } catch (e) {

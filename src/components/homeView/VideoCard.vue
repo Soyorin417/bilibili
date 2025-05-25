@@ -6,9 +6,9 @@
       <div class="card-img-overlay mb-1">
         <div class="card-text position-absolute bottom-0 start-0">
           <play class="ms-2" theme="outline" size="18" fill="#ffffff" />
-          <small class="ms-1">{{ playCount }}</small>
+          <small class="ms-1">{{ formatCount(playCount) }}</small>
           <message class="ms-3" theme="outline" size="18" fill="#ffffff" />
-          <small class="ms-1">{{ comment }}</small>
+          <small class="ms-1">{{ formatCount(comment) }}</small>
         </div>
         <div class="card-text position-absolute bottom-0 end-0">
           <small class="me-1">{{ time }}</small>
@@ -97,6 +97,17 @@ export default {
   methods: {
     toggleLike() {
       this.isLiked = !this.isLiked;
+    },
+    formatCount(count) {
+      if (!count) return "0";
+      const n = parseFloat(count);
+      if (isNaN(n)) return "0";
+      if (n >= 100000000) {
+        return (n / 100000000).toFixed(1) + "亿";
+      } else if (n >= 10000) {
+        return (n / 10000).toFixed(1) + "万";
+      }
+      return n.toString();
     },
   },
 };

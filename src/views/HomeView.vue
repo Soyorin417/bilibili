@@ -125,7 +125,6 @@
 <script>
 import VideoCard from "@/components/homeView/VideoCard.vue";
 import NavBar from "@/components/navBar/NavBar.vue";
-import { videoInfos } from "@/data/videoInfos.js";
 import TopNav from "@/components/navBar/TopNav.vue";
 import axios from "axios";
 export default {
@@ -138,6 +137,9 @@ export default {
 
   data() {
     return {
+      videoInfos: [],
+      videoCards: [],
+      otherVideos: [],
       loop_videoCards: [
         {
           id: "1",
@@ -166,8 +168,6 @@ export default {
           message: "白小鱼",
         },
       ],
-      videoCards: videoInfos.slice(0, 6),
-      otherVideos: videoInfos.slice(6),
       showPlaceholder: true,
       loadedVideos: [],
     };

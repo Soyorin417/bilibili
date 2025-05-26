@@ -4,9 +4,9 @@
       <div class="post-user">
         <img :src="post.avatar" class="avatar" alt="用户头像" />
         <div class="post-info">
-          <div class="post-author">{{ post.author }}</div>
+          <div class="post-author">{{ post.username }}</div>
           <div class="post-meta">
-            <span class="post-time">{{ post.time }}</span>
+            <span class="post-time">{{ formatTime(post.time) }}</span>
             <span class="post-type">投稿了视频</span>
           </div>
         </div>
@@ -32,6 +32,9 @@
             </div>
           </div>
         </div>
+      </div>
+      <div v-else>
+        <div class="post-content-text">{{ post.content }}</div>
       </div>
     </div>
     <div class="post-actions">
@@ -132,8 +135,15 @@
         <img :src="comment.avatar" class="comment-avatar" alt="用户头像" />
         <div class="comment-content">
           <div class="comment-header">
-            <span class="comment-author">{{ comment.author }}</span>
+            <span class="comment-author">{{ comment.username }}</span>
             <span class="comment-time">{{ comment.time }}</span>
+            <button
+              v-if="userInfo && comment.userId === userInfo.id"
+              class="comment-action-btn"
+              @click="handleDeleteComment(comment.id)"
+            >
+              删除
+            </button>
           </div>
           <div class="comment-text">{{ comment.content }}</div>
           <div class="comment-actions">
@@ -155,6 +165,7 @@
 <script>
 import { ShareTwo, ThumbsUp } from "@icon-park/vue-next";
 import EmojiPicker from "vue3-emoji-picker";
+import axios from "axios";
 
 export default {
   name: "ActivityCard",
@@ -170,7 +181,7 @@ export default {
       default: () => ({
         id: "",
         user_id: "",
-        author: "",
+        username: "",
         avatar: "",
         time: "",
         content: "",
@@ -192,45 +203,81 @@ export default {
     return {
       localLiked: this.post.liked,
       localShared: this.post.shared,
-      localLikes: this.post.likes,
+      localLikes: this.post.likeCount,
       localComments: this.post.comments,
       is_comments: false,
       postContent: "",
       showEmojiPicker: false,
       selectedImage: null,
-      comments: [
-        {
-          id: 1,
-          author: "用户1",
-          avatar: "http://113.45.69.13:9000/image/laoba.jpg",
-          time: "2小时前",
-          content: "这个视频太棒了！",
-          likes: 5,
-        },
-        {
-          id: 2,
-          author: "用户2",
-          avatar: "http://113.45.69.13:9000/image/arknight_w.jpg",
-          time: "1小时前",
-          content: "支持一下！",
-          likes: 3,
-        },
-      ],
+      comments: [],
+      replies: [],
     };
   },
   methods: {
-    handleLike() {
-      this.localLiked = !this.localLiked;
-      if (this.localLiked) {
-        this.localLikes = this.localLikes + 1;
-      } else {
-        this.localLikes = this.localLikes - 1;
+    async handleLike() {
+      if (!this.post || !this.post.id) {
+        alert("动态数据未加载，请稍后再试");
+        return;
       }
-      this.$emit("like", {
-        id: this.post.id,
-        liked: this.localLiked,
-        likes: this.localLikes,
-      });
+      if (!this.userInfo || !this.userInfo.id) {
+        alert("请先登录");
+        return;
+      }
+      const postId = this.post.id;
+      const userId = this.userInfo.id;
+      const token = localStorage.getItem("token");
+
+      // 1. 本地先更新
+      const oldLiked = this.localLiked;
+      const oldLikes = this.localLikes;
+      if (!this.localLiked) {
+        this.localLiked = true;
+        this.localLikes++;
+      } else {
+        this.localLiked = false;
+        this.localLikes--;
+      }
+
+      try {
+        if (!oldLiked) {
+          // 点赞
+          const res = await axios.post(
+            `http://127.0.0.1:8081/post/like/${postId}`,
+            null,
+            {
+              params: { userId },
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          if (res.data !== "点赞成功") {
+            // 失败回滚
+            this.localLiked = oldLiked;
+            this.localLikes = oldLikes;
+          }
+        } else {
+          // 取消点赞
+          const res = await axios.delete(`http://127.0.0.1:8081/post/like/${postId}`, {
+            params: { userId },
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.data !== "取消点赞成功") {
+            // 失败回滚
+            this.localLiked = oldLiked;
+            this.localLikes = oldLikes;
+          }
+        }
+        this.$emit("like", {
+          id: postId,
+          liked: this.localLiked,
+          likeCount: this.localLikes,
+        });
+      } catch (e) {
+        // 失败回滚
+        this.localLiked = oldLiked;
+        this.localLikes = oldLikes;
+        alert("操作失败，请稍后重试");
+        console.error(e);
+      }
     },
     handleComments() {
       this.is_comments = !this.is_comments;
@@ -241,7 +288,7 @@ export default {
       this.$emit("share", { id: this.post.id, shared: this.localShared });
     },
     handleDelete() {
-      this.$emit("delete", this.post.id);
+      this.$emit("deletePost", this.post.id);
     },
     toggleEmojiPicker() {
       this.showEmojiPicker = !this.showEmojiPicker;
@@ -281,7 +328,7 @@ export default {
         // 处理评论
         this.comments.unshift({
           id: this.comments.length + 1,
-          author: this.userInfo.name,
+          username: this.userInfo.username,
           avatar: this.userInfo.avatar,
           time: "刚刚",
           content: this.postContent,
@@ -302,8 +349,100 @@ export default {
       comment.likes++;
     },
     replyComment(comment) {
-      this.postContent = `@${comment.author} `;
+      this.postContent = `@${comment.username} `;
       this.is_comments = true;
+    },
+    formatTime(isoString) {
+      if (!isoString) return "";
+      // 兼容 Safari，替换 T 为空格
+      const str = isoString.replace("T", " ");
+      // 你可以用 dayjs、moment.js 或原生 Date
+      const date = new Date(str);
+      if (isNaN(date.getTime())) return isoString; // 解析失败就原样返回
+
+      // 返回 yyyy-MM-dd HH:mm:ss
+      const pad = (n) => n.toString().padStart(2, "0");
+      return (
+        date.getFullYear() +
+        "-" +
+        pad(date.getMonth() + 1) +
+        "-" +
+        pad(date.getDate()) +
+        " " +
+        pad(date.getHours()) +
+        ":" +
+        pad(date.getMinutes()) +
+        ":" +
+        pad(date.getSeconds())
+      );
+    },
+    async fetchComments(postId) {
+      try {
+        const res = await axios.get(`http://127.0.0.1:8081/post/comment/list/${postId}`);
+        // res.data 是评论数组
+        this.comments = res.data;
+      } catch (e) {
+        console.error("获取评论失败", e);
+      }
+    },
+    async addComment(postId, content, userId) {
+      try {
+        const comment = {
+          postId,
+          content,
+          userId,
+        };
+        const res = await axios.post("http://127.0.0.1:8081/post/comment/add", comment);
+        if (res.data === "评论成功") {
+          // 重新拉取评论
+          await this.fetchComments(postId);
+        }
+      } catch (e) {
+        console.error("评论失败", e);
+      }
+    },
+    async fetchReplies(parentId) {
+      try {
+        const res = await axios.get(
+          `http://127.0.0.1:8081/post/comment/replies/${parentId}`
+        );
+        // res.data 是回复数组
+        this.replies = res.data;
+      } catch (e) {
+        console.error("获取回复失败", e);
+      }
+    },
+    async deleteComment(commentId, postId) {
+      try {
+        const res = await axios.delete(
+          `http://127.0.0.1:8081/post/comment/delete/${commentId}`
+        );
+        if (res.data === "删除成功") {
+          // 重新拉取评论
+          console.log("删除成功");
+          await this.fetchComments(postId);
+        }
+      } catch (e) {
+        console.error("删除评论失败", e);
+      }
+    },
+    async handleDeleteComment(commentId) {
+      if (!window.confirm("确定要删除这条评论吗？")) return;
+      try {
+        const res = await axios.delete(
+          `http://127.0.0.1:8081/post/comment/delete/${commentId}`
+        );
+        if (res.data === "删除成功") {
+          // 前端本地移除
+          this.comments = this.comments.filter((c) => c.id !== commentId);
+          alert("删除成功");
+        } else {
+          alert(typeof res.data === "string" ? res.data : JSON.stringify(res.data));
+        }
+      } catch (e) {
+        alert("删除失败，请稍后再试");
+        console.error("删除评论失败", e);
+      }
     },
   },
   watch: {
@@ -337,6 +476,10 @@ export default {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.post-content-text {
+  font-size: 14px;
+  text-align: left;
+}
 .post-header {
   display: flex;
   justify-content: space-between;
@@ -372,6 +515,7 @@ export default {
 .post-author {
   font-size: 13px;
   font-weight: 500;
+  text-align: left;
   color: #18191c;
 }
 

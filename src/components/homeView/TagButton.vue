@@ -1,5 +1,5 @@
 <template>
-  <div :style="{ background: color }">
+  <div>
     <a href="#" role="button" aria-expanded="false">
       <component :is="icon" theme="filled" size="15" fill="#61676d"
     /></a>

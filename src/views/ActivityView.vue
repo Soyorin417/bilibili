@@ -11,7 +11,7 @@
             </div>
             <div class="user-name ms-2 mb-4">
               <div>
-                {{ userInfo.name }}
+                {{ userInfo.username }}
               </div>
               <div>
                 <span class="user-level">LV{{ userInfo.level }}</span>
@@ -20,15 +20,15 @@
           </div>
           <div class="user-stats">
             <div class="stat-item">
-              <div class="stat-value">2</div>
+              <div class="stat-value">{{ userInfo.followCount || 0 }}</div>
               <div class="stat-label">关注</div>
             </div>
             <div class="stat-item">
-              <div class="stat-value">13</div>
+              <div class="stat-value">{{ userInfo.fans }}</div>
               <div class="stat-label">粉丝</div>
             </div>
             <div class="stat-item">
-              <div class="stat-value">48</div>
+              <div class="stat-value">{{ userInfo.dynamic }}</div>
               <div class="stat-label">动态</div>
             </div>
           </div>
@@ -102,8 +102,9 @@
             :userInfo="userInfo"
             @like="handleLike"
             @share="handleShare"
-            @delete="handleDelete"
+            @deletePost="deletePost"
             @comments="handleComments"
+            @refresh-posts="fetchPosts"
           />
         </div>
       </div>
@@ -150,9 +151,10 @@
 <script>
 import VideoBar from "@/components/navBar/VideoBar.vue";
 import ActivityCard from "@/components/ActivityCard.vue";
-import userData from "@/data/userData.js";
 import EmojiPicker from "vue3-emoji-picker";
 import "vue3-emoji-picker/css";
+import { mapGetters } from "vuex";
+import axios from "axios";
 
 export default {
   name: "ActivityView",
@@ -163,46 +165,10 @@ export default {
   },
   data() {
     return {
-      userInfo: userData,
       postContent: "",
       selectedImage: null,
       showEmojiPicker: false,
-      posts: [
-        {
-          id: 1,
-          user_id: 1,
-          author: userData.name,
-          avatar: userData.avatar,
-          time: "2小时前",
-          content: "这是一个视频标题",
-          media:
-            "http://113.45.69.13:9000/image/35d43d37454c820e9d994445e8edd348a0a2233c.jpg",
-          duration: "5:20",
-          is_image: true,
-          views: 114,
-          comments: 23,
-          likes: 45,
-          liked: false,
-          shared: false,
-        },
-        {
-          id: 2,
-          user_id: 2,
-          author: userData.name,
-          avatar: userData.avatar,
-          time: "1小时前",
-          content: "这是一个视频标题",
-          media:
-            "http://113.45.69.13:9000/image/35d43d37454c820e9d994445e8edd348a0a2233c.jpg",
-          duration: "5:20",
-          is_image: true,
-          views: 114,
-          comments: 23,
-          likes: 45,
-          liked: false,
-          shared: false,
-        },
-      ],
+      posts: [],
       topics: [
         {
           id: 1,
@@ -232,11 +198,11 @@ export default {
     };
   },
   methods: {
-    handleLike({ id, liked, likes }) {
+    handleLike({ id, liked, likeCount }) {
       const post = this.posts.find((p) => p.id === id);
       if (post) {
         post.liked = liked;
-        post.likes = likes;
+        post.likeCount = likeCount;
       }
     },
     handleShare({ id, shared }) {
@@ -245,10 +211,10 @@ export default {
         post.shared = shared;
       }
     },
-    handleDelete(id) {
-      const index = this.posts.findIndex((p) => p.id === id);
-      if (index !== -1) {
-        this.posts.splice(index, 1);
+    handleComments({ id, comments }) {
+      const post = this.posts.find((p) => p.id === id);
+      if (post) {
+        post.comments = comments;
       }
     },
     triggerFileInput() {
@@ -272,29 +238,42 @@ export default {
     },
 
     sendPost() {
+      if (!this.userInfo || !this.userInfo.username) {
+        alert("用户信息未加载，请稍后再试");
+        return;
+      }
       if (!this.postContent.trim() && !this.selectedImage) return;
 
+      // 1. 先本地插入一条临时动态
+      const tempId = "temp_" + Date.now();
       this.posts.unshift({
-        id: this.posts.length + 1,
+        id: tempId,
         user_id: this.userInfo.id,
-        author: this.userInfo.name,
+        username: this.userInfo.username,
         avatar: this.userInfo.avatar,
         time: "刚刚",
         content: this.postContent,
-        media:
-          this.selectedImage ||
-          "http://113.45.69.13:9000/image/35d43d37454c820e9d994445e8edd348a0a2233c.jpg",
-        duration: "5:20",
+        media: this.selectedImage || null,
         is_image: !!this.selectedImage,
         views: 0,
         comments: 0,
-        likes: 0,
+        likeCount: 0,
         liked: false,
         shared: false,
       });
 
+      const postData = {
+        userId: this.userInfo.id,
+        content: this.postContent,
+        media: this.selectedImage || null,
+        isImage: !!this.selectedImage,
+      };
+
       this.postContent = "";
       this.removeImage();
+
+      // 2. 发请求
+      this.createPost(postData, tempId);
     },
 
     toggleEmojiPicker() {
@@ -305,14 +284,127 @@ export default {
       this.postContent += emoji.i;
       this.showEmojiPicker = false;
     },
+
+    async fetchPosts() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Token is missing");
+        return;
+      }
+      if (!this.userInfo || !this.userInfo.id) return;
+
+      try {
+        const response = await axios.get(`http://127.0.0.1:8081/posts/post/dtoList`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          params: {
+            userId: this.userInfo.id,
+          },
+        });
+        this.posts = response.data.map((post) => ({
+          id: post.id,
+          user_id: post.userId,
+          username: post.username,
+          avatar: post.avatar,
+          time: post.createTime,
+          content: post.content,
+          media: post.media,
+          duration: post.duration,
+          views: post.views,
+          comments: post.commentCount,
+          likeCount: post.likeCount,
+          liked: post.liked,
+          shared: post.shared,
+          is_image: post.isImage,
+          shareCount: post.shareCount,
+        }));
+        console.log("获取动态成功:", this.posts);
+      } catch (error) {
+        console.error("获取动态失败:", error);
+      }
+    },
+
+    async createPost(postData, tempId) {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("Token is missing");
+          return;
+        }
+        const res = await axios.post("http://127.0.0.1:8081/posts", postData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data === "动态创建成功") {
+          console.log("创建动态成功");
+        } else {
+          // 4. 失败则移除临时动态
+          this.posts = this.posts.filter((post) => post.id !== tempId);
+        }
+      } catch (e) {
+        this.posts = this.posts.filter((post) => post.id !== tempId);
+        alert("创建动态失败，请稍后再试");
+      }
+    },
+
+    async deletePost(id) {
+      console.log("deletePost called", id);
+      // 1. 先本地移除
+      const oldPosts = [...this.posts];
+      this.posts = this.posts.filter((post) => post.id !== id);
+
+      // 2. 如果是临时动态（本地假数据），不请求后端
+      if (typeof id === "string" && id.startsWith("temp_")) {
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.delete(`http://127.0.0.1:8081/posts/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data === "动态删除成功") {
+          console.log("删除成功");
+        } else {
+          // 失败回滚
+          this.posts = oldPosts;
+          alert("删除失败，请稍后再试");
+        }
+      } catch (e) {
+        this.posts = oldPosts;
+        alert("删除失败，请稍后再试");
+        console.error("删除动态失败", e);
+      }
+    },
+    async updatePost(id, postData) {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.put(`http://127.0.0.1:8081/posts/${id}`, postData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data === "动态更新成功") {
+          console.log("更新动态成功");
+        }
+      } catch (e) {
+        console.error("更新动态失败", e);
+      }
+    },
+  },
+  computed: {
+    ...mapGetters("user", ["userInfo"]),
   },
   mounted() {
-    // 点击页面其他地方时关闭 emoji 选择器
+    this.fetchPosts();
     document.addEventListener("click", (e) => {
       if (!e.target.closest(".emoji-picker-container")) {
         this.showEmojiPicker = false;
       }
     });
+  },
+  watch: {
+    userInfo: {
+      immediate: true,
+    },
   },
   beforeUnmount() {
     document.removeEventListener("click", this.closeEmojiPicker);

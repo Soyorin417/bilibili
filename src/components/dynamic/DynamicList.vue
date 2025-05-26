@@ -5,13 +5,15 @@
       <span class="divider-text">历史动态</span>
     </div>
     <div class="dynamic-item" v-for="item in dynamics" :key="item.id">
-      <img :src="item.avatar" class="avatar" />
-      <div class="dynamic-content">
-        <div class="user">{{ item.user }}</div>
-        <div class="content">{{ item.content }}</div>
-        <div class="date">{{ formatDate(item.date) }}</div>
-      </div>
-      <img v-if="item.thumb" :src="item.thumb" class="dynamic-thumb" />
+      <router-link :to="`/video/${item.id}`" class="dynamic-link">
+        <img :src="item.avatar" class="avatar" />
+        <div class="dynamic-content">
+          <div class="user">{{ item.username }}</div>
+          <div class="content ellipsis">{{ item.title }}</div>
+          <div class="date">{{ formatDate(item.createTime) }}</div>
+        </div>
+        <img :src="item.image" class="dynamic-thumb" />
+      </router-link>
     </div>
   </div>
 </template>
@@ -102,5 +104,23 @@ export default {
   color: #222;
   margin-bottom: 6px;
   margin-left: 2px;
+}
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px; /* 根据实际需求调整宽度 */
+  display: block;
+}
+.dynamic-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  width: 100%;
+}
+.dynamic-link:hover {
+  background: #f6f7f8;
+  border-radius: 8px;
 }
 </style>

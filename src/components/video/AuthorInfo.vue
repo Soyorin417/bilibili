@@ -159,10 +159,7 @@ export default {
 
 <style scoped>
 .author-info {
-  padding: 12px;
   background-color: white;
-  border-radius: 6px;
-  margin-bottom: 16px;
 }
 
 .author-avatar img {

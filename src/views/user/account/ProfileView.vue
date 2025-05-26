@@ -25,7 +25,7 @@
                 </div>
                 <div class="d-flex align-items-center text-muted small">
                   <span class="me-3"> <b>B</b> {{ user.coins }} </span>
-                  <span> <b>币</b> {{ user.bCoins }} </span>
+                  <span> <b>币</b> {{ user.bcoin }} </span>
                 </div>
               </div>
               <div class="btn-group ms-3">

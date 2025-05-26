@@ -1,5 +1,5 @@
 <template>
-  <div class="danmaku-container mb-3" :class="{ expanded: isShow }">
+  <div class="danmaku-container mt-2 mb-3" :class="{ expanded: isShow }">
     <div class="danmaku-header d-flex justify-content-between align-items-center p-1">
       <div class="d-flex align-items-center">
         <h6 class="mb-0 ms-1">弹幕列表</h6>
@@ -15,9 +15,8 @@
       <table class="table table-sm table-hover borderless">
         <thead class="thead-light">
           <tr class="header-row">
-            <th scope="col" width="15%">时间</th>
-            <th scope="col" width="65%">内容</th>
-            <th scope="col" width="20%">发送时间</th>
+            <th scope="col" width="20%">时间</th>
+            <th scope="col" width="80%">内容</th>
           </tr>
         </thead>
         <tbody class="small">
@@ -31,7 +30,6 @@
         </tbody>
       </table>
     </div>
-    <div v-if="isShow" class="danmaku-footer text-center"></div>
   </div>
 </template>
 
@@ -60,7 +58,7 @@ export default {
   },
   data() {
     return {
-      isShow: true,
+      isShow: false,
       danmakuList: [],
     };
   },
@@ -145,7 +143,7 @@ export default {
 <style scoped>
 .danmaku-container {
   border: 1px solid #eee;
-  border-radius: 3px;
+
   overflow: hidden;
   background-color: #fff;
   font-size: 10px;
@@ -202,13 +200,6 @@ export default {
   line-height: 1.2;
 }
 
-.danmaku-footer {
-  background-color: #f8f9fa;
-  border-top: 1px solid #eee;
-  padding: 2px 0;
-  height: 4px;
-}
-
 .borderless th,
 .borderless td,
 .borderless thead th,
@@ -225,8 +216,8 @@ export default {
   background-color: #f8f9fa;
 }
 
-/* 调整容器高度以匹配内容 */
+/* 调整容器高度 */
 .danmaku-container.expanded {
-  height: 625px;
+  height: 725px;
 }
 </style>

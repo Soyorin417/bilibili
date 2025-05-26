@@ -61,12 +61,12 @@ export default {
       required: true,
     },
     playCount: {
-      type: String,
-      default: "100万",
+      type: Number,
+      default: 0,
     },
     comment: {
-      type: String,
-      default: "213",
+      type: Number,
+      default: 0,
     },
     time: {
       type: String,

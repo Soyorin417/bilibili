@@ -1,36 +1,18 @@
 ﻿<template>
   <div :key="$route.params.id">
     <VideoBar></VideoBar>
-    <div class="container-fluid mt-3">
+    <div class="container-fluid mt-2">
       <div class="page mx-auto">
         <div class="row">
-          <div class="col-lg-9 mt-4 text-start">
-            <h4 class="title-wrapper">
-              {{ videoInfo.title }}
-            </h4>
-            <div class="stats-wrapper d-flex align-items-center">
-              <play-two
-                theme="outline"
-                size="16"
-                fill="#666666"
-                :strokeWidth="2"
-                class="me-1 icon-fix"
-              />
-              <span class="me-3 stats-text">{{ formattedViews }}</span>
-              <comment-one
-                theme="outline"
-                size="16"
-                fill="#666666"
-                :strokeWidth="2"
-                class="me-1 icon-fix"
-              />
-              <span class="me-3 stats-text">{{ formattedComments }}</span>
-              <span class="me-3 stats-text">{{ formattedTime }}</span>
-              <span v-if="!videoInfo.show_right" class="ms-2">
-                <forbid theme="outline" size="16" fill="#fc0404" class="me-1 icon-fix" />
-                <span class="copyright-text">未经作者授权，禁止转载</span>
-              </span>
-            </div>
+          <!--视频简介-->
+          <div class="col-lg-9 mt-2 text-start">
+            <VideoStats
+              :title="videoInfo.title"
+              :formatted-views="formattedViews"
+              :formatted-comments="formattedComments"
+              :formatted-time="formattedTime"
+              :show-right="videoInfo.show_right"
+            />
 
             <!-- 视频播放器 -->
             <div class="mt-4" id="videoStatus">
@@ -113,7 +95,6 @@
 
 <script>
 import VideoBar from "@/components/navBar/VideoBar.vue";
-import { PlayTwo, CommentOne, Forbid } from "@icon-park/vue-next";
 import { mapGetters } from "vuex";
 import RecommendedVideos from "@/components/video/RecommendedVideos.vue";
 import AuthorInfo from "@/components/video/AuthorInfo.vue";
@@ -124,13 +105,11 @@ import CommentList from "@/components/video/CommentList.vue";
 import axios from "axios";
 import DanmakuList from "@/components/video/DanmakuList.vue";
 import VideoActions from "@/components/video/VideoActions.vue";
+import VideoStats from "@/components/video/VideoStats.vue";
 
 export default {
   components: {
     VideoBar,
-    PlayTwo,
-    CommentOne,
-    Forbid,
     RecommendedVideos,
     AuthorInfo,
     DanmakuControl,
@@ -139,6 +118,7 @@ export default {
     CommentList,
     DanmakuList,
     VideoActions,
+    VideoStats,
   },
   props: {
     id: {
@@ -415,38 +395,7 @@ export default {
         item.likeCount--;
       }
     },
-    videoLike() {
-      this.videoInfo.is_like = !this.videoInfo.is_like;
-      this.videoInfo.likeCount++;
-    },
-    videoDislike() {
-      this.videoInfo.is_like = !this.videoInfo.is_like;
-      this.videoInfo.likeCount--;
-    },
-    videoCollect() {
-      this.videoInfo.is_collect = !this.videoInfo.is_collect;
-      this.videoInfo.collectCount++;
-    },
-    videoDiscollect() {
-      this.videoInfo.is_collect = !this.videoInfo.is_collect;
-      this.videoInfo.collectCount--;
-    },
-    videoShare() {
-      this.videoInfo.is_share = !this.videoInfo.is_share;
-      this.videoInfo.shareCount++;
-    },
-    videoDisshare() {
-      this.videoInfo.is_share = !this.videoInfo.is_share;
-      this.videoInfo.shareCount--;
-    },
-    videoCoin() {
-      this.videoInfo.is_coin = true;
-      this.videoInfo.coinCount++;
-    },
-    videoDiscoin() {
-      this.videoInfo.is_coin = false;
-      this.videoInfo.coinCount--;
-    },
+
     async loadVideoData(id) {
       try {
         const token = localStorage.getItem("token");
@@ -681,105 +630,9 @@ export default {
 };
 </script>
 
-<style scoped lang="less">
+<style scoped>
 .page {
-  max-width: 1500px;
-}
-
-.recommended-thumbnail {
-  width: 140px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.video-duration {
-  font-size: 11px;
-  padding: 0px 3px;
-  border-radius: 2px;
-}
-
-.recommended-video-title {
-  font-size: 13px;
-  line-height: 1.3;
-  margin-bottom: 4px;
-}
-
-.recommended-video-info {
-  width: calc(100% - 150px);
-}
-
-.video-stats {
-  font-size: 13px;
-  margin-bottom: 12px;
-}
-
-.video-title {
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.4;
-  margin-bottom: 8px;
-}
-
-.recommended-video-item {
-  margin-bottom: 12px;
-}
-
-.video-actions {
-  margin-top: 20px;
-  padding: 15px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.left-align {
-  text-align: left !important;
-}
-
-.stats-text {
-  font-size: 13px;
-  color: #666666;
-}
-
-.copyright-text {
-  font-size: 12px;
-  color: #666666;
-}
-
-.title-wrapper {
-  margin: 0;
-  padding: 0;
-  line-height: 1.5;
-  font-size: 24px;
-  font-weight: 600;
-  text-align: left;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  letter-spacing: 0.2px;
-}
-
-.stats-wrapper {
-  margin-top: 12px;
-  margin-bottom: 12px;
-  line-height: 1;
-}
-
-.icon-fix {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  vertical-align: middle;
-}
-h4 {
-  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica", "Arial", sans-serif;
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: 0.5px;
-}
-
-.video-coin-icon {
-  cursor: pointer;
-  transition: color 0.3s ease;
+  max-width: 1600px;
 }
 
 .divider {
@@ -788,42 +641,31 @@ h4 {
   margin: 20px 0;
 }
 
-.comments-section {
-  .comment-item {
-    .comment-content {
-      flex: 1;
-    }
-  }
-  .replies-section {
-    margin-left: 48px;
-    .reply-item {
-      .reply-content {
-        flex: 1;
-      }
-    }
-  }
+.comments-section .comment-item .comment-content {
+  flex: 1;
 }
-
-.video-tags {
-  .tags-wrapper {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .tag-item {
-    background-color: #f6f7f8;
-    color: #61666d;
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background-color: #e3e5e7;
-      color: #00aeec;
-    }
-  }
+.comments-section .replies-section {
+  margin-left: 48px;
+}
+.comments-section .replies-section .reply-item .reply-content {
+  flex: 1;
+}
+.video-tags .tags-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.video-tags .tag-item {
+  background-color: #f6f7f8;
+  color: #61666d;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.video-tags .tag-item:hover {
+  background-color: #e3e5e7;
+  color: #00aeec;
 }
 </style>

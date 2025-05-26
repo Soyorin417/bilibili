@@ -264,8 +264,9 @@ export default {
 <style scoped>
 .video-container {
   position: relative;
-  width: 1111px;
-  height: 625px;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
   margin: 0 auto;
   background-color: #000;

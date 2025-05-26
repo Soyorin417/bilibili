@@ -283,7 +283,7 @@ const routes = [
   },
   // 收藏页面路由
   {
-    path: '/collection',
+    path: '/profile/collection',
     name: 'CollectionView',
     component: CollectionView
   },
@@ -306,12 +306,7 @@ const routes = [
     component: CreateView
   },
   // 视频详情页面路由
-  {
-    path: '/video/:id',  // 使用动态路由来接收视频的 id
-    name: 'VideoView',
-    component: VideoView,
-    props: true,  // 允许将 `id` 作为 props 传递给组件
-  },
+  
 
   // 热门页面路由
   {
@@ -379,6 +374,12 @@ const routes = [
     path: '/admin',
     name: 'AdminView',
     component: AdminView,
+  },
+  {
+    path: '/video/:id',
+    name: 'VideoView',
+    component: VideoView,
+    props: true
   },
 ]
 

@@ -26,6 +26,7 @@
 
 <script>
 import { mapGetters } from "vuex";
+import websocketClient from "@/utils/websocket";
 
 export default {
   name: "CommentInput",
@@ -60,13 +61,15 @@ export default {
       if (!this.content.trim()) return;
 
       const newComment = {
-        commentId: Date.now(),
-        userName: this.userInfo.username,
+        type: "comment",
+        videoId: this.$route.params.id,
+        userUid: this.userInfo.id,
+        username: this.userInfo.username,
         avatar: this.userInfo.avatar,
-        isUp: false,
-        userLevel: this.userInfo.level || 0,
-        content: this.content,
-        createTime: new Date().toLocaleString(),
+        isUp: this.userInfo.id === this.$route.params.id,
+        level: this.userInfo.level || 0,
+        content: this.content.trim(),
+        createTime: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
         likeCount: 0,
         isLiked: false,
         replyCount: 0,
@@ -74,7 +77,12 @@ export default {
         replies: [],
       };
 
+      // 发送到WebSocket服务器
+      websocketClient.send(newComment);
+
+      // 同时发送到后端API保存
       this.$emit("send-comment", newComment);
+
       this.showButton = false;
       this.content = "";
     },

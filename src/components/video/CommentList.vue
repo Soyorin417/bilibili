@@ -1,6 +1,10 @@
 <template>
   <div class="comment-list" @click="handleOutsideClick">
-    <div v-for="comment in comments" :key="comment.commentId" class="comment-item mb-4">
+    <div
+      v-for="comment in localComments"
+      :key="comment.commentId"
+      class="comment-item mb-4"
+    >
       <div class="d-flex">
         <div class="user-avatar me-3">
           <img
@@ -201,6 +205,8 @@
 import { ThumbsUp, ThumbsDown, CommentOne, Delete } from "@icon-park/vue-next";
 import { mapGetters } from "vuex";
 import axios from "axios";
+import websocketClient from "@/utils/websocket";
+
 export default {
   name: "CommentList",
   components: {
@@ -222,8 +228,17 @@ export default {
   data() {
     return {
       newComment: "",
-      activeCommentId: null, // 添加当前展开的评论ID
+      activeCommentId: null,
+      localComments: [],
     };
+  },
+  watch: {
+    comments: {
+      immediate: true,
+      handler(newComments) {
+        this.localComments = [...newComments];
+      },
+    },
   },
   methods: {
     formatDate(dateString) {
@@ -269,7 +284,7 @@ export default {
 
       // 如果点击在回复区域外，则收起所有回复
       if (!isReplyElement) {
-        this.comments.forEach((comment) => {
+        this.localComments.forEach((comment) => {
           if (comment.showReplies) {
             comment.showReplies = false;
           }
@@ -285,7 +300,7 @@ export default {
       }
 
       // 收起其他已展开的评论
-      this.comments.forEach((c) => {
+      this.localComments.forEach((c) => {
         if (c !== comment && c.showReplies) {
           c.showReplies = false;
         }
@@ -323,7 +338,7 @@ export default {
     async handleSendReply(comment) {
       if (!comment.replyContent || !comment.replyContent.trim()) return;
 
-      let newReply = null; // 声明在外部，使其在整个函数作用域内可用
+      let newReply = null;
 
       try {
         const token = localStorage.getItem("token");
@@ -335,8 +350,14 @@ export default {
           return;
         }
 
+        // 确保 replies 是数组
+        if (!Array.isArray(comment.replies)) {
+          comment.replies = [];
+        }
+
         // 创建新回复对象
         newReply = {
+          type: "reply",
           content: comment.replyContent.trim(),
           userUid: this.userInfo.id,
           username: this.userInfo.username,
@@ -350,15 +371,16 @@ export default {
         };
 
         // 先添加到评论的回复列表中
-        if (!comment.replies) {
-          comment.replies = [];
-        }
         comment.replies.unshift(newReply);
         comment.replyCount = (comment.replyCount || 0) + 1;
 
         const tempContent = comment.replyContent;
         comment.replyContent = "";
 
+        // 发送到WebSocket服务器
+        websocketClient.send(newReply);
+
+        // 同时保存到后端数据库
         const replyData = {
           commentId: comment.id,
           userUid: this.userInfo.id,
@@ -376,11 +398,13 @@ export default {
         if (response.data === "回复添加成功") {
           // 更新回复ID
           newReply.id = response.data.id;
+          // 通知父组件评论已更新
+          this.$emit("comment-added");
         }
       } catch (error) {
         console.error("发送回复失败:", error);
         // 如果发送失败，从回复列表中移除
-        if (comment.replies && newReply) {
+        if (Array.isArray(comment.replies) && newReply) {
           const index = comment.replies.findIndex((r) => r === newReply);
           if (index !== -1) {
             comment.replies.splice(index, 1);
@@ -612,7 +636,7 @@ export default {
 
         if (response.data === "回复删除成功") {
           // 从回复列表中移除该回复
-          const comment = this.comments.find((c) =>
+          const comment = this.localComments.find((c) =>
             c.replies.some((r) => r.id === reply.id)
           );
           if (comment) {
@@ -733,6 +757,69 @@ export default {
         console.error("发送评论失败:", error);
       }
     },
+
+    handleWebSocketMessage(event) {
+      try {
+        const rawMessage = event.data;
+        // 检查是否是 "[用户]" 开头的消息
+        if (rawMessage.startsWith("[用户]")) {
+          // 提取JSON部分
+          const jsonStartIndex = rawMessage.indexOf("：") + 1;
+          if (jsonStartIndex > 0) {
+            const jsonStr = rawMessage.substring(jsonStartIndex);
+            const data = JSON.parse(jsonStr);
+
+            if (data.type === "comment") {
+              // 检查是否是当前视频的评论
+              if (data.videoId === this.$route.params.id) {
+                // 将新评论添加到本地数组开头
+                this.localComments.unshift(data);
+                // 通知父组件评论已更新
+                this.$emit("comment-added");
+              }
+            } else if (data.type === "reply") {
+              // 处理回复消息
+              const comment = this.localComments.find((c) => c.id === data.commentId);
+              if (comment) {
+                if (!comment.replies) {
+                  comment.replies = [];
+                }
+                comment.replies.unshift(data);
+                comment.replyCount = (comment.replyCount || 0) + 1;
+                // 通知父组件评论已更新
+                this.$emit("comment-added");
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error handling WebSocket message:", error);
+        console.log("Raw message:", event.data);
+      }
+    },
+  },
+
+  mounted() {
+    // 添加WebSocket消息监听器
+    if (!websocketClient.ws || websocketClient.ws.readyState !== WebSocket.OPEN) {
+      websocketClient.connect();
+      // 等待连接建立后再添加监听器
+      const checkConnection = setInterval(() => {
+        if (websocketClient.ws && websocketClient.ws.readyState === WebSocket.OPEN) {
+          websocketClient.ws.addEventListener("message", this.handleWebSocketMessage);
+          clearInterval(checkConnection);
+        }
+      }, 100);
+    } else {
+      websocketClient.ws.addEventListener("message", this.handleWebSocketMessage);
+    }
+  },
+
+  beforeUnmount() {
+    // 移除WebSocket消息监听器
+    if (websocketClient.ws && websocketClient.ws.readyState === WebSocket.OPEN) {
+      websocketClient.ws.removeEventListener("message", this.handleWebSocketMessage);
+    }
   },
 };
 </script>

@@ -4,11 +4,6 @@
     <div class="container-fluid mt-3">
       <div class="page mx-auto">
         <TopNav />
-        <CarouselWithVideos
-          :carousel-items="carouselItems"
-          :featured-videos="featuredVideos"
-        />
-        <VideoGrid :videos="videos" />
       </div>
     </div>
   </div>
@@ -17,24 +12,12 @@
 <script>
 import NavBar from "@/components/navBar/NavBar.vue";
 import TopNav from "@/components/navBar/TopNav.vue";
-import CarouselWithVideos from "@/components/cartoonView/CarouselWithVideos.vue";
-import VideoGrid from "@/components/cartoonView/VideoGrid.vue";
-import { carouselItems, featuredVideos, videos } from "@/data/testData";
 
 export default {
   name: "RemixView",
   components: {
     NavBar,
     TopNav,
-    CarouselWithVideos,
-    VideoGrid,
-  },
-  data() {
-    return {
-      carouselItems,
-      featuredVideos,
-      videos,
-    };
   },
 };
 </script>

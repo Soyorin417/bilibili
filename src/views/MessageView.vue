@@ -26,6 +26,7 @@ import MessageList from "@/components/message/MessageList.vue";
 import MessageDetail from "@/components/message/MessageDetail.vue";
 import VideoBar from "@/components/navBar/VideoBar.vue";
 import axios from "axios";
+import websocketClient from "@/utils/websocket";
 
 export default {
   name: "MessageView",
@@ -116,23 +117,129 @@ export default {
         if (!session.messages) {
           session.messages = [];
         }
-        session.messages.push(newMsg);
+
+        // 添加用户信息到消息中
+        const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+        const messageWithUserInfo = {
+          ...newMsg,
+          avatar: userInfo.avatar,
+          username: userInfo.username,
+          fromUserId: userInfo.id,
+          toUserId: session.user1Id === userInfo.id ? session.user2Id : session.user1Id,
+          timestamp: new Date().toISOString(),
+        };
+
+        // 立即在发送者界面显示消息
+        session.messages.push(messageWithUserInfo);
         this.selectedSession = { ...session };
-        console.log(this.selectedSession, "this.selectedSession");
+
+        // 发送消息到WebSocket服务器
+        const messageData = {
+          type: "private_message",
+          fromUserId: userInfo.id,
+          toUserId: session.user1Id === userInfo.id ? session.user2Id : session.user1Id,
+          content: newMsg.content,
+          timestamp: new Date().toISOString(),
+          avatar: userInfo.avatar,
+          username: userInfo.username,
+        };
+
+        websocketClient.send(messageData);
+
+        // 同时保存到后端数据库
         const url = `http://localhost:8081/messages`;
         const token = localStorage.getItem("token");
-        const response = await axios.post(url, newMsg, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        console.log(response.data, "response.data");
+        try {
+          const response = await axios.post(url, messageWithUserInfo, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          console.log("Message saved to database:", response.data);
+        } catch (error) {
+          console.error("Error saving message to database:", error);
+        }
+      }
+    },
+
+    handleWebSocketMessage(event) {
+      try {
+        const rawMessage = event.data;
+        // 检查是否是 "[用户]" 开头的消息
+        if (rawMessage.startsWith("[用户]")) {
+          // 提取JSON部分
+          const jsonStartIndex = rawMessage.indexOf("：") + 1; // 使用中文冒号
+          if (jsonStartIndex > 0) {
+            const jsonStr = rawMessage.substring(jsonStartIndex);
+            const data = JSON.parse(jsonStr);
+
+            if (data.type === "private_message") {
+              const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+              const userId = parseInt(userInfo.id);
+
+              // 只处理发送给当前用户的消息
+              if (data.toUserId === userId) {
+                // 检查消息是否属于当前会话
+                if (
+                  this.selectedSession &&
+                  ((this.selectedSession.user1Id === data.fromUserId &&
+                    this.selectedSession.user2Id === userId) ||
+                    (this.selectedSession.user1Id === userId &&
+                      this.selectedSession.user2Id === data.fromUserId))
+                ) {
+                  // 将新消息添加到当前会话
+                  const newMessage = {
+                    content: data.content,
+                    timestamp: data.timestamp,
+                    fromUserId: data.fromUserId,
+                    toUserId: data.toUserId,
+                    avatar: data.avatar,
+                    username: data.username,
+                  };
+
+                  if (!this.selectedSession.messages) {
+                    this.selectedSession.messages = [];
+                  }
+                  this.selectedSession.messages.push(newMessage);
+                  this.selectedSession = { ...this.selectedSession };
+                }
+              }
+            }
+          }
+        } else {
+          // 如果不是预期格式，尝试直接解析为JSON
+          const data = JSON.parse(rawMessage);
+          console.log("Received direct JSON message:", data);
+        }
+      } catch (error) {
+        console.error("Error handling WebSocket message:", error);
+        console.log("Raw message:", event.data);
       }
     },
   },
 
   mounted() {
     this.getAllSessions();
+    // 确保WebSocket连接已建立
+    if (!websocketClient.ws || websocketClient.ws.readyState !== WebSocket.OPEN) {
+      websocketClient.connect();
+      // 等待连接建立后再添加监听器
+      const checkConnection = setInterval(() => {
+        if (websocketClient.ws && websocketClient.ws.readyState === WebSocket.OPEN) {
+          websocketClient.ws.addEventListener("message", this.handleWebSocketMessage);
+          clearInterval(checkConnection);
+        }
+      }, 100);
+    } else {
+      websocketClient.ws.addEventListener("message", this.handleWebSocketMessage);
+    }
+  },
+
+  beforeUnmount() {
+    // 移除WebSocket消息监听器
+    if (websocketClient.ws && websocketClient.ws.readyState === WebSocket.OPEN) {
+      websocketClient.ws.removeEventListener("message", this.handleWebSocketMessage);
+    }
   },
 };
 </script>

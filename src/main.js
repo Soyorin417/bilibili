@@ -7,6 +7,7 @@ import "element-plus/dist/index.css";
 import * as ElementPlusIconsVue from "@element-plus/icons-vue";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from 'axios'
+import websocketClient from './utils/websocket'
 
 const token = localStorage.getItem("token");
 
@@ -17,9 +18,10 @@ if (token) {
     .then(res => {
       const userInfo = res.data;
       localStorage.setItem("userInfo", JSON.stringify(userInfo));
-
       store.commit("user/SET_USER_INFO", userInfo);
-
+      
+      // Initialize WebSocket connection after user is authenticated
+      websocketClient.connect();
     })
     .catch(err => {
       console.error("main.js 获取用户信息失败", err);
@@ -28,13 +30,10 @@ if (token) {
     });
 }
 
-
-
 const app = createApp(App);
 
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component);
 }
-
 
 app.use(store).use(router).use(ElementPlus).mount("#app");

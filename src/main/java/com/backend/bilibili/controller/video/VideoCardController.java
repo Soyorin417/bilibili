@@ -1,6 +1,6 @@
 package com.backend.bilibili.controller.video;
 
-import com.backend.bilibili.pojo.video.VideoCardDTO;
+import com.backend.bilibili.service.dto.VideoCardDTO;
 import com.backend.bilibili.service.video.VideoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;

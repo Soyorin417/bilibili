@@ -37,7 +37,6 @@ public class InfoServiceImpl implements InfoService {
         responseMap.put("exp", userInfo.getExp());
         responseMap.put("coin", userInfo.getCoin());
         responseMap.put("bcoin", userInfo.getBcoin());
-        responseMap.put("following", userInfo.getFollowing());
         responseMap.put("fans", userInfo.getFans());
         responseMap.put("dynamic", userInfo.getDynamic());
         responseMap.put("role", userInfo.getRole());

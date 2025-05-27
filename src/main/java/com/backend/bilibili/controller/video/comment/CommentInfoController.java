@@ -2,7 +2,7 @@ package com.backend.bilibili.controller.video.comment;
 
 
 import com.backend.bilibili.pojo.video.comment.CommentInfo;
-import com.backend.bilibili.pojo.video.comment.CommentVO;
+import com.backend.bilibili.service.vo.CommentVO;
 import com.backend.bilibili.service.video.comment.CommentInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

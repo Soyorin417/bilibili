@@ -1,7 +1,7 @@
 package com.backend.bilibili.mapper.video.comment;
 
 import com.backend.bilibili.pojo.video.comment.ReplyInfo;
-import com.backend.bilibili.pojo.video.comment.ReplyVO;
+import com.backend.bilibili.service.vo.ReplyVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

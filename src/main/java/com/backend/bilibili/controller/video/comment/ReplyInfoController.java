@@ -1,7 +1,7 @@
 package com.backend.bilibili.controller.video.comment;
 
 import com.backend.bilibili.pojo.video.comment.ReplyInfo;
-import com.backend.bilibili.pojo.video.comment.ReplyVO;
+import com.backend.bilibili.service.vo.ReplyVO;
 import com.backend.bilibili.service.video.comment.ReplyInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

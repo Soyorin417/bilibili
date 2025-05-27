@@ -3,9 +3,12 @@ package com.backend.bilibili.service.video.impl;
 
 import com.backend.bilibili.mapper.video.VideoActionMapper;
 import com.backend.bilibili.mapper.video.VideoInfoMapper;
+import com.backend.bilibili.pojo.user.UserCollect;
 import com.backend.bilibili.pojo.video.VideoActionInfo;
 import com.backend.bilibili.service.user.account.InfoService;
+import com.backend.bilibili.service.user.account.UserCollectService;
 import com.backend.bilibili.service.video.VideoActionService;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,9 @@ public class VideoActionServiceImpl extends ServiceImpl<VideoActionMapper, Video
 
     @Autowired
     private InfoService infoService;
+
+    @Autowired
+    private UserCollectService userCollectService; // 注入收藏服务
 
     @Override
     public VideoActionInfo getUserVideoAction(Long videoId, Long userUid) {
@@ -75,37 +81,55 @@ public class VideoActionServiceImpl extends ServiceImpl<VideoActionMapper, Video
 
     @Override
     public boolean collectVideo(Long videoId, Long userUid) {
-
+        UserCollect exist = userCollectService.getOne(userUid,videoId);
+        if (exist != null) {
+            return false; // 已存在，不重复添加
+        }
+        // 1. 先更新或插入 VideoActionInfo 状态
         VideoActionInfo action = actionMapper.selectByUserAndVideo(userUid, videoId);
         if (action == null) {
             action = new VideoActionInfo();
             action.setVideoId(videoId);
             action.setUserUid(userUid);
             action.setIsCollect(true);
-
             actionMapper.insert(action);
         } else {
             action.setIsCollect(true);
-
-            System.out.println("collectVideo");
-            System.out.println(action);
             actionMapper.updateById(action);
         }
+
+        // 2. 添加收藏记录（封装在 UserCollectService）
+        userCollectService.addCollect(userUid, videoId);
+
+        // 3. 更新视频收藏数
         videoInfoMapper.increaseCollectCount(videoId);
         return true;
     }
 
+
     @Override
     public boolean cancelCollect(Long videoId, Long userUid) {
+        UserCollect exist = userCollectService.getOne(userUid, videoId);
+        if (exist == null) {
+            return false; // 不存在收藏记录，直接返回
+        }
+
+        // 删除收藏记录
+        userCollectService.deleteCollect(userUid, videoId);
+
+        // 更新 VideoActionInfo 状态
         VideoActionInfo action = actionMapper.selectByUserAndVideo(userUid, videoId);
         if (action != null && Boolean.TRUE.equals(action.getIsCollect())) {
             action.setIsCollect(false);
             actionMapper.updateById(action);
+
+            // 减少收藏数
             videoInfoMapper.decreaseCollectCount(videoId);
-            return true;
         }
-        return false;
+
+        return true;
     }
+
 
     @Override
     public boolean coinVideo(Long videoId, Long userUid) {

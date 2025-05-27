@@ -3,7 +3,7 @@ package com.backend.bilibili.service.video.comment.impl;
 import com.backend.bilibili.mapper.video.comment.CommentInfoMapper;
 import com.backend.bilibili.mapper.video.comment.ReplyInfoMapper;
 import com.backend.bilibili.pojo.video.comment.ReplyInfo;
-import com.backend.bilibili.pojo.video.comment.ReplyVO;
+import com.backend.bilibili.service.vo.ReplyVO;
 import com.backend.bilibili.service.video.comment.ReplyInfoService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;

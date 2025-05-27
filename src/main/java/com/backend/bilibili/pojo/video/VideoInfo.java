@@ -19,11 +19,10 @@ public class VideoInfo {
     private int id;
 
     private String title;
-    private String views;
-    private String comments;
+    private Long views;
+    private int comments;
     private Date time;
     private String description;
-    private String avatar;
 
     @TableField("video_url")
     private String videoUrl;
@@ -36,7 +35,6 @@ public class VideoInfo {
     @TableField("author_id")
     private Long authorId;
 
-    private String follow;
     private String duration;
 
     @TableField("like_count")
@@ -50,8 +48,6 @@ public class VideoInfo {
 
     @TableField("share_count")
     private int shareCount;
-
-    private String introduction;
 
     private String status;
 }

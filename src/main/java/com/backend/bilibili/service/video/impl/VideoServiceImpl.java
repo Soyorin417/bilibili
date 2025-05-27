@@ -3,17 +3,14 @@ package com.backend.bilibili.service.video.impl;
 import com.backend.bilibili.mapper.user.UserInfoMapper;
 import com.backend.bilibili.mapper.video.VideoInfoMapper;
 import com.backend.bilibili.pojo.user.UserInfo;
-import com.backend.bilibili.pojo.video.VideoCardDTO;
+import com.backend.bilibili.service.dto.VideoCardDTO;
 import com.backend.bilibili.pojo.video.VideoInfo;
 import com.backend.bilibili.service.video.VideoService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,10 +33,19 @@ public class VideoServiceImpl implements VideoService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        Map<Long, String> authorMap = userInfoMapper.selectBatchIds(authorIds)
-                .stream()
-                .collect(Collectors.toMap(UserInfo::getId, UserInfo::getUsername));
 
+
+
+        QueryWrapper<UserInfo> wrapper = new QueryWrapper<>();
+        wrapper.in("uid", authorIds);
+        List<UserInfo> authors = userInfoMapper.selectList(wrapper);
+
+        Map<Long, String> authorMap = new HashMap<>();
+        for (UserInfo author : authors) {
+            authorMap.put(author.getUid(), author.getUsername());
+        }
+
+        System.out.println(authorMap);
         return videos.stream().map(video -> {
             VideoCardDTO dto = new VideoCardDTO();
             dto.setId((long) video.getId());

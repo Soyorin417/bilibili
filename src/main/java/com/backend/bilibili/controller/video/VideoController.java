@@ -1,6 +1,7 @@
 package com.backend.bilibili.controller.video;
 
 import com.backend.bilibili.pojo.video.VideoInfo;
+import com.backend.bilibili.service.dto.VideoViewDTO;
 import com.backend.bilibili.service.minio.MinioService;
 import com.backend.bilibili.service.video.VideoInfoService;
 import com.backend.bilibili.utils.MinioUrlUtil;
@@ -21,14 +22,20 @@ public class VideoController {
     private MinioService minioService;
 
     @GetMapping("/video/getAllVideo")
-    public List<VideoInfo> getAllVideo() {
-        return videoInfoService.getAllVideos();
+    public List<VideoViewDTO> getAllVideoViews() {
+        return videoInfoService.getAllVideoViews();
     }
 
     @GetMapping("/video/getVideoById")
-    public VideoInfo getVideoById(@RequestParam int id) {
+    public VideoViewDTO getVideoById(@RequestParam int id) {
         return videoInfoService.getVideoInfoById(id);
     }
+    @PostMapping("/video/play/{videoId}")
+    public ResponseEntity<String> addPlayCount(@PathVariable Long videoId) {
+        boolean result = videoInfoService.increaseViewCount(videoId);
+        return result ? ResponseEntity.ok("success") : ResponseEntity.status(500).body("fail");
+    }
+
 
     @PostMapping("/submit")
     public ResponseEntity<String> submitVideo(
@@ -91,7 +98,7 @@ public class VideoController {
     }
 
     @GetMapping("/{id}")
-    public VideoInfo getById(@PathVariable int id) {
+    public VideoViewDTO getById(@PathVariable int id) {
         return videoInfoService.getVideoInfoById(id);
     }
 }

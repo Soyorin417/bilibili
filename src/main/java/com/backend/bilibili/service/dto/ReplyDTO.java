@@ -1,4 +1,4 @@
-package com.backend.bilibili.pojo.video.comment;
+package com.backend.bilibili.service.dto;
 
 import lombok.Data;
 

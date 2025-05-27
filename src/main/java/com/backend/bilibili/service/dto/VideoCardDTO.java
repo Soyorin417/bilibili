@@ -1,4 +1,4 @@
-package com.backend.bilibili.pojo.video;
+package com.backend.bilibili.service.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,9 +13,9 @@ public class VideoCardDTO {
 
     private String title;
 
-    private String views;
+    private Long views;
 
-    private String comments;
+    private int comments;
 
     private Date time;
 

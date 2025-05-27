@@ -1,21 +1,21 @@
-package com.backend.bilibili.pojo.video.comment;
+package com.backend.bilibili.service.vo;
 
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
-public class ReplyVO {
+public class CommentVO {
     private Long id;
-    private Long commentId;
+    private Integer videoId;
     private Long userUid;
     private String content;
-    private String replyToUsername;
     private LocalDateTime createTime;
     private Integer likeCount;
+    private Boolean isUp;
     private Boolean isLiked;
+    private Integer replyCount;
 
-    // 附加用户信息
     private String avatar;
     private String username;
     private Integer level;

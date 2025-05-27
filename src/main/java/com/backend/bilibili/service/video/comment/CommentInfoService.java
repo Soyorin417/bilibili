@@ -1,8 +1,8 @@
 package com.backend.bilibili.service.video.comment;
 
-import com.backend.bilibili.pojo.video.comment.CommentDTO;
+import com.backend.bilibili.service.dto.CommentDTO;
 import com.backend.bilibili.pojo.video.comment.CommentInfo;
-import com.backend.bilibili.pojo.video.comment.CommentVO;
+import com.backend.bilibili.service.vo.CommentVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

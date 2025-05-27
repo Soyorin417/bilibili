@@ -1,9 +1,9 @@
 package com.backend.bilibili.service.video.comment.impl;
 
 import com.backend.bilibili.mapper.video.comment.CommentInfoMapper;
-import com.backend.bilibili.pojo.video.comment.CommentDTO;
+import com.backend.bilibili.service.dto.CommentDTO;
 import com.backend.bilibili.pojo.video.comment.CommentInfo;
-import com.backend.bilibili.pojo.video.comment.CommentVO;
+import com.backend.bilibili.service.vo.CommentVO;
 import com.backend.bilibili.pojo.video.comment.ReplyInfo;
 import com.backend.bilibili.service.video.comment.CommentInfoService;
 import com.backend.bilibili.service.video.comment.ReplyInfoService;

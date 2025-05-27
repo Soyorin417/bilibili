@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import { animeApi } from '@/api/anime';
 export default {
   name: "AnimeRanking",
   data() {
@@ -39,8 +39,12 @@ export default {
   },
   methods: {
     async getAnimeRanking() {
-      const response = await axios.get("http://localhost:8081/getAllAnime");
-      this.rankingList = response.data.slice(0, 5);
+      try {
+        const response = await animeApi.getAllAnime();
+        this.rankingList = response.data.slice(0, 5);
+      } catch (error) {
+        console.error('获取动漫排行榜失败:', error);
+      }
     },
   },
 };

@@ -177,74 +177,8 @@
 <script>
 import VideoBar from "@/components/navBar/VideoBar.vue";
 import DataNav from "@/components/navBar/DataNav.vue";
-import axios from "axios";
+import { uploadApi } from "@/api/upload";
 import { mapGetters } from "vuex";
-
-// 创建 axios 实例
-const api = axios.create({
-  baseURL: "/api",
-  timeout: 60000, // 增加超时时间到60秒
-  withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// 重试配置
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1秒
-
-// 请求拦截器
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    // 添加重试计数
-    config.retryCount = config.retryCount || 0;
-    return config;
-  },
-  (error) => {
-    console.error("Request error:", error);
-    return Promise.reject(error);
-  }
-);
-
-// 响应拦截器
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const config = error.config;
-
-    // 如果配置了重试，并且还没有超过最大重试次数
-    if (config && config.retryCount < MAX_RETRIES) {
-      config.retryCount += 1;
-
-      // 延迟重试
-      await new Promise((resolve) =>
-        setTimeout(resolve, RETRY_DELAY * config.retryCount)
-      );
-
-      console.log(
-        `Retrying request (${config.retryCount}/${MAX_RETRIES}): ${config.url}`
-      );
-      return api(config);
-    }
-
-    console.error("Response error:", error);
-    if (error.code === "ECONNABORTED") {
-      alert("请求超时，请检查网络连接");
-    } else if (error.response) {
-      alert(`请求失败: ${error.response.data || error.message}`);
-    } else if (error.request) {
-      alert("服务器无响应，请检查网络连接");
-    } else {
-      alert(`请求错误: ${error.message}`);
-    }
-    return Promise.reject(error);
-  }
-);
 
 export default {
   name: "UpLoadView",
@@ -375,24 +309,10 @@ export default {
           fileSize: this.selectedFile.size,
         });
 
-        const videoResponse = await axios.post(
-          "http://localhost:8081/minio/upload",
-          videoFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${token}`,
-            },
-            timeout: 300000,
-            onUploadProgress: (progressEvent) => {
-              const percentCompleted = Math.round(
-                (progressEvent.loaded * 100) / progressEvent.total
-              );
-              this.uploadProgress = percentCompleted;
-              console.log(`视频上传进度: ${percentCompleted}%`);
-            },
-          }
-        );
+        const videoResponse = await uploadApi.uploadToMinIO(videoFormData, (progress) => {
+          this.uploadProgress = progress;
+          console.log(`视频上传进度: ${progress}%`);
+        });
 
         console.log("视频上传响应:", videoResponse.data);
 
@@ -452,17 +372,7 @@ export default {
           });
           coverFormData.append("file", coverFile);
 
-          const coverResponse = await axios.post(
-            "http://localhost:8081/minio/upload",
-            coverFormData,
-            {
-              headers: {
-                "Content-Type": "multipart/form-data",
-                Authorization: `Bearer ${token}`,
-              },
-              timeout: 300000,
-            }
-          );
+          const coverResponse = await uploadApi.uploadToMinIO(coverFormData);
 
           console.log("封面上传响应:", coverResponse.data);
 
@@ -516,16 +426,7 @@ export default {
           avatar: this.userInfo.avatar || "",
         });
 
-        const submitResponse = await axios({
-          method: "post",
-          url: "http://localhost:8081/submit",
-          data: formDataSubmit,
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`,
-          },
-          timeout: 10000,
-        });
+        const submitResponse = await uploadApi.submitVideo(formDataSubmit);
 
         if (submitResponse.status === 200) {
           alert("视频投稿成功！");

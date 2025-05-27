@@ -1,7 +1,12 @@
 <template>
   <div class="banner-section">
     <div class="carousel-container">
-      <div class="carousel-slide" v-for="(slide, index) in slides" :key="index" v-show="currentIndex === index">
+      <div
+        class="carousel-slide"
+        v-for="(slide, index) in slides"
+        :key="index"
+        v-show="currentIndex === index"
+      >
         <img :src="slide.image" class="banner-image" :alt="slide.title" />
         <div class="banner-title">
           <h1>{{ slide.title }}</h1>
@@ -9,11 +14,11 @@
         </div>
       </div>
     </div>
-    
+
     <div class="thumbnail-nav">
       <div class="thumbnail-container">
-        <div 
-          v-for="(slide, index) in slides" 
+        <div
+          v-for="(slide, index) in slides"
           :key="index"
           class="thumbnail-item"
           :class="{ active: currentIndex === index }"
@@ -29,20 +34,19 @@
 
 <script>
 export default {
-  name: 'AnimeBanner',
+  name: "AnimeBanner",
   data() {
     return {
       currentIndex: 0,
       slides: [
         {
-          title: '最强王者的第二人生',
-          subtitle: 'The Beginning After the End',
-          image: '/path/to/banner1.jpg',
-          thumbnail: '/path/to/thumb1.jpg'
+          title: "最强王者的第二人生",
+          subtitle: "The Beginning After the End",
+          image: "/path/to/banner1.jpg",
+          thumbnail: "/path/to/thumb1.jpg",
         },
-        // Add more slides here
-      ]
-    }
+      ],
+    };
   },
   methods: {
     setCurrentSlide(index) {
@@ -53,12 +57,12 @@ export default {
     },
     startAutoPlay() {
       setInterval(this.nextSlide, 5000); // Change slide every 5 seconds
-    }
+    },
   },
   mounted() {
     this.startAutoPlay();
-  }
-}
+  },
+};
 </script>
 
 <style scoped>
@@ -158,4 +162,4 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-</style> 
+</style>

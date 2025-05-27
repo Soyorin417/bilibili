@@ -97,6 +97,7 @@ export default {
     "clearHistory",
     "setSearchQuery",
   ],
+
   methods: {
     onBlur() {
       setTimeout(() => {

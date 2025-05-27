@@ -60,7 +60,7 @@
 
 <script>
 import { AlarmClock } from "@icon-park/vue-next";
-import axios from "axios";
+import { animeApi } from '@/api/anime';
 
 export default {
   name: "AnimeSchedule",
@@ -98,7 +98,7 @@ export default {
       this.isLoading = true;
       this.error = null;
       try {
-        const response = await axios.get("http://localhost:8081/getAllAnimeSchedule");
+        const response = await animeApi.getAnimeSchedule();
         const animeList = response.data;
 
         // 按星期几对数据进行分组

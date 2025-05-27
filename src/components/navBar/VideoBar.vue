@@ -55,13 +55,8 @@ export default {
       // 搜索相关
       searchQuery: "",
       isSearchFocused: false,
-      searchHistory: [
-        "缘之空",
-        "bilibili icon",
-        "icon图标",
-        "明日方舟",
-        "妈妈妈妈你看我有",
-      ],
+      searchHistory: ["一等情事", "bilibili icon", "icon图标", "明日方舟", "小祥"],
+      historyTags: [],
       hotSearchItems: [
         { title: "TES战胜NIP", tag: "热", tagType: "hot-tag-red" },
         { title: "中国队将不参加今年LCG杯", tag: "热", tagType: "hot-tag-red" },
@@ -87,23 +82,26 @@ export default {
     },
     handleSearch() {
       if (this.searchQuery.trim()) {
-        // 添加到搜索历史
+        // 添加到搜索历史和标签
         if (!this.searchHistory.includes(this.searchQuery)) {
           this.searchHistory.unshift(this.searchQuery);
+          this.historyTags.unshift(this.searchQuery);
           // 限制历史记录数量
           if (this.searchHistory.length > 10) {
             this.searchHistory.pop();
+            this.historyTags.pop();
           }
         }
         console.log("搜索:", this.searchQuery);
+        this.$router.push({
+          path: "/search",
+          query: { keyword: this.searchQuery },
+        });
       }
-      this.$router.push({
-        path: "/search",
-        query: { keyword: this.searchQuery },
-      });
     },
     clearHistory() {
       this.searchHistory = [];
+      this.historyTags = [];
     },
     setSearchQuery(query) {
       this.searchQuery = query;

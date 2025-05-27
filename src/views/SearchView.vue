@@ -54,55 +54,98 @@
           <div class="spinner"></div>
           <span>加载中...</span>
         </div>
-        <div v-else-if="results.length === 0" class="no-results">
+        <div v-else-if="results.length === 0 && users.length === 0" class="no-results">
           <i class="bi bi-search"></i>
           <p>没有找到相关内容</p>
         </div>
-        <div v-else class="results-grid">
-          <div v-for="(item, index) in results" :key="index" class="result-card">
-            <router-link :to="`/video/${item.id}`" class="video-link" target="_blank">
-              <div class="video-thumbnail">
-                <img :src="item.image" :alt="item.title" />
-                <span class="video-duration">{{ item.duration }}</span>
-                <div class="video-stats">
-                  <span><i class="bi bi-play-fill"></i> {{ item.views }}</span>
-                  <span><i class="bi bi-chat-fill"></i> {{ item.danmaku }}</span>
+        <div v-else>
+          <!-- 用户搜索结果 -->
+          <div v-if="users.length > 0" class="user-results mb-4">
+            <h3 class="section-title">用户</h3>
+            <div class="user-grid">
+              <div v-for="user in users" :key="user.id" class="user-card">
+                <div class="user-card-left">
+                  <img
+                    class="user-avatar"
+                    :src="user.avatar"
+                    :alt="user.username"
+                    @click="goToChat(user.id)"
+                    style="cursor: pointer"
+                  />
                 </div>
-              </div>
-              <div class="video-info">
-                <h3 class="video-title">{{ item.title }}</h3>
-                <div class="video-meta">
-                  <div class="uploader-info">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      xmlns:xlink="http://www.w3.org/1999/xlink"
-                      viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
-                      class="bili-video-card__info--author-ico mr_2"
-                      data-v-603f41ad=""
-                    >
-                      <!--[-->
-                      <path
-                        d="M6.15 8.24805C6.5642 8.24805 6.9 8.58383 6.9 8.99805L6.9 12.7741C6.9 13.5881 7.55988 14.248 8.3739 14.248C9.18791 14.248 9.8478 13.5881 9.8478 12.7741L9.8478 8.99805C9.8478 8.58383 10.1836 8.24805 10.5978 8.24805C11.012 8.24805 11.3478 8.58383 11.3478 8.99805L11.3478 12.7741C11.3478 14.41655 10.01635 15.748 8.3739 15.748C6.73146 15.748 5.4 14.41655 5.4 12.7741L5.4 8.99805C5.4 8.58383 5.73578 8.24805 6.15 8.24805z"
-                        fill="currentColor"
-                      ></path>
-                      <path
-                        d="M12.6522 8.99805C12.6522 8.58383 12.98795 8.24805 13.4022 8.24805L15.725 8.24805C17.31285 8.24805 18.6 9.53522 18.6 11.123C18.6 12.71085 17.31285 13.998 15.725 13.998L14.1522 13.998L14.1522 14.998C14.1522 15.4122 13.8164 15.748 13.4022 15.748C12.98795 15.748 12.6522 15.4122 12.6522 14.998L12.6522 8.99805zM14.1522 12.498L15.725 12.498C16.4844 12.498 17.1 11.8824 17.1 11.123C17.1 10.36365 16.4844 9.74804 15.725 9.74804L14.1522 9.74804L14.1522 12.498z"
-                        fill="currentColor"
-                      ></path>
-                      <path
-                        d="M12 4.99805C9.48178 4.99805 7.283 5.12616 5.73089 5.25202C4.65221 5.33949 3.81611 6.16352 3.72 7.23254C3.60607 8.4998 3.5 10.171 3.5 11.998C3.5 13.8251 3.60607 15.4963 3.72 16.76355C3.81611 17.83255 4.65221 18.6566 5.73089 18.7441C7.283 18.8699 9.48178 18.998 12 18.998C14.5185 18.998 16.7174 18.8699 18.2696 18.74405C19.3481 18.65655 20.184 17.8328 20.2801 16.76405C20.394 15.4973 20.5 13.82645 20.5 11.998C20.5 10.16965 20.394 8.49877 20.2801 7.23205C20.184 6.1633 19.3481 5.33952 18.2696 5.25205C16.7174 5.12618 14.5185 4.99805 12 4.99805zM5.60965 3.75693C7.19232 3.62859 9.43258 3.49805 12 3.49805C14.5677 3.49805 16.8081 3.62861 18.3908 3.75696C20.1881 3.90272 21.6118 5.29278 21.7741 7.09773C21.8909 8.3969 22 10.11405 22 11.998C22 13.88205 21.8909 15.5992 21.7741 16.8984C21.6118 18.7033 20.1881 20.09335 18.3908 20.23915C16.8081 20.3675 14.5677 20.498 12 20.498C9.43258 20.498 7.19232 20.3675 5.60965 20.2392C3.81206 20.0934 2.38831 18.70295 2.22603 16.8979C2.10918 15.5982 2 13.8808 2 11.998C2 10.1153 2.10918 8.39787 2.22603 7.09823C2.38831 5.29312 3.81206 3.90269 5.60965 3.75693z"
-                        fill="currentColor"
-                      ></path>
-                      <!--]-->
-                    </svg>
-                    <span class="uploader-name">{{ item.uploader }}</span>
-                    <span class="upload-time">{{ item.date }}</span>
+                <div class="user-card-main">
+                  <div class="user-header">
+                    <span class="username">{{ user.username }}</span>
+                    <span class="user-level" v-if="user.level">LV{{ user.level }}</span>
                   </div>
+                  <div class="user-meta-desc">
+                    <span>{{ formatNumber(user.followers) }}粉丝 ·</span>
+                    <span>{{ formatNumber(user.videos) }}个视频 ·</span>
+                    <span class="user-desc">{{
+                      user.description || "这个用户很懒，什么都没写~"
+                    }}</span>
+                  </div>
+                  <button
+                    class="follow-btn"
+                    :class="{ followed: user.isFollowed }"
+                    @click="user.isFollowed ? handleUnfollow(user) : handleFollow(user)"
+                  >
+                    {{ user.isFollowed ? "已关注" : "+ 关注" }}
+                  </button>
                 </div>
+                <div class="user-card-action"></div>
               </div>
-            </router-link>
+            </div>
+          </div>
+
+          <!-- 视频搜索结果 -->
+          <div v-if="results.length > 0" class="video-results">
+            <h3 class="section-title">视频</h3>
+            <div class="results-grid">
+              <div v-for="(item, index) in results" :key="index" class="result-card">
+                <router-link :to="`/video/${item.id}`" class="video-link" target="_blank">
+                  <div class="video-thumbnail">
+                    <img :src="item.image" :alt="item.title" />
+                    <span class="video-duration">{{ item.duration }}</span>
+                    <div class="video-stats">
+                      <span><i class="bi bi-play-fill"></i> {{ item.views }}</span>
+                      <span><i class="bi bi-chat-fill"></i> {{ item.danmaku }}</span>
+                    </div>
+                  </div>
+                  <div class="video-info">
+                    <h3 class="video-title">{{ item.title }}</h3>
+                    <div class="video-meta">
+                      <div class="uploader-info">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          xmlns:xlink="http://www.w3.org/1999/xlink"
+                          viewBox="0 0 24 24"
+                          width="16"
+                          height="16"
+                          class="bili-video-card__info--author-ico mr_2"
+                          data-v-603f41ad=""
+                        >
+                          <path
+                            d="M6.15 8.24805C6.5642 8.24805 6.9 8.58383 6.9 8.99805L6.9 12.7741C6.9 13.5881 7.55988 14.248 8.3739 14.248C9.18791 14.248 9.8478 13.5881 9.8478 12.7741L9.8478 8.99805C9.8478 8.58383 10.1836 8.24805 10.5978 8.24805C11.012 8.24805 11.3478 8.58383 11.3478 8.99805L11.3478 12.7741C11.3478 14.41655 10.01635 15.748 8.3739 15.748C6.73146 15.748 5.4 14.41655 5.4 12.7741L5.4 8.99805C5.4 8.58383 5.73578 8.24805 6.15 8.24805z"
+                            fill="currentColor"
+                          ></path>
+                          <path
+                            d="M12.6522 8.99805C12.6522 8.58383 12.98795 8.24805 13.4022 8.24805L15.725 8.24805C17.31285 8.24805 18.6 9.53522 18.6 11.123C18.6 12.71085 17.31285 13.998 15.725 13.998L14.1522 13.998L14.1522 14.998C14.1522 15.4122 13.8164 15.748 13.4022 15.748C12.98795 15.748 12.6522 15.4122 12.6522 14.998L12.6522 8.99805zM14.1522 12.498L15.725 12.498C16.4844 12.498 17.1 11.8824 17.1 11.123C17.1 10.36365 16.4844 9.74804 15.725 9.74804L14.1522 9.74804L14.1522 12.498z"
+                            fill="currentColor"
+                          ></path>
+                          <path
+                            d="M12 4.99805C9.48178 4.99805 7.283 5.12616 5.73089 5.25202C4.65221 5.33949 3.81611 6.16352 3.72 7.23254C3.60607 8.4998 3.5 10.171 3.5 11.998C3.5 13.8251 3.60607 15.4963 3.72 16.76355C3.81611 17.83255 4.65221 18.6566 5.73089 18.7441C7.283 18.8699 9.48178 18.998 12 18.998C14.5185 18.998 16.7174 18.8699 18.2696 18.74405C19.3481 18.65655 20.184 17.8328 20.2801 16.76405C20.394 15.4973 20.5 13.82645 20.5 11.998C20.5 10.16965 20.394 8.49877 20.2801 7.23205C20.184 6.1633 19.3481 5.33952 18.2696 5.25205C16.7174 5.12618 14.5185 4.99805 12 4.99805zM5.60965 3.75693C7.19232 3.62859 9.43258 3.49805 12 3.49805C14.5677 3.49805 16.8081 3.62861 18.3908 3.75696C20.1881 3.90272 21.6118 5.29278 21.7741 7.09773C21.8909 8.3969 22 10.11405 22 11.998C22 13.88205 21.8909 15.5992 21.7741 16.8984C21.6118 18.7033 20.1881 20.09335 18.3908 20.23915C16.8081 20.3675 14.5677 20.498 12 20.498C9.43258 20.498 7.19232 20.3675 5.60965 20.2392C3.81206 20.0934 2.38831 18.70295 2.22603 16.8979C2.10918 15.5982 2 13.8808 2 11.998C2 10.1153 2.10918 8.39787 2.22603 7.09823C2.38831 5.29312 3.81206 3.90269 5.60965 3.75693z"
+                            fill="currentColor"
+                          ></path>
+                        </svg>
+                        <span class="uploader-name">{{ item.uploader }}</span>
+                        <span class="upload-time">{{ item.date }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </router-link>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -113,7 +156,9 @@
 <script>
 import VideoBar from "@/components/navBar/VideoBar.vue";
 import { mapGetters } from "vuex";
-import axios from "axios";
+import { searchApi } from "@/api/search";
+import { userApi } from "@/api/user";
+import { createSession } from "@/api/session";
 
 export default {
   name: "SearchView",
@@ -128,6 +173,7 @@ export default {
       currentFilter: "all",
       results: [],
       videoInfos: [],
+      users: [],
     };
   },
   computed: {
@@ -139,25 +185,14 @@ export default {
   },
   methods: {
     async fetchSearchResults() {
-      this.loading = true;
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.error("Token is missing");
-        return;
-      }
-
       try {
-        const response = await axios.get("http://127.0.0.1:8081/video/getAllVideo", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        this.loading = true;
+        const keyword = this.$route.query.keyword || "";
 
-        // 处理成功响应
-        this.videoInfos = response.data;
-        console.log("videoInfos:", this.videoInfos[0].image);
-        this.results = this.videoInfos.map((video) => ({
+        // 搜索视频
+        const videoResponse = await searchApi.searchVideo(keyword);
+        console.log("视频搜索返回：", videoResponse.data);
+        this.results = videoResponse.data.map((video) => ({
           id: video.id,
           title: video.title,
           image: video.image,
@@ -169,43 +204,27 @@ export default {
           date: this.formatDate(video.time),
         }));
 
-        // 获取每个视频的互动状态
+        // 如果用户已登录，搜索用户
         if (this.userInfo && this.userInfo.id) {
-          await Promise.all(
-            this.videoInfos.map(async (video) => {
-              try {
-                const actionResponse = await axios.get(
-                  `http://127.0.0.1:8081/video/action/status/${video.id}?userUid=${this.userInfo.id}`,
-                  {
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                    },
-                  }
-                );
-                if (actionResponse.data) {
-                  // 更新视频的互动状态
-                  video.isLiked = actionResponse.data.isLiked;
-                  video.isCollected = actionResponse.data.isCollected;
-                  video.isCoined = actionResponse.data.isCoined;
-                  video.isShared = actionResponse.data.isShared;
-                }
-              } catch (error) {
-                console.error(`获取视频 ${video.id} 的互动状态失败:`, error);
-              }
-            })
-          );
+          const userResponse = await searchApi.searchUser(keyword, this.userInfo.id);
+          console.log("用户搜索返回：", userResponse.data);
+          this.users = userResponse.data.map((user) => ({
+            ...user,
+            isFollowed: user.follow,
+          }));
         }
 
         this.totalResults = this.results.length;
       } catch (error) {
-        console.error("获取视频列表失败:", error);
-        alert("获取视频信息失败，请稍后再试");
+        console.error("获取搜索结果失败:", error);
+        this.error = "获取搜索结果失败，请稍后重试";
       } finally {
         this.loading = false;
       }
     },
 
     formatNumber(num) {
+      if (!num && num !== 0) return "0";
       if (num >= 10000) {
         return (num / 10000).toFixed(1) + "万";
       }
@@ -230,6 +249,52 @@ export default {
       }
       // 大于30天
       return `${date.getMonth() + 1}-${date.getDate()}`;
+    },
+
+    async handleFollow(user) {
+      try {
+        console.log("关注用户 - 当前用户ID:", this.userInfo.id, "目标用户ID:", user.id);
+        const res = await userApi.followUser(this.userInfo.id, user.id);
+        console.log("关注返回：", res.data);
+        user.isFollowed = true;
+      } catch (e) {
+        this.$message && this.$message.error("关注失败，请重试");
+        console.error("关注异常：", e);
+      }
+    },
+    async handleUnfollow(user) {
+      try {
+        console.log(
+          "取消关注用户 - 当前用户ID:",
+          this.userInfo.id,
+          "目标用户ID:",
+          user.id
+        );
+        const res = await userApi.unfollowUser(this.userInfo.id, user.id);
+        console.log("取消关注返回：", res.data);
+        user.isFollowed = false;
+      } catch (e) {
+        this.$message && this.$message.error("取消关注失败，请重试");
+        console.error("取消关注异常：", e);
+      }
+    },
+    async goToChat() {
+      if (!this.userInfo || !this.userInfo.id) {
+        this.$message && this.$message.warning("请先登录后再聊天");
+        return;
+      }
+      try {
+        // 创建会话
+        await createSession({
+          userId: this.userInfo.id,
+          createTime: new Date().toISOString(),
+        });
+        // 跳转到消息页面
+        this.$router.push("/message");
+      } catch (error) {
+        console.error("创建会话失败:", error);
+        this.$message && this.$message.error("创建会话失败，请重试");
+      }
     },
   },
   watch: {
@@ -420,7 +485,6 @@ export default {
   height: 22px;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   font-weight: 500;
   text-align: left;
@@ -482,5 +546,122 @@ export default {
   font-size: 48px;
   margin-bottom: 12px;
   display: block;
+}
+
+.user-results {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  color: #18191c;
+}
+
+.user-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.user-card-left {
+  margin-right: 20px;
+}
+
+.user-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-card-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.username {
+  font-weight: bold;
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.user-level {
+  background: #ff4d4f;
+  color: #fff;
+  font-size: 12px;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 2px;
+}
+
+.user-meta-desc {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #9499a0;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  gap: 4px;
+}
+
+.user-desc {
+  color: #61666d;
+
+  min-width: 0;
+}
+
+.user-card-action {
+  margin-left: 24px;
+}
+
+.follow-btn {
+  align-self: flex-start;
+  margin-top: 10px;
+  background: #00aeec;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.follow-btn:hover {
+  background: #0096c7;
+}
+
+.follow-btn.followed {
+  background: #e5e5e5;
+  color: #aaa;
+  border: 1px solid #e5e5e5;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem;
 }
 </style>

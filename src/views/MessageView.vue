@@ -36,11 +36,12 @@ export default {
       sessions: [],
       selectedSession: null,
       currentUser: localStorage.getItem("username") || "",
+      hasAutoSelected: false,
     };
   },
   methods: {
     async getAllSessions() {
-      const url = "http://localhost:8081/sessions";
+      const url = "http://localhost:8081/api/sessions";
       const token = localStorage.getItem("token");
       if (!token) {
         console.error("Token is missing");
@@ -54,8 +55,9 @@ export default {
         });
         this.sessions = response.data;
         console.log(this.sessions, "this.sessions");
-        if (this.sessions.length > 0) {
+        if (!this.hasAutoSelected && this.sessions.length > 0) {
           this.selectSession(this.sessions[0]);
+          this.hasAutoSelected = true;
         }
       } catch (error) {
         console.error("Error fetching sessions:", error);
@@ -63,7 +65,7 @@ export default {
     },
 
     async getMessages(fromUser, toUser) {
-      const url = `http://localhost:8081/messages/private?user1=${fromUser}&user2=${toUser}`;
+      const url = `http://localhost:8081/api/messages/private?user1=${fromUser}&user2=${toUser}`;
       const token = localStorage.getItem("token");
 
       try {
@@ -147,7 +149,7 @@ export default {
         websocketClient.send(messageData);
 
         // 同时保存到后端数据库
-        const url = `http://localhost:8081/messages`;
+        const url = `http://localhost:8081/api/messages`;
         const token = localStorage.getItem("token");
         try {
           const response = await axios.post(url, messageWithUserInfo, {
@@ -165,51 +167,55 @@ export default {
     handleWebSocketMessage(event) {
       try {
         const rawMessage = event.data;
-        // 检查是否是 "[用户]" 开头的消息
-        if (rawMessage.startsWith("[用户]")) {
-          // 提取JSON部分
-          const jsonStartIndex = rawMessage.indexOf("：") + 1; // 使用中文冒号
-          if (jsonStartIndex > 0) {
-            const jsonStr = rawMessage.substring(jsonStartIndex);
-            const data = JSON.parse(jsonStr);
+        console.log("处理WebSocket消息:", rawMessage);
 
-            if (data.type === "private_message") {
-              const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-              const userId = parseInt(userInfo.id);
+        // 正确的前缀匹配
+        const prefixMatch = rawMessage.match(/^\[.*?]：/);
+        let jsonStr = rawMessage;
+        if (prefixMatch) {
+          jsonStr = rawMessage.substring(prefixMatch[0].length);
+        }
 
-              // 只处理发送给当前用户的消息
-              if (data.toUserId === userId) {
-                // 检查消息是否属于当前会话
-                if (
-                  this.selectedSession &&
-                  ((this.selectedSession.user1Id === data.fromUserId &&
-                    this.selectedSession.user2Id === userId) ||
-                    (this.selectedSession.user1Id === userId &&
-                      this.selectedSession.user2Id === data.fromUserId))
-                ) {
-                  // 将新消息添加到当前会话
-                  const newMessage = {
-                    content: data.content,
-                    timestamp: data.timestamp,
-                    fromUserId: data.fromUserId,
-                    toUserId: data.toUserId,
-                    avatar: data.avatar,
-                    username: data.username,
-                  };
+        // 只处理以 { 开头的消息
+        if (!jsonStr.trim().startsWith("{")) {
+          // 不是 JSON 消息，直接忽略
+          return;
+        }
 
-                  if (!this.selectedSession.messages) {
-                    this.selectedSession.messages = [];
-                  }
-                  this.selectedSession.messages.push(newMessage);
-                  this.selectedSession = { ...this.selectedSession };
-                }
+        // 尝试解析 JSON
+        const data = JSON.parse(jsonStr);
+
+        if (data.type === "private_message") {
+          const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+          const userId = parseInt(userInfo.id);
+
+          // 只处理发送给当前用户的消息
+          if (data.toUserId === userId) {
+            // 检查消息是否属于当前会话
+            if (
+              this.selectedSession &&
+              ((this.selectedSession.user1Id === data.fromUserId &&
+                this.selectedSession.user2Id === userId) ||
+                (this.selectedSession.user1Id === userId &&
+                  this.selectedSession.user2Id === data.fromUserId))
+            ) {
+              // 将新消息添加到当前会话
+              const newMessage = {
+                content: data.content,
+                timestamp: data.timestamp,
+                fromUserId: data.fromUserId,
+                toUserId: data.toUserId,
+                avatar: data.avatar,
+                username: data.username,
+              };
+
+              if (!this.selectedSession.messages) {
+                this.selectedSession.messages = [];
               }
+              this.selectedSession.messages.push(newMessage);
+              this.selectedSession = { ...this.selectedSession };
             }
           }
-        } else {
-          // 如果不是预期格式，尝试直接解析为JSON
-          const data = JSON.parse(rawMessage);
-          console.log("Received direct JSON message:", data);
         }
       } catch (error) {
         console.error("Error handling WebSocket message:", error);
@@ -273,5 +279,15 @@ export default {
   flex: 1;
   background: #f4f5f7;
   overflow-y: auto;
+}
+.session {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.session.active {
+  background: #e0e0e0;
 }
 </style>

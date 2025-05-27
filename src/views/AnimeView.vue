@@ -159,7 +159,7 @@
 import AnimeBar from "@/components/navBar/AnimeBar.vue";
 import AnimeSchedule from "@/components/AnimeSchedule.vue";
 import AnimeRanking from "@/components/AnimeRanking.vue";
-import axios from "axios";
+import { animeApi } from '@/api/anime';
 export default {
   name: "AnimeView",
   components: {
@@ -169,8 +169,12 @@ export default {
   },
   methods: {
     async getAnimeList() {
-      const response = await axios.get("http://localhost:8081/getAllAnime");
+      try {
+        const response = await animeApi.getAllAnime();
       this.animeList = response.data;
+      } catch (error) {
+        console.error('获取动漫列表失败:', error);
+      }
     },
   },
   mounted() {

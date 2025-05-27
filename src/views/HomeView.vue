@@ -126,7 +126,8 @@
 import VideoCard from "@/components/homeView/VideoCard.vue";
 import NavBar from "@/components/navBar/NavBar.vue";
 import TopNav from "@/components/navBar/TopNav.vue";
-import axios from "axios";
+import { videoApi } from "@/api/video";
+
 export default {
   name: "HomeView",
   components: {
@@ -179,35 +180,20 @@ export default {
   },
   methods: {
     async getVideoInfos() {
-      const url = "http://127.0.0.1:8081/video/cards";
       try {
-        const response = await axios.get(url);
-        if (response.data && Array.isArray(response.data)) {
-          // 直接用新接口字段
-          this.videoInfos = response.data.map((video) => ({
-            id: video.id,
-            title: video.title || "未知标题",
-            views: video.views || 0,
-            comments: video.comments || 0,
-            image: video.image || "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            duration: video.duration || "00:00",
-            author: video.author || "未知作者",
-          }));
+        const videoInfos = await videoApi.getVideoCards();
+        this.videoInfos = videoInfos;
+        this.videoCards = this.videoInfos.slice(0, 6);
+        this.otherVideos = this.videoInfos.slice(6);
 
-          this.videoCards = this.videoInfos.slice(0, 6);
-          this.otherVideos = this.videoInfos.slice(6);
+        this.loadedVideos = Array(this.videoInfos.length).fill(false);
+        this.videoInfos.forEach((_, index) => {
+          setTimeout(() => {
+            this.loadedVideos[index] = true;
+          }, 200 * (index + 1));
+        });
 
-          this.loadedVideos = Array(this.videoInfos.length).fill(false);
-          this.videoInfos.forEach((_, index) => {
-            setTimeout(() => {
-              this.loadedVideos[index] = true;
-            }, 200 * (index + 1));
-          });
-
-          console.log("获取到的视频数据:", this.videoInfos);
-        } else {
-          console.error("Invalid video data format:", response.data);
-        }
+        console.log("获取到的视频数据:", this.videoInfos);
       } catch (error) {
         console.error("获取视频列表失败:", error);
         alert("获取视频信息失败，请稍后再试");

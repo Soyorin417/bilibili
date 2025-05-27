@@ -1,13 +1,19 @@
 export function parseDanmakuXml(xmlText) {
   try {
     // 检查并移除第一行的完整样式信息提示
-    if (xmlText.trim().startsWith('This XML file does not appear to have any style information associated with it. The document tree is shown below.')) {
-      xmlText = xmlText.split('\n').slice(1).join('\n').trim();
+    if (
+      xmlText
+        .trim()
+        .startsWith(
+          "This XML file does not appear to have any style information associated with it. The document tree is shown below."
+        )
+    ) {
+      xmlText = xmlText.split("\n").slice(1).join("\n").trim();
     }
 
     const parser = new DOMParser();
     const xml = parser.parseFromString(xmlText, "text/xml");
-    
+
     // 尝试从根节点i获取d节点
     let dNodes = [];
     const root = xml.getElementsByTagName("i")[0];
@@ -17,7 +23,7 @@ export function parseDanmakuXml(xmlText) {
       // 如果没有找到i节点，直接获取d节点
       dNodes = xml.getElementsByTagName("d");
     }
-    
+
     const danmakus = [];
 
     // 统计弹幕类型
@@ -102,8 +108,6 @@ export function parseDanmakuXml(xmlText) {
               fontFamily: jsonData[12] || "SimHei", // 字体族
               isAdvanced: jsonData[13] || 1, // 是否高级弹幕
             };
-
-            
           } catch (e) {
             console.warn("高级弹幕解析失败:", content, e);
             // 解析失败时，将其视为普通弹幕
@@ -139,7 +143,6 @@ export function parseDanmakuXml(xmlText) {
           font: position?.font || "SimHei",
           isScrolling: type === 1 || type === 7, // 标记是否为滚动弹幕
         };
-
 
         danmakus.push(danmaku);
       } catch (e) {

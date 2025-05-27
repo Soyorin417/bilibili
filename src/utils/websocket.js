@@ -122,7 +122,8 @@ class WebSocketClient {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       try {
         // 如果消息是对象，转换为JSON字符串
-        const messageToSend = typeof message === 'object' ? JSON.stringify(message) : message;
+        const messageToSend =
+          typeof message === "object" ? JSON.stringify(message) : message;
         this.ws.send(messageToSend);
       } catch (error) {
         console.error("Error sending message:", error);

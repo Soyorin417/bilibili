@@ -1,31 +1,28 @@
 <template>
-  <div class="danmaku-container mt-2 mb-3" :class="{ expanded: isShow }">
-    <div class="danmaku-header d-flex justify-content-between align-items-center p-1">
-      <div class="d-flex align-items-center">
-        <h6 class="mb-0 ms-1">弹幕列表</h6>
-        <small class="text-secondary ms-2">({{ danmakuList.length }}条)</small>
-      </div>
-      <div>
-        <small class="text-secondary me-1" @click="toggleShow">
-          <drop-down-list theme="outline" size="18" fill="#000000" />
-        </small>
-      </div>
+  <div class="danmaku-list mt-1">
+    <div class="danmaku-list-header">
+      <h5>弹幕列表</h5>
+      <button class="toggle-btn" @click="toggleShow">
+        {{ isShow ? "˄" : "˅" }}
+      </button>
     </div>
-    <div v-if="isShow" class="danmaku-list">
-      <table class="table table-sm table-hover borderless">
-        <thead class="thead-light">
-          <tr class="header-row">
-            <th scope="col" width="20%">时间</th>
-            <th scope="col" width="80%">内容</th>
+    <div class="danmaku-list-content" v-show="isShow">
+      <table class="danmaku-table">
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>弹幕内容</th>
+            <th>发送时间</th>
           </tr>
         </thead>
-        <tbody class="small">
-          <tr v-for="(item, index) in danmakuList" :key="index">
-            <td>{{ formatTime(item.time) }}</td>
-            <td class="text-truncate" style="max-width: 160px">
-              {{ item.text }}
-            </td>
-            <td>{{ item.sendTime }}</td>
+        <tbody>
+          <tr v-if="!danmakuList || danmakuList.length === 0">
+            <td colspan="3" class="no-danmaku">暂无弹幕</td>
+          </tr>
+          <tr v-else v-for="(danmaku, index) in danmakuList" :key="index">
+            <td>{{ formatTime(danmaku.time) }}</td>
+            <td>{{ danmaku.text || danmaku.content }}</td>
+            <td>{{ formatSendTime(danmaku.timestamp) }}</td>
           </tr>
         </tbody>
       </table>
@@ -34,63 +31,20 @@
 </template>
 
 <script>
-import { DropDownList } from "@icon-park/vue-next";
-import { parseDanmakuXml } from "../danmaku/danmakuParser";
-import axios from "axios";
-
 export default {
   name: "DanmakuList",
-  components: {
-    DropDownList,
-  },
   props: {
-    videoId: {
-      type: String,
-      required: true,
-      validator: (value) => {
-        return !isNaN(value) && value > 0;
-      },
-    },
-    danmakuUrl: {
-      type: String,
-      required: true,
+    danmakuList: {
+      type: Array,
+      default: () => [],
     },
   },
   data() {
     return {
       isShow: false,
-      danmakuList: [],
     };
   },
   methods: {
-    async getDanmakuList(videoId) {
-      if (!videoId) {
-        console.error("无效的 videoId:", videoId);
-        return;
-      }
-
-      const url = `http://127.0.0.1:8081/danmaku/getDanmakuList?id=${videoId}`;
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.error("Token is missing");
-        return;
-      }
-
-      try {
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.data) {
-          this.danmakuList = response.data;
-        }
-      } catch (error) {
-        console.error("Error fetching danmaku list:", error);
-      }
-    },
     toggleShow() {
       this.isShow = !this.isShow;
     },
@@ -99,125 +53,113 @@ export default {
       const seconds = Math.floor(time % 60);
       return `${minutes}:${seconds.toString().padStart(2, "0")}`;
     },
-
-    async loadDanmaku() {
-      const danmakuInfo = this.danmakuUrl;
-
-      if (danmakuInfo) {
-        try {
-          const response = await axios.get(danmakuInfo, {
-            transformResponse: [(data) => data],
-          });
-
-          this.danmakuList = parseDanmakuXml(response.data);
-          this.$emit("danmaku-loaded", this.danmakuList);
-        } catch (error) {
-          console.error("获取弹幕数据失败:", error);
-          this.danmakuList = [];
-        }
-      } else {
-        console.log("未找到对应的弹幕信息:", this.videoId);
-        this.danmakuList = [];
-      }
-    },
-  },
-  watch: {
-    videoId: {
-      immediate: true,
-      handler(newVal) {
-        console.log("videoId changed:", newVal);
-        this.loadDanmaku();
-      },
-    },
-    danmakuUrl: {
-      immediate: true,
-      handler(newVal) {
-        console.log("danmakuUrl changed:", newVal);
-        this.loadDanmaku();
-      },
+    formatSendTime(timestamp) {
+      if (!timestamp) return "";
+      const date = new Date(timestamp * 1000); // 如果是秒级时间戳
+      // const date = new Date(timestamp); // 如果是毫秒级时间戳
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const day = date.getDate().toString().padStart(2, "0");
+      const hour = date.getHours().toString().padStart(2, "0");
+      const minute = date.getMinutes().toString().padStart(2, "0");
+      return `${month}-${day} ${hour}:${minute}`;
     },
   },
 };
 </script>
 
 <style scoped>
-.danmaku-container {
-  border: 1px solid #eee;
-
-  overflow: hidden;
-  background-color: #fff;
-  font-size: 10px;
-  height: auto;
-  min-height: 30px;
+.danmaku-list {
+  background: #f1f2f3;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.danmaku-header {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #eee;
-  padding: 2px 4px !important;
-  min-height: 28px;
+.danmaku-list-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f2f3;
 }
 
-.danmaku-header h6 {
-  font-size: 13px;
+.danmaku-list-header h5 {
+  margin: 0;
+  font-size: 16px;
   color: #333;
-  margin-bottom: 0;
 }
 
-.danmaku-list {
-  height: 625px;
+.danmaku-list-content {
+  max-height: 625px;
   overflow-y: auto;
-  max-height: none;
+  padding: 8px 0;
 }
 
-.danmaku-list table {
-  margin-bottom: 0;
-  border: none;
+.no-danmaku {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+}
+
+.danmaku-items {
+  padding: 0 16px;
+}
+
+.danmaku-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.danmaku-time {
+  color: #999;
   font-size: 12px;
+  margin-right: 8px;
+  min-width: 45px;
 }
 
-.danmaku-list th {
-  font-size: 12px;
-  font-weight: 600;
-  color: #555;
-  padding: 4px 8px;
+.danmaku-content {
+  font-size: 14px;
+  color: #333;
+  word-break: break-all;
+}
+
+.danmaku-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+.danmaku-table th,
+.danmaku-table td {
+  border-bottom: 1px solid #f5f5f5;
+  padding: 6px 8px;
+  font-size: 13px;
+  text-align: left;
+}
+.danmaku-table th {
+  background: #f8f9fa;
+  color: #666;
+  font-weight: 500;
+}
+.no-danmaku {
+  text-align: center;
+  color: #999;
+}
+
+.toggle-btn {
+  float: right;
+  margin-top: 2px;
+  margin-right: 8px;
+  padding: 2px 10px;
+  font-size: 13px;
+  background: #e3e5e7;
   border: none;
-  background-color: #f8f9fa;
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  border-radius: 4px;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.2s;
 }
-
-.danmaku-list td {
-  font-size: 12px;
-  padding: 4px 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  border: none;
-  line-height: 1.2;
-}
-
-.borderless th,
-.borderless td,
-.borderless thead th,
-.borderless tbody + tbody {
-  border: none !important;
-}
-
-.table-hover > tbody > tr:hover {
-  background-color: rgba(0, 0, 0, 0.02);
-}
-
-.header-row {
-  border: none !important;
-  background-color: #f8f9fa;
-}
-
-/* 调整容器高度 */
-.danmaku-container.expanded {
-  height: 725px;
+.toggle-btn:hover {
+  background: #d0d3d6;
 }
 </style>

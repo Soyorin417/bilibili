@@ -63,9 +63,12 @@
               <h5 class="mb-3">评论 ({{ commentData.length }})</h5>
               <CommentInput @send-comment="handleNewComment" />
               <CommentList
+                ref="commentList"
                 :comments="commentData"
                 @like="handleLike"
                 @comment-deleted="getCommentList"
+                @send-reply="handleSendReply"
+                @comment-added="handleCommentAdded"
               />
             </div>
           </div>
@@ -80,7 +83,7 @@
             />
 
             <!-- 弹幕列表 -->
-            <DanmakuList :videoId="videoId" :danmakuUrl="danmakuList.url || ''" />
+            <DanmakuList :danmakuList="danmakuList || ''" />
             <!-- 推荐视频列表 -->
             <RecommendedVideos
               :recommendedVideos="recommendedVideos"
@@ -102,10 +105,13 @@ import DanmakuControl from "@/components/video/DanmakuControl.vue";
 import DanmakuDisplay from "@/components/video/DanmakuDisplay.vue";
 import CommentInput from "@/components/video/CommentInput.vue";
 import CommentList from "@/components/video/CommentList.vue";
-import axios from "axios";
 import DanmakuList from "@/components/video/DanmakuList.vue";
 import VideoActions from "@/components/video/VideoActions.vue";
 import VideoStats from "@/components/video/VideoStats.vue";
+import { videoApi } from "@/api/video";
+import { parseDanmakuXml } from "@/components/danmaku/danmakuParser";
+import commentApi from "@/api/comment";
+import websocketClient from "@/utils/websocket";
 
 export default {
   components: {
@@ -165,53 +171,39 @@ export default {
     },
   },
   methods: {
+    // 获取视频列表
     async getVideoInfos() {
-      const url = "http://127.0.0.1:8081/video/getAllVideo";
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.error("Token is missing");
+      if (!this.userInfo || !this.userInfo.id) {
+        console.error("用户信息不完整");
         return;
       }
 
       this.isLoading = true;
 
       try {
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        // 处理成功响应
+        const response = await videoApi.getAllVideos();
         this.videoInfos = response.data;
         console.log("获取视频列表", this.videoInfos);
 
         // 获取每个视频的互动状态
-        if (this.userInfo && this.userInfo.id) {
-          await Promise.all(
-            this.videoInfos.map(async (video) => {
-              try {
-                const actionResponse = await axios.get(
-                  `http://127.0.0.1:8081/video/action/status/${video.id}?userUid=${this.userInfo.id}`,
-                  {
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                    },
-                  }
-                );
-                if (actionResponse.data) {
-                  video.isLiked = actionResponse.data.isLiked;
-                  video.isCollected = actionResponse.data.isCollected;
-                  video.isCoined = actionResponse.data.isCoined;
-                  video.isShared = actionResponse.data.isShared;
-                }
-              } catch (error) {
-                console.error(`获取视频 ${video.id} 的互动状态失败:`, error);
+        await Promise.all(
+          this.videoInfos.map(async (video) => {
+            try {
+              const actionResponse = await videoApi.getVideoActionStatus(
+                video.id,
+                this.userInfo.id
+              );
+              if (actionResponse.data) {
+                video.isLiked = actionResponse.data.isLiked;
+                video.isCollected = actionResponse.data.isCollected;
+                video.isCoined = actionResponse.data.isCoined;
+                video.isShared = actionResponse.data.isShared;
               }
-            })
-          );
-        }
+            } catch (error) {
+              console.error(`获取视频 ${video.id} 的互动状态失败:`, error);
+            }
+          })
+        );
       } catch (error) {
         console.error("获取视频列表失败:", error);
         alert("获取视频信息失败，请稍后再试");
@@ -220,23 +212,10 @@ export default {
       }
     },
 
+    // 获取视频标签
     async getVideoTags(videoId) {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("Token is missing");
-        return [];
-      }
-
       try {
-        const tagsResponse = await axios.get(
-          `http://127.0.0.1:8081/api/tags/video/${videoId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
+        const tagsResponse = await videoApi.getVideoTags(videoId);
         if (tagsResponse.data && Array.isArray(tagsResponse.data)) {
           const tags = tagsResponse.data.map((tag) => tag.name);
           this.tags = tags;
@@ -250,22 +229,11 @@ export default {
         return [];
       }
     },
+
+    // 获取视频详情
     async getVideoById(videoId) {
-      const url = `http://127.0.0.1:8081/video/getVideoById?id=${videoId}`;
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.error("Token is missing");
-        return;
-      }
-
       try {
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
+        const response = await videoApi.getVideoById(videoId);
         if (response.data) {
           this.videoInfo = { ...response.data };
         }
@@ -273,52 +241,34 @@ export default {
         console.error("Error fetching video info:", error);
       }
     },
+
+    // 获取弹幕列表
     async getDanmakuList(videoId) {
       if (!videoId) {
         console.error("无效的 videoId:", videoId);
         return;
       }
 
-      const url = `http://127.0.0.1:8081/danmaku/getDanmakuList?id=${videoId}`;
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.error("Token is missing");
-        return;
-      }
-
       try {
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.data) {
-          this.danmakuList = response.data;
+        const response = await videoApi.getDanmakuList(videoId);
+        if (response.data && response.data.url) {
+          // 更新弹幕列表
+          console.log("获取到的弹幕列表:", response.data.url);
+          const xmlResponse = await fetch(response.data.url);
+          const xmlText = await xmlResponse.text();
+          this.danmakuList = parseDanmakuXml(xmlText);
+          console.log("解析后的弹幕列表:", this.danmakuList);
         }
       } catch (error) {
         console.error("Error fetching danmaku list:", error);
       }
     },
+
+    // 获取评论列表
     async getCommentList() {
-      const url = `http://127.0.0.1:8081/comments/list?videoId=${this.videoId}`;
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.error("Token is missing");
-        return;
-      }
-
       try {
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
+        const response = await videoApi.getCommentList(this.videoId);
         if (response.data && Array.isArray(response.data)) {
-          // 处理每条评论的数据
           this.commentData = response.data.map((comment) => ({
             ...comment,
             showReplies: false,
@@ -338,16 +288,9 @@ export default {
       }
     },
 
+    // 发送评论
     async handleNewComment(newComment) {
       try {
-        const url = `http://127.0.0.1:8081/comments/add`;
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          console.error("Token is missing");
-          return;
-        }
-
         if (!this.userInfo || !this.userInfo.id) {
           console.error("用户信息不完整:", this.userInfo);
           return;
@@ -362,12 +305,7 @@ export default {
           replyCount: 0,
         };
 
-        const response = await axios.post(url, commentData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await videoApi.addComment(commentData);
 
         if (response.data === "评论发布成功") {
           await this.getCommentList();
@@ -387,44 +325,24 @@ export default {
         alert("评论发送失败，请稍后重试");
       }
     },
-    handleLike(item) {
-      item.isLiked = !item.isLiked;
-      if (item.isLiked) {
-        item.likeCount++;
-      } else {
-        item.likeCount--;
-      }
-    },
 
+    // 加载视频数据
     async loadVideoData(id) {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("Token is missing");
-          return;
-        }
-
-        // First get all videos for recommendations
+        // 首先获取所有视频用于推荐
         await this.getVideoInfos();
 
         // Then fetch the specific video data
-        const videoResponse = await axios.get(
-          `http://127.0.0.1:8081/video/getVideoById?id=${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const videoResponse = await videoApi.getVideoById(id);
 
         if (videoResponse.data) {
           this.videoInfo = videoResponse.data;
 
           // Fetch user action status if user is logged in
           if (this.userInfo && this.userInfo.id) {
-            const actionResponse = await axios.get(
-              `http://127.0.0.1:8081/video/action/status/${id}?userUid=${this.userInfo.id}`,
-              {
-                headers: { Authorization: `Bearer ${token}` },
-              }
+            const actionResponse = await videoApi.getVideoActionStatus(
+              id,
+              this.userInfo.id
             );
 
             if (actionResponse.data) {
@@ -449,54 +367,12 @@ export default {
       }
     },
 
-    handleVideoClick(videoId) {
-      // 使用 replace 而不是 push，这样可以替换当前历史记录
-      this.$router.replace({
-        name: "VideoView",
-        params: { id: videoId },
-      });
-    },
-
-    refreshRecommendedVideos() {
-      const currentId = this.videoInfo.id;
-      if (Array.isArray(this.videoInfos) && this.videoInfos.length > 0) {
-        this.recommendedVideos = this.videoInfos.filter(
-          (video) => video.id !== currentId
-        );
-      } else {
-        console.error("videoInfos 不是有效的数组或为空");
-      }
-    },
-
-    is_follow() {
-      if (this.userInfo) {
-        this.userInfo.is_follow = !this.userInfo.is_follow;
-      }
-    },
-
-    handleSendDanmaku(danmakuData) {
-      if (this.$refs.danmakuDisplay) {
-        this.$refs.danmakuDisplay.addNewDanmaku(danmakuData);
-      }
-    },
-    handleToggleDanmaku(value) {
-      this.isDanmakuVisible = value;
-    },
-
-    // 添加获取视频互动状态的方法
+    // 获取视频互动状态
     async getVideoActionStatus(videoId) {
       if (!this.userInfo || !this.userInfo.id) return null;
 
       try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `http://127.0.0.1:8081/video/action/status/${videoId}?userUid=${this.userInfo.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await videoApi.getVideoActionStatus(videoId, this.userInfo.id);
         return response.data;
       } catch (error) {
         console.error(`获取视频 ${videoId} 的互动状态失败:`, error);
@@ -504,7 +380,7 @@ export default {
       }
     },
 
-    // Add the missing toggleFollow method
+    // 关注/取消关注
     async toggleFollow() {
       if (!this.userInfo || !this.userInfo.id) {
         alert("请先登录");
@@ -512,27 +388,14 @@ export default {
       }
 
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("Token is missing");
-          return;
-        }
-
         const params = {
           followerUid: this.userInfo.id,
           followingUid: this.videoInfo.authorId,
         };
 
-        const response = await axios.post(
-          `http://127.0.0.1:8081/api/follow/${
-            this.videoInfo.isFollow ? "unfollow" : "follow"
-          }`,
-          null,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            params,
-          }
-        );
+        const response = this.videoInfo.isFollow
+          ? await videoApi.unfollowUser(params.followerUid, params.followingUid)
+          : await videoApi.followUser(params.followerUid, params.followingUid);
 
         if (response.data) {
           this.videoInfo.isFollow = !this.videoInfo.isFollow;
@@ -547,6 +410,7 @@ export default {
       }
     },
 
+    // 初始化数据
     async initData() {
       try {
         // 先获取视频基本信息
@@ -563,6 +427,7 @@ export default {
       }
     },
 
+    // 格式化数字
     formatNumber(num) {
       if (!num) return "0";
       const n = parseFloat(num);
@@ -576,14 +441,160 @@ export default {
       return n.toString();
     },
 
+    // 上报播放量
     async handlePlay() {
       if (this.hasReportedPlay) return;
       this.hasReportedPlay = true;
       console.log("上报播放量");
       try {
-        await axios.post(`http://127.0.0.1:8081/video/play/${this.videoId}`);
+        await videoApi.reportPlay(this.videoId);
       } catch (e) {
         console.error("上报播放量失败", e);
+      }
+    },
+
+    // 刷新推荐视频
+    refreshRecommendedVideos() {
+      const currentId = parseInt(this.videoId);
+      this.recommendedVideos = this.videoInfos.filter(
+        (video) => parseInt(video.id) !== currentId
+      );
+      console.log("视频列表", this.videoInfos);
+      console.log("当前视频ID", currentId);
+      console.log("刷新推荐视频", this.recommendedVideos);
+    },
+
+    // 处理视频点击
+    handleVideoClick(videoId) {
+      this.$router.push({
+        name: "VideoView",
+        params: { id: videoId },
+      });
+    },
+
+    // 处理弹幕发送
+    async handleSendDanmaku(danmaku) {
+      if (!this.userInfo || !this.userInfo.id) {
+        alert("请先登录");
+        return;
+      }
+      console.log("发送弹幕", danmaku);
+
+      // 创建新弹幕对象
+      const newDanmaku = {
+        ...danmaku,
+        userId: this.userInfo.id,
+        username: this.userInfo.username,
+        timestamp: new Date().getTime(),
+      };
+
+      // 如果弹幕显示组件存在，立即显示新弹幕
+      if (this.$refs.danmakuDisplay) {
+        this.$refs.danmakuDisplay.addNewDanmaku(newDanmaku);
+      }
+
+      try {
+        // 发送到服务器
+        await videoApi.sendDanmaku(this.videoId, danmaku);
+      } catch (e) {
+        console.error("弹幕发送失败", e);
+      }
+    },
+
+    // 处理弹幕显示
+    handleToggleDanmaku() {
+      this.isDanmakuVisible = !this.isDanmakuVisible;
+    },
+
+    // 处理弹幕类型切换
+    handleDanmakuTypeChange(type) {
+      this.currentDanmakuType = type;
+    },
+
+    // 处理弹幕位置切换
+    handleDanmakuPositionChange(position) {
+      this.currentDanmakuPosition = position;
+    },
+
+    // 处理弹幕显示
+    handleDanmakuDisplay(display) {
+      this.isDanmakuVisible = display;
+    },
+
+    // 处理弹幕控制
+    handleDanmakuControl(control) {
+      this.isDanmakuVisible = control;
+    },
+
+    // 处理评论添加后的逻辑
+    handleCommentAdded() {
+      // 处理评论添加后的逻辑
+      console.log("新评论已添加");
+    },
+
+    // 初始化WebSocket连接
+    initWebSocket() {
+      // 确保WebSocket连接已建立
+      if (!websocketClient.ws || websocketClient.ws.readyState !== WebSocket.OPEN) {
+        websocketClient.connect();
+      }
+      // 添加消息处理器
+      websocketClient.addMessageHandler(this.handleWebSocketMessage);
+    },
+
+    // 处理WebSocket消息
+    handleWebSocketMessage(event) {
+      try {
+        const rawMessage = event.data;
+        console.log("收到原始WebSocket消息:", rawMessage);
+
+        // 处理系统消息
+        if (typeof rawMessage === "string" && !rawMessage.startsWith("[用户]")) {
+          console.log("系统消息:", rawMessage);
+          return;
+        }
+
+        // 处理用户消息
+        if (rawMessage.startsWith("[用户]")) {
+          const jsonStartIndex = rawMessage.indexOf("：") + 1;
+          if (jsonStartIndex > 0) {
+            const jsonStr = rawMessage.substring(jsonStartIndex);
+            const data = JSON.parse(jsonStr);
+            console.log("解析后的消息数据:", data);
+
+            if (data.type === "reply") {
+              // 通过ref调用子组件的方法处理新回复
+              this.$refs.commentList.handleNewReply(data);
+            } else if (data.type === "comment") {
+              // 刷新评论列表
+              this.getCommentList();
+            }
+          }
+        }
+      } catch (error) {
+        console.error("WebSocket消息处理失败:", error);
+        console.log("原始消息:", event.data);
+      }
+    },
+
+    // 处理回复发送
+    async handleSendReply(reply) {
+      try {
+        const response = await commentApi.addReply(reply);
+        if (response.data === "回复添加成功") {
+          // 确保WebSocket连接已建立
+          if (!websocketClient.ws || websocketClient.ws.readyState !== WebSocket.OPEN) {
+            websocketClient.connect();
+          }
+          // 通过WebSocket发送回复
+          websocketClient.send({
+            type: "reply",
+            ...reply,
+          });
+        }
+      } catch (error) {
+        console.error("回复发送失败:", error);
+        alert("回复发送失败，请稍后重试");
       }
     },
   },
@@ -621,11 +632,14 @@ export default {
   mounted() {
     // 使用 async/await 确保数据加载完成
     this.initData();
+    // 初始化WebSocket连接
+    this.initWebSocket();
   },
   beforeUnmount() {
     this.activeDanmaku = [];
-
     document.removeEventListener("click", this.handleClickOutside);
+    // 移除WebSocket消息处理器
+    websocketClient.removeMessageHandler(this.handleWebSocketMessage);
   },
 };
 </script>

@@ -1,197 +1,190 @@
 <template>
   <div class="comment-list" @click="handleOutsideClick">
-    <div
-      v-for="comment in localComments"
-      :key="comment.commentId"
-      class="comment-item mb-4"
-    >
-      <div class="d-flex">
-        <div class="user-avatar me-3">
-          <img
-            :src="comment.avatar"
-            class="rounded-circle"
-            width="48"
-            height="48"
-            alt="user avatar"
-          />
-        </div>
-        <div class="comment-content">
-          <div class="d-flex align-items-center mb-1">
-            <h6 class="mb-0 me-2">{{ comment.username }}</h6>
-            <span class="badge bg-primary me-2" v-if="comment.isUp">UP主</span>
-            <span class="badge bg-secondary">Lv.{{ comment.level }}</span>
+    <div class="comment-container">
+      <div v-for="comment in localComments" :key="comment.id" class="comment-item mb-4">
+        <div class="d-flex">
+          <div class="user-avatar me-3">
+            <img
+              :src="comment.avatar"
+              class="rounded-circle"
+              width="48"
+              height="48"
+              alt="user avatar"
+            />
           </div>
-          <p class="mb-1">{{ comment.content }}</p>
-          <div class="d-flex align-items-center text-muted">
-            <small class="me-3">{{ formatDate(comment.createTime) }}</small>
-            <div class="d-flex align-items-center me-3">
-              <thumbs-up
-                @click="handleLike(comment)"
-                theme="filled"
-                size="16"
-                :fill="comment.isLiked ? '#00aeec' : '#666666'"
-                class="me-1"
-                style="cursor: pointer"
-              /><small>{{ comment.likeCount }}</small>
-              <thumbs-down
-                @click="commentDislike(comment)"
-                theme="filled"
-                size="16"
-                :fill="comment.isDisliked ? '#00aeec' : '#666666'"
-                class="ms-2"
-                style="cursor: pointer"
-              />
-              <small>{{ comment.dislikeCount || 0 }}</small>
+          <div class="comment-content">
+            <div class="d-flex align-items-center mb-1">
+              <h6 class="mb-0 me-2">{{ comment.username }}</h6>
+              <span class="badge bg-primary me-2" v-if="comment.isUp">UP主</span>
+              <span class="badge bg-secondary">Lv.{{ comment.level }}</span>
             </div>
-            <div class="d-flex align-items-center me-3">
-              <comment-one
-                @click.stop="toggleReplies(comment)"
-                theme="filled"
-                size="16"
-                fill="#666666"
-                class="me-1"
-                style="cursor: pointer"
-              />
-              <small>{{ comment.replyCount }}</small>
-              <small
-                v-if="comment.showReplies"
-                class="text-muted ms-2"
-                style="cursor: pointer"
-                @click.stop="toggleReplies(comment)"
-              >
-                收起
-              </small>
-            </div>
-            <div
-              v-if="userInfo && userInfo.id === comment.userUid"
-              class="d-flex align-items-center"
-            >
-              <delete
-                @click="handleDeleteComment(comment)"
-                theme="filled"
-                size="16"
-                fill="#ff4d4f"
-                class="me-1"
-                style="cursor: pointer"
-              />
-              <small class="text-danger">删除</small>
-            </div>
-          </div>
-
-          <!-- 回复列表 -->
-          <div v-if="comment.showReplies" class="replies-section mt-3">
-            <!-- 回复列表 -->
-            <div
-              v-for="reply in comment.replies"
-              :key="reply.commentId"
-              class="reply-item mb-3"
-            >
-              <div class="d-flex">
-                <div class="user-avatar me-3">
-                  <img
-                    :src="reply.avatar"
-                    class="rounded-circle"
-                    width="32"
-                    height="32"
-                    alt="user avatar"
-                  />
-                </div>
-                <div class="reply-content">
-                  <div class="d-flex align-items-center mb-1">
-                    <h6 class="mb-0 me-2">{{ reply.username }}</h6>
-                    <span class="badge bg-primary me-2" v-if="reply.isUp">UP主</span>
-                    <span class="badge bg-secondary">Lv.{{ reply.level }}</span>
-                  </div>
-                  <p class="mb-1">{{ reply.content }}</p>
-                  <div class="d-flex align-items-center text-muted">
-                    <small class="me-3">{{ formatDate(reply.createTime) }}</small>
-                    <div class="d-flex align-items-center me-3">
-                      <thumbs-up
-                        @click="$emit('like', reply)"
-                        theme="filled"
-                        size="16"
-                        :fill="reply.isLiked ? '#00aeec' : '#666666'"
-                        class="me-1"
-                      /><small>{{ reply.likeCount }}</small>
-                      <thumbs-down
-                        @click="commentDislike(reply)"
-                        theme="filled"
-                        size="16"
-                        :fill="reply.isDisliked ? '#00aeec' : '#666666'"
-                        class="ms-2"
-                      />
-                      <small>{{ reply.dislikeCount || 0 }}</small>
-                    </div>
-                    <!-- 添加编辑和删除按钮，只有回复作者可见 -->
-                    <div
-                      v-if="userInfo && userInfo.id === reply.userUid"
-                      class="d-flex align-items-center"
-                    >
-                      <delete
-                        @click="handleDeleteReply(reply)"
-                        theme="filled"
-                        size="16"
-                        fill="#ff4d4f"
-                        class="me-1"
-                        style="cursor: pointer"
-                      />
-                      <small class="text-danger">删除</small>
-                    </div>
-                  </div>
-
-                  <!-- 编辑回复的输入框 -->
-                  <div v-if="reply.isEditing" class="edit-reply mt-2">
-                    <div class="form-floating">
-                      <input
-                        v-model="reply.editContent"
-                        type="text"
-                        class="form-control"
-                        :id="'editReplyInput-' + reply.id"
-                        placeholder="编辑回复"
-                      />
-                      <label :for="'editReplyInput-' + reply.id">编辑回复</label>
-                    </div>
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-2">
-                      <button
-                        @click="handleUpdateReply(reply)"
-                        class="btn btn-primary btn-sm me-2"
-                        type="button"
-                      >
-                        保存
-                      </button>
-                      <button
-                        @click="reply.isEditing = false"
-                        class="btn btn-secondary btn-sm"
-                        type="button"
-                      >
-                        取消
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 回复输入框 -->
-            <div class="reply-input mt-3">
-              <div class="form-floating">
-                <input
-                  v-model="comment.replyContent"
-                  type="text"
-                  class="form-control"
-                  :id="'replyInput-' + comment.commentId"
-                  placeholder="回复评论"
+            <p class="mb-1">{{ comment.content }}</p>
+            <div class="d-flex align-items-center text-muted">
+              <small class="me-3">{{ formatDate(comment.createTime) }}</small>
+              <div class="d-flex align-items-center me-3">
+                <thumbs-up
+                  @click="handleLike(comment)"
+                  theme="filled"
+                  size="16"
+                  :fill="comment.isLiked ? '#00aeec' : '#666666'"
+                  class="me-1"
+                  style="cursor: pointer"
+                /><small>{{ comment.likeCount }}</small>
+                <thumbs-down
+                  @click="commentDislike(comment)"
+                  theme="filled"
+                  size="16"
+                  :fill="comment.isDisliked ? '#00aeec' : '#666666'"
+                  class="ms-2"
+                  style="cursor: pointer"
                 />
-                <label :for="'replyInput-' + comment.commentId">回复评论</label>
+                <small>{{ comment.dislikeCount || 0 }}</small>
               </div>
-              <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-2">
-                <button
-                  @click="handleSendReply(comment)"
-                  class="btn btn-primary btn-sm"
-                  type="button"
+              <div class="d-flex align-items-center me-3">
+                <comment-one
+                  @click.stop="toggleReplies(comment)"
+                  theme="filled"
+                  size="16"
+                  fill="#666666"
+                  class="me-1"
+                  style="cursor: pointer"
+                />
+                <small>{{ comment.replyCount }}</small>
+                <small
+                  v-if="comment.showReplies"
+                  class="text-muted ms-2"
+                  style="cursor: pointer"
+                  @click.stop="toggleReplies(comment)"
                 >
-                  发送回复
-                </button>
+                  收起
+                </small>
+              </div>
+              <div
+                v-if="userInfo && userInfo.id === comment.userUid"
+                class="d-flex align-items-center"
+              >
+                <i
+                  class="bi bi-x"
+                  @click="handleDeleteComment(comment)"
+                  style="cursor: pointer"
+                >
+                  <small>删除</small></i
+                >
+              </div>
+            </div>
+
+            <!-- 回复列表 -->
+            <div v-if="comment.showReplies" class="replies-section mt-3">
+              <!-- 回复列表 -->
+              <div
+                v-for="reply in comment.replies"
+                :key="reply.commentId"
+                class="reply-item mb-3"
+              >
+                <div class="d-flex">
+                  <div class="user-avatar me-3">
+                    <img
+                      :src="reply.avatar"
+                      class="rounded-circle"
+                      width="32"
+                      height="32"
+                      alt="user avatar"
+                    />
+                  </div>
+                  <div class="reply-content">
+                    <div class="d-flex align-items-center mb-1">
+                      <h6 class="mb-0 me-2">{{ reply.username }}</h6>
+                      <span class="badge bg-primary me-2" v-if="reply.isUp">UP主</span>
+                      <span class="badge bg-secondary">Lv.{{ reply.level }}</span>
+                    </div>
+                    <p class="mb-1">{{ reply.content }}</p>
+                    <div class="d-flex align-items-center text-muted">
+                      <small class="me-3">{{ formatDate(reply.createTime) }}</small>
+                      <div class="d-flex align-items-center me-3">
+                        <thumbs-up
+                          @click="$emit('like', reply)"
+                          theme="filled"
+                          size="16"
+                          :fill="reply.isLiked ? '#00aeec' : '#666666'"
+                          class="me-1"
+                        /><small>{{ reply.likeCount }}</small>
+                        <thumbs-down
+                          @click="commentDislike(reply)"
+                          theme="filled"
+                          size="16"
+                          :fill="reply.isDisliked ? '#00aeec' : '#666666'"
+                          class="ms-2"
+                        />
+                        <small>{{ reply.dislikeCount || 0 }}</small>
+                      </div>
+                      <!-- 添加编辑和删除按钮，只有回复作者可见 -->
+                      <div
+                        v-if="userInfo && userInfo.id === reply.userUid"
+                        class="d-flex align-items-center"
+                      >
+                        <i
+                          class="bi bi-x"
+                          @click="handleDeleteReply(reply)"
+                          style="cursor: pointer"
+                          ><small>删除</small></i
+                        >
+                      </div>
+                    </div>
+
+                    <!-- 编辑回复的输入框 -->
+                    <div v-if="reply.isEditing" class="edit-reply mt-2">
+                      <div class="form-floating">
+                        <input
+                          v-model="reply.editContent"
+                          type="text"
+                          class="form-control"
+                          :id="'editReplyInput-' + reply.id"
+                          placeholder="编辑回复"
+                        />
+                        <label :for="'editReplyInput-' + reply.id">编辑回复</label>
+                      </div>
+                      <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-2">
+                        <button
+                          @click="handleUpdateReply(reply)"
+                          class="btn btn-primary btn-sm me-2"
+                          type="button"
+                        >
+                          保存
+                        </button>
+                        <button
+                          @click="reply.isEditing = false"
+                          class="btn btn-secondary btn-sm"
+                          type="button"
+                        >
+                          取消
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 回复输入框 -->
+              <div class="reply-input mt-3">
+                <div class="form-floating">
+                  <input
+                    v-model="comment.replyContent"
+                    type="text"
+                    class="form-control"
+                    :id="'replyInput-' + comment.commentId"
+                    placeholder="回复评论"
+                  />
+                  <label :for="'replyInput-' + comment.commentId">回复评论</label>
+                </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-2">
+                  <button
+                    @click="handleSendReply(comment)"
+                    class="btn btn-primary btn-sm"
+                    type="button"
+                  >
+                    发送回复
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -202,10 +195,10 @@
 </template>
 
 <script>
-import { ThumbsUp, ThumbsDown, CommentOne, Delete } from "@icon-park/vue-next";
+import { ThumbsUp, ThumbsDown, CommentOne } from "@icon-park/vue-next";
 import { mapGetters } from "vuex";
 import axios from "axios";
-import websocketClient from "@/utils/websocket";
+import commentApi from "@/api/comment";
 
 export default {
   name: "CommentList",
@@ -213,7 +206,6 @@ export default {
     ThumbsUp,
     ThumbsDown,
     CommentOne,
-    Delete,
   },
 
   props: {
@@ -291,74 +283,48 @@ export default {
         });
       }
     },
-    toggleReplies(comment) {
-      // 如果点击的是当前展开的评论，则收起
+    async toggleReplies(comment) {
       if (comment.showReplies) {
         comment.showReplies = false;
         this.activeCommentId = null;
         return;
       }
 
-      // 收起其他已展开的评论
       this.localComments.forEach((c) => {
         if (c !== comment && c.showReplies) {
           c.showReplies = false;
         }
       });
 
-      // 展开当前评论
       comment.showReplies = true;
       this.activeCommentId = comment.id;
 
       if (!comment.replies || comment.replies.length === 0) {
-        const token = localStorage.getItem("token");
-        if (token) {
-          axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        try {
+          // 检查点赞状态
+          await this.checkLikeStatus(comment);
+          // 获取回复列表
+          const response = await commentApi.getReplies(comment.id);
+          comment.replies = response.data || [];
+        } catch (error) {
+          console.error("获取回复失败:", error);
         }
-
-        // 检查点赞状态
-        this.checkLikeStatus(comment);
-
-        axios
-          .get(`http://127.0.0.1:8081/reply/list?commentId=${comment.id}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          })
-          .then((response) => {
-            console.log("获取到的回复数据:", response.data);
-            comment.replies = response.data || [];
-          })
-          .catch((error) => {
-            console.error("获取回复失败:", error);
-          });
       }
     },
     async handleSendReply(comment) {
+      if (!this.userInfo) {
+        alert("请先登录后再评论");
+        return;
+      }
+
       if (!comment.replyContent || !comment.replyContent.trim()) return;
 
-      let newReply = null;
+      const tempContent = comment.replyContent;
 
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          return;
-        }
-
-        if (!this.userInfo || !this.userInfo.id) {
-          return;
-        }
-
-        // 确保 replies 是数组
-        if (!Array.isArray(comment.replies)) {
-          comment.replies = [];
-        }
-
-        // 创建新回复对象
-        newReply = {
+        const newReply = {
           type: "reply",
-          content: comment.replyContent.trim(),
+          content: tempContent.trim(),
           userUid: this.userInfo.id,
           username: this.userInfo.username,
           avatar: this.userInfo.avatar,
@@ -368,19 +334,16 @@ export default {
           likeCount: 0,
           isLiked: false,
           commentId: comment.id,
+          id: Date.now(),
         };
 
-        // 先添加到评论的回复列表中
-        comment.replies.unshift(newReply);
-        comment.replyCount = (comment.replyCount || 0) + 1;
-
-        const tempContent = comment.replyContent;
+        // 清空输入框
         comment.replyContent = "";
 
-        // 发送到WebSocket服务器
-        websocketClient.send(newReply);
+        // 通过事件发送到父组件
+        this.$emit("send-reply", newReply);
 
-        // 同时保存到后端数据库
+        // 保存到后端数据库
         const replyData = {
           commentId: comment.id,
           userUid: this.userInfo.id,
@@ -388,39 +351,23 @@ export default {
           createTime: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
         };
 
-        const response = await axios.post("http://127.0.0.1:8081/reply/add", replyData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
+        const response = await commentApi.addReply(replyData, { timeout: 10000 });
         if (response.data === "回复添加成功") {
-          // 更新回复ID
           newReply.id = response.data.id;
-          // 通知父组件评论已更新
           this.$emit("comment-added");
         }
       } catch (error) {
         console.error("发送回复失败:", error);
-        // 如果发送失败，从回复列表中移除
-        if (Array.isArray(comment.replies) && newReply) {
-          const index = comment.replies.findIndex((r) => r === newReply);
-          if (index !== -1) {
-            comment.replies.splice(index, 1);
-            comment.replyCount = Math.max(0, (comment.replyCount || 0) - 1);
-          }
-        }
+        comment.replyContent = tempContent;
+        alert("发送回复失败，请稍后重试");
       }
     },
-
     toggleReplyReplies(reply) {
       reply.showReplies = !reply.showReplies;
       if (reply.showReplies && !reply.replyContent) {
         reply.replyContent = "";
       }
     },
-
     handleSendReplyToReply(comment, reply) {
       if (!reply.replyContent || !reply.replyContent.trim()) return;
 
@@ -452,7 +399,6 @@ export default {
           console.error("回复回复失败", err);
         });
     },
-
     async handleDeleteComment(comment) {
       if (!confirm("确定要删除这条评论吗？")) {
         return;
@@ -480,7 +426,6 @@ export default {
         console.error("删除评论失败:", error);
       }
     },
-
     // 视频相关事件保持不变
     videoLike() {
       this.$emit("video-like");
@@ -579,63 +524,22 @@ export default {
         alert("操作失败，请稍后重试");
       }
     },
-
-    // 检查评论是否已点赞
     async checkLikeStatus(comment) {
       try {
-        const token = localStorage.getItem("token");
-        if (!token || !this.userInfo || !this.userInfo.id) {
-          return;
-        }
+        if (!this.userInfo?.id) return;
 
-        const params = {
-          commentId: comment.id,
-          userUid: this.userInfo.id,
-        };
-
-        const response = await axios.get(`http://127.0.0.1:8081/comment-like/is-liked`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          params: params,
-        });
-
-        // 确保 isLiked 是布尔值
+        const response = await commentApi.checkLikeStatus(comment.id, this.userInfo.id);
         comment.isLiked = Boolean(response.data);
-        console.log("评论点赞状态:", comment.id, comment.isLiked);
       } catch (error) {
         console.error("检查点赞状态失败:", error);
       }
     },
-
     async handleDeleteReply(reply) {
-      if (!confirm("确定要删除这条回复吗？")) {
-        return;
-      }
+      if (!confirm("确定要删除这条回复吗？")) return;
 
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("Token is missing");
-          return;
-        }
-
-        // 删除回复调试信息
-        console.log("尝试删除回复:", reply);
-
-        const response = await axios.delete(
-          `http://127.0.0.1:8081/reply/delete/${reply.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
+        const response = await commentApi.deleteReply(reply.id);
         if (response.data === "回复删除成功") {
-          // 从回复列表中移除该回复
           const comment = this.localComments.find((c) =>
             c.replies.some((r) => r.id === reply.id)
           );
@@ -643,34 +547,23 @@ export default {
             comment.replies = comment.replies.filter((r) => r.id !== reply.id);
             comment.replyCount--;
           }
-        } else {
-          console.error("回复删除失败:", response.data);
-          alert(response.data);
         }
       } catch (error) {
         console.error("删除回复失败:", error);
         alert("删除回复失败，请稍后重试");
       }
     },
-
     async handleUpdateReply(reply) {
       if (!reply.editContent || !reply.editContent.trim()) return;
 
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("Token is missing");
-          return;
-        }
-
-        // 构建更新数据
         const updateData = {
           id: reply.id,
           commentId: reply.commentId,
           userUid: reply.userUid,
           content: reply.editContent.trim(),
           createTime: reply.createTime,
-          username: this.userInfo.username, // 用户名
+          username: this.userInfo.username,
           avatar: this.userInfo.avatar,
           level: this.userInfo.level,
           isUp: this.userInfo.id === reply.authorId,
@@ -678,58 +571,26 @@ export default {
           isLiked: reply.isLiked,
         };
 
-        console.log("更新回复数据:", updateData);
-        console.log("用户ID:", this.userInfo.id);
-        console.log("作者ID:", reply.authorId);
-        console.log("是否为UP主:", updateData.isUp);
-
-        const response = await axios.put(
-          `http://127.0.0.1:8081/reply/update/${reply.id}`,
-          updateData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        console.log("更新响应:", response.data);
-
+        const response = await commentApi.updateReply(reply.id, updateData);
         if (response.data === "回复更新成功") {
           reply.content = reply.editContent.trim();
           reply.isEditing = false;
           reply.editContent = "";
-        } else {
-          console.error("回复更新失败:", response.data);
-          alert(response.data);
         }
       } catch (error) {
         console.error("更新回复失败:", error);
-        if (error.response) {
-          console.error("错误响应:", error.response.data);
-          console.error("错误状态:", error.response.status);
-        } else {
-          alert("更新回复失败，请稍后重试");
-        }
+        alert("更新回复失败，请稍后重试");
       }
     },
-
     async handleSendComment() {
-      if (!this.newComment || !this.newComment.trim()) {
+      if (!this.userInfo) {
+        alert("请先登录后再评论");
         return;
       }
 
+      if (!this.newComment || !this.newComment.trim()) return;
+
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          return;
-        }
-
-        if (!this.userInfo || !this.userInfo.id) {
-          return;
-        }
-
         const commentData = {
           videoId: this.$route.params.id,
           userUid: this.userInfo.id,
@@ -737,98 +598,57 @@ export default {
           createTime: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
         };
 
-        const response = await axios.post(
-          "http://127.0.0.1:8081/comments/add",
-          commentData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
+        const response = await commentApi.addComment(commentData);
         if (response.data === "评论添加成功") {
           this.newComment = "";
-          // 通知父组件刷新评论列表
           this.$emit("comment-added");
         }
       } catch (error) {
         console.error("发送评论失败:", error);
       }
     },
-
-    handleWebSocketMessage(event) {
-      try {
-        const rawMessage = event.data;
-        // 检查是否是 "[用户]" 开头的消息
-        if (rawMessage.startsWith("[用户]")) {
-          // 提取JSON部分
-          const jsonStartIndex = rawMessage.indexOf("：") + 1;
-          if (jsonStartIndex > 0) {
-            const jsonStr = rawMessage.substring(jsonStartIndex);
-            const data = JSON.parse(jsonStr);
-
-            if (data.type === "comment") {
-              // 检查是否是当前视频的评论
-              if (data.videoId === this.$route.params.id) {
-                // 将新评论添加到本地数组开头
-                this.localComments.unshift(data);
-                // 通知父组件评论已更新
-                this.$emit("comment-added");
-              }
-            } else if (data.type === "reply") {
-              // 处理回复消息
-              const comment = this.localComments.find((c) => c.id === data.commentId);
-              if (comment) {
-                if (!comment.replies) {
-                  comment.replies = [];
-                }
-                comment.replies.unshift(data);
-                comment.replyCount = (comment.replyCount || 0) + 1;
-                // 通知父组件评论已更新
-                this.$emit("comment-added");
-              }
-            }
-          }
+    // 添加处理新回复的方法
+    handleNewReply(reply) {
+      const comment = this.localComments.find((c) => c.id === reply.commentId);
+      if (comment) {
+        if (!Array.isArray(comment.replies)) {
+          comment.replies = [];
         }
-      } catch (error) {
-        console.error("Error handling WebSocket message:", error);
-        console.log("Raw message:", event.data);
+
+        // 检查是否已经存在相同的回复
+        const isDuplicate = comment.replies.some(
+          (r) =>
+            r.content === reply.content &&
+            r.userUid === reply.userUid &&
+            Math.abs(new Date(r.createTime) - new Date(reply.createTime)) < 1000
+        );
+
+        if (!isDuplicate) {
+          comment.replies.unshift(reply);
+          comment.replyCount = (comment.replyCount || 0) + 1;
+        }
       }
     },
   },
 
   mounted() {
-    // 添加WebSocket消息监听器
-    if (!websocketClient.ws || websocketClient.ws.readyState !== WebSocket.OPEN) {
-      websocketClient.connect();
-      // 等待连接建立后再添加监听器
-      const checkConnection = setInterval(() => {
-        if (websocketClient.ws && websocketClient.ws.readyState === WebSocket.OPEN) {
-          websocketClient.ws.addEventListener("message", this.handleWebSocketMessage);
-          clearInterval(checkConnection);
-        }
-      }, 100);
-    } else {
-      websocketClient.ws.addEventListener("message", this.handleWebSocketMessage);
-    }
+    // 初始化评论数据
+    this.localComments = this.comments;
   },
 
   beforeUnmount() {
-    // 移除WebSocket消息监听器
-    if (websocketClient.ws && websocketClient.ws.readyState === WebSocket.OPEN) {
-      websocketClient.ws.removeEventListener("message", this.handleWebSocketMessage);
-    }
+    // 清理工作
   },
 };
 </script>
 
 <style scoped>
 .comment-list {
+  position: relative;
   margin-top: 20px;
 }
 
+/* 保留其他原有样式 */
 .comment-item .comment-content {
   flex: 1;
 }

@@ -44,22 +44,10 @@
     </div>
 
     <div class="action-item me-4" @click="handleCoin">
-      <bitcoin
-        v-if="!isCoined"
-        theme="filled"
-        size="24"
-        fill="#666666"
-        class="me-1"
-        style="cursor: pointer"
-      />
-      <bitcoin
-        v-else
-        theme="filled"
-        size="24"
-        fill="#00aeec"
-        class="me-1"
-        style="cursor: pointer"
-      />
+      <CoinIcon v-if="!isCoined" />
+
+      <CoinIcon v-else :fill="'#00aeec'" />
+
       <span :class="{ 'text-primary': isCoined }">{{ coinCount }}</span>
     </div>
 
@@ -77,7 +65,8 @@
 </template>
 
 <script>
-import { ThumbsUp, Star, Bitcoin, ShareTwo } from "@icon-park/vue-next";
+import { ThumbsUp, Star, ShareTwo } from "@icon-park/vue-next";
+import CoinIcon from "@/components/ui/CoinIcon.vue";
 import { mapGetters } from "vuex";
 import axios from "axios";
 
@@ -86,8 +75,8 @@ export default {
   components: {
     ThumbsUp,
     Star,
-    Bitcoin,
     ShareTwo,
+    CoinIcon,
   },
   props: {
     videoId: {

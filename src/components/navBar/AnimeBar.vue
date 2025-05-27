@@ -43,10 +43,10 @@
 </template>
 
 <script>
-import axios from "axios";
 import HotSearchList from "@/components/navBar/search/HotSearchList.vue";
 import NavBarRightMenu from "@/components/navBar/NavBarRightMenu.vue";
 import LeftNavMenu from "@/components/navBar/NavBarLeftMenu.vue";
+import { activityApi } from "@/api/activity";
 export default {
   name: "AnimeBar",
   components: {
@@ -124,7 +124,7 @@ export default {
   methods: {
     async fetchNavbarDynamics() {
       try {
-        const res = await axios.get("http://127.0.0.1:8081/api/activity/right");
+        const res = await activityApi.getNavbarDynamics();
         this.navbarDynamics = res.data;
         console.log(this.navbarDynamics, "navbarDynamics");
       } catch (e) {
@@ -132,14 +132,8 @@ export default {
       }
     },
     async getImages() {
-      const url = "http://localhost:8081/getAllCarousel";
-      const token = localStorage.getItem("token");
       try {
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await activityApi.getCarouselImages();
         this.images = response.data.map((item) => item.url);
         console.log(this.images, "images");
       } catch (error) {

@@ -3,7 +3,7 @@
     <div
       v-for="session in filteredSessions"
       :key="session.id"
-      :class="['session', { active: session === selected }]"
+      :class="['session', { active: session.id === (selected && selected.id) }]"
       @click="$emit('select', session)"
       class="ms-4 mt-2"
     >
@@ -19,13 +19,25 @@
 import { mapGetters } from "vuex";
 
 export default {
-  props: ["sessions", "selected"],
+  props: {
+    selected: {
+      type: [String, Number, Object],
+      default: null,
+    },
+    sessions: {
+      type: Array,
+      default: () => [],
+    },
+  },
   computed: {
     ...mapGetters("user", ["userInfo"]),
     currentUser() {
       return this.userInfo;
     },
     filteredSessions() {
+      if (!Array.isArray(this.sessions)) {
+        return [];
+      }
       return this.sessions.filter(
         (session) =>
           session.user1Id === this.currentUser.id ||

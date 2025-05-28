@@ -414,17 +414,8 @@ export default {
         formDataSubmit.append("videoFileName", videoFileName);
         formDataSubmit.append("coverFileName", coverFileName);
         formDataSubmit.append("description", this.videoInfo.description || "");
-        formDataSubmit.append("author", this.userInfo?.username || "未知用户");
+        formDataSubmit.append("authorId", this.userInfo?.id);
         formDataSubmit.append("avatar", this.userInfo?.avatar || "");
-
-        console.log("准备提交视频信息:", {
-          title: this.videoInfo.title,
-          videoFileName: videoFileName,
-          coverFileName: coverFileName,
-          description: this.videoInfo.description || "",
-          author: this.userInfo.username || "未知用户",
-          avatar: this.userInfo.avatar || "",
-        });
 
         const submitResponse = await uploadApi.submitVideo(formDataSubmit);
 

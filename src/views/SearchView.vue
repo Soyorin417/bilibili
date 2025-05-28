@@ -69,7 +69,7 @@
                     class="user-avatar"
                     :src="user.avatar"
                     :alt="user.username"
-                    @click="goToChat(user.id)"
+                    @click="goToChat(user.id, user.avatar, user.username)"
                     style="cursor: pointer"
                   />
                 </div>
@@ -158,7 +158,7 @@ import VideoBar from "@/components/navBar/VideoBar.vue";
 import { mapGetters } from "vuex";
 import { searchApi } from "@/api/search";
 import { userApi } from "@/api/user";
-import { createSession } from "@/api/session";
+import { sessionApi } from "@/api/session";
 
 export default {
   name: "SearchView",
@@ -278,18 +278,19 @@ export default {
         console.error("取消关注异常：", e);
       }
     },
-    async goToChat() {
+    async goToChat(targetUserId, targetUserAvatar, targetUsername) {
       if (!this.userInfo || !this.userInfo.id) {
         this.$message && this.$message.warning("请先登录后再聊天");
         return;
       }
       try {
-        // 创建会话
-        await createSession({
-          userId: this.userInfo.id,
-          createTime: new Date().toISOString(),
+        await sessionApi.createSession({
+          user1Id: this.userInfo.id,
+          user2Id: targetUserId,
+          avatar: targetUserAvatar,
+          name: `${targetUsername}`,
+          summary: "",
         });
-        // 跳转到消息页面
         this.$router.push("/message");
       } catch (error) {
         console.error("创建会话失败:", error);

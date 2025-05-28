@@ -9,7 +9,11 @@
           @select="selectSession"
           :sessions="sessions"
           :selected="selectedSession"
-        />
+        >
+          <template #session-item="{ session }">
+            <img :src="getSessionAvatar(session)" class="avatar ms-2" />
+          </template>
+        </MessageList>
         <MessageDetail
           class="detail"
           :session="selectedSession"
@@ -27,10 +31,13 @@ import MessageDetail from "@/components/message/MessageDetail.vue";
 import VideoBar from "@/components/navBar/VideoBar.vue";
 import axios from "axios";
 import websocketClient from "@/utils/websocket";
+import { userApi } from "@/api/user";
+import { sessionApi } from "@/api/session";
 
 export default {
   name: "MessageView",
   components: { MessageNav, MessageList, MessageDetail, VideoBar },
+
   data() {
     return {
       sessions: [],
@@ -41,20 +48,40 @@ export default {
   },
   methods: {
     async getAllSessions() {
-      const url = "http://localhost:8081/api/sessions";
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("Token is missing");
-        return;
-      }
+      const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+      const userId = userInfo.id;
       try {
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await sessionApi.getSessionsByUserId(userId);
         this.sessions = response.data;
-        console.log(this.sessions, "this.sessions");
+
+        // 立即加载所有会话的头像
+        await Promise.all(
+          this.sessions.map(async (session) => {
+            const targetUserId =
+              userId === session.user1Id ? session.user2Id : session.user1Id;
+            try {
+              const userResponse = await userApi.getUserById(targetUserId);
+              this.$set(session, "avatar", userResponse.data.avatar);
+            } catch (error) {
+              this.$set(
+                session,
+                "avatar",
+                "http://113.45.69.13:9000/image/default-avatar.jpg"
+              );
+            }
+          })
+        );
+
+        if (this.sessions.length > 0) {
+          if (
+            this.sessions[0].user1Id === this.currentUser ||
+            this.sessions[0].user2Id === this.currentUser
+          ) {
+            this.selectSession(this.sessions[0]);
+            this.hasAutoSelected = true;
+          }
+        }
+
         if (!this.hasAutoSelected && this.sessions.length > 0) {
           this.selectSession(this.sessions[0]);
           this.hasAutoSelected = true;
@@ -84,6 +111,7 @@ export default {
 
         if (session) {
           session.messages = messages;
+          this.getSessionAvatar(session);
           this.selectedSession = { ...session };
         }
       } catch (error) {
@@ -115,59 +143,78 @@ export default {
       if (!this.selectedSession) return;
 
       const session = this.sessions.find((s) => s.id === this.selectedSession.id);
-      if (session) {
-        if (!session.messages) {
-          session.messages = [];
-        }
+      if (!session) return;
 
-        // 添加用户信息到消息中
-        const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-        const messageWithUserInfo = {
-          ...newMsg,
-          avatar: userInfo.avatar,
-          username: userInfo.username,
-          fromUserId: userInfo.id,
-          toUserId: session.user1Id === userInfo.id ? session.user2Id : session.user1Id,
-          timestamp: new Date().toISOString(),
-        };
+      const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+      const senderId = userInfo.id;
+      const senderName = userInfo.username;
+      const senderAvatar = userInfo.avatar;
 
-        // 立即在发送者界面显示消息
-        session.messages.push(messageWithUserInfo);
-        this.selectedSession = { ...session };
+      // 判断对方id
+      const receiverId = senderId === session.user1Id ? session.user2Id : session.user1Id;
 
-        // 发送消息到WebSocket服务器
-        const messageData = {
-          type: "private_message",
-          fromUserId: userInfo.id,
-          toUserId: session.user1Id === userInfo.id ? session.user2Id : session.user1Id,
-          content: newMsg.content,
-          timestamp: new Date().toISOString(),
-          avatar: userInfo.avatar,
-          username: userInfo.username,
-        };
+      // 查对方信息
+      let receiverName = "";
+      let receiverAvatar = "";
+      try {
+        const res = await userApi.getUserById(receiverId);
+        receiverName = res.data.username;
+        receiverAvatar = res.data.avatar;
+      } catch (e) {
+        console.error("获取对方用户信息失败", e);
+      }
 
-        websocketClient.send(messageData);
+      const messagePayload = {
+        session_id: session.id,
+        content: newMsg.content,
+        send_time: new Date().toISOString(),
+        sender_id: senderId,
+        sender_name: senderName,
+        sender_avatar: senderAvatar,
+        receiver_id: receiverId,
+        receiver_name: receiverName,
+        receiver_avatar: receiverAvatar,
+      };
 
-        // 同时保存到后端数据库
-        const url = `http://localhost:8081/api/messages`;
-        const token = localStorage.getItem("token");
-        try {
-          const response = await axios.post(url, messageWithUserInfo, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          console.log("Message saved to database:", response.data);
-        } catch (error) {
-          console.error("Error saving message to database:", error);
-        }
+      // 立即在发送者界面显示消息
+      if (!session.messages) {
+        session.messages = [];
+      }
+      session.messages.push({
+        ...messagePayload,
+        // 兼容前端展示字段
+        timestamp: messagePayload.send_time,
+        fromUserId: senderId,
+        toUserId: receiverId,
+        avatar: senderAvatar,
+        username: senderName,
+      });
+      this.selectedSession = { ...session };
+
+      // 发送消息到WebSocket服务器
+      websocketClient.send({
+        type: "private_message",
+        ...messagePayload,
+      });
+
+      // 同时保存到后端数据库
+      const url = `http://localhost:8081/api/messages`;
+      const token = localStorage.getItem("token");
+      try {
+        const response = await axios.post(url, messagePayload, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log("保存消息到数据库成功:", response.data);
+      } catch (error) {
+        console.error("Error saving message to database:", error);
       }
     },
 
     handleWebSocketMessage(event) {
       try {
         const rawMessage = event.data;
-        console.log("处理WebSocket消息:", rawMessage);
 
         // 正确的前缀匹配
         const prefixMatch = rawMessage.match(/^\[.*?]：/);
@@ -219,8 +266,28 @@ export default {
         }
       } catch (error) {
         console.error("Error handling WebSocket message:", error);
-        console.log("Raw message:", event.data);
       }
+    },
+
+    async getSessionAvatar(session) {
+      console.log("getSessionAvatar session:", session);
+      if (session.avatar === this.currentUser.avatar) {
+        if (session.messages && session.messages.length > 0) {
+          const otherUserMessage = session.messages.find(
+            (msg) => msg.senderId !== this.currentUser.id
+          );
+          if (otherUserMessage) {
+            return otherUserMessage.avatar || otherUserMessage.sender_avatar;
+          }
+        }
+        // messages 为空时，直接用 session 里的对方头像
+        if (session.user1Id === this.currentUser.id) {
+          return session.user2Avatar;
+        } else {
+          return session.user1Avatar;
+        }
+      }
+      return session.avatar;
     },
   },
 
@@ -246,6 +313,18 @@ export default {
     if (websocketClient.ws && websocketClient.ws.readyState === WebSocket.OPEN) {
       websocketClient.ws.removeEventListener("message", this.handleWebSocketMessage);
     }
+  },
+
+  watch: {
+    selectedSession: {
+      handler(newVal) {
+        if (newVal && Array.isArray(newVal.messages)) {
+          console.log("selectedSession messages:", newVal.messages);
+        }
+      },
+      immediate: true,
+      deep: true,
+    },
   },
 };
 </script>

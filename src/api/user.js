@@ -2,7 +2,7 @@ import axios from "axios";
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8081",
+  baseURL: "http://localhost:8081",
   timeout: 5000,
 });
 
@@ -15,9 +15,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // 响应拦截器
@@ -36,6 +34,12 @@ api.interceptors.response.use(
 
 // 用户API
 export const userApi = {
+  // 获取当前登录用户信息
+  getCurrentUser: () => api.get("/api/user/info"),
+
+  // 根据uid获取指定用户信息
+  getUserById: (uid) => api.get(`/api/user/${uid}`),
+
   // 用户登录
   login: (data) => {
     return api.post("/user/login", data);

@@ -14,12 +14,12 @@ const token = localStorage.getItem("token");
 if (token) {
   axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-  axios.get("http://127.0.0.1:8081/user")
+  axios.get("http://127.0.0.1:8081/api/user/info")
     .then(res => {
       const userInfo = res.data;
       localStorage.setItem("userInfo", JSON.stringify(userInfo));
       store.commit("user/SET_USER_INFO", userInfo);
-      
+
       // Initialize WebSocket connection after user is authenticated
       websocketClient.connect();
     })

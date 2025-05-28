@@ -38,8 +38,11 @@ export const sessionApi = {
   // 创建会话
   createSession: (data) => api.post("/api/sessions", data),
 
-  // 获取会话列表
+  // 获取所有会话列表（不推荐用）
   getSessions: () => api.get("/api/sessions"),
+
+  // 根据用户ID获取会话列表
+  getSessionsByUserId: (userId) => api.get("/api/sessions/byUserId", { params: { userId } }),
 
   // 获取单个会话
   getSession: (id) => api.get(`/api/sessions/${id}`),

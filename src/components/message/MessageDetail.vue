@@ -88,18 +88,30 @@ export default {
     sendMessage() {
       if (!this.inputMessage.trim()) return;
 
+      // 判断对方用户
+      const isUser1 = this.session.user1Id === this.user.id;
+      const receiverId = isUser1 ? this.session.user2Id : this.session.user1Id;
+      const receiverName = isUser1 ? this.session.user2Name : this.session.user1Name;
+      const receiverAvatar = isUser1
+        ? this.session.user2Avatar
+        : this.session.user1Avatar;
+
       const newMsg = {
+        // id 可由后端生成，前端临时用时间戳
         id: Date.now(),
+        session_id: this.session.id,
         content: this.inputMessage,
-        sendTime: new Date().toISOString(),
-        senderId: this.user.id,
-        sessionId: this.session.id,
-        avatar: this.user.avatar,
+        send_time: new Date().toISOString(),
+        sender_id: this.user.id,
+        sender_name: this.user.username,
+        sender_avatar: this.user.avatar,
+        receiver_id: receiverId,
+        receiver_name: receiverName,
+        receiver_avatar: receiverAvatar,
       };
 
       this.$emit("send-message", newMsg);
       this.inputMessage = "";
-
       this.$nextTick(() => {
         this.scrollToBottom();
       });
@@ -117,8 +129,18 @@ export default {
         if (newSession && Array.isArray(newSession.messages)) {
           this.messages = newSession.messages.map((msg) => ({
             ...msg,
-            senderAvatar: msg.avatar,
+            senderId: msg.sender_id,
+            senderName: msg.sender_name,
+            senderAvatar: msg.sender_avatar,
+            receiverId: msg.receiver_id,
+            receiverName: msg.receiver_name,
+            receiverAvatar: msg.receiver_avatar,
+            sessionId: msg.session_id,
+            sendTime: msg.send_time,
+            avatar: msg.sender_avatar, // 用于头像显示
           }));
+        } else {
+          this.messages = [];
         }
       },
       immediate: true,

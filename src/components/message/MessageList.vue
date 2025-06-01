@@ -101,9 +101,11 @@ export default {
 }
 .name {
   font-weight: bold;
+  text-align: left;
 }
 .summary {
   color: #888;
+  text-align: left;
   font-size: 13px;
 }
 </style>

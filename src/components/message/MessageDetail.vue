@@ -1,17 +1,20 @@
 <template>
   <div class="chat-container">
     <!-- 消息列表区域 -->
-    <div class="message-list">
+    <div class="message-list" ref="messageList">
       <div class="messages-wrapper">
         <div
-          v-for="(msg, index) in messages"
-          :key="msg.id"
-          :class="['msg-block', msg.senderId === user.id ? 'msg-right' : 'msg-left']"
+          v-for="(msg, index) in sessionMessages"
+          :key="msg.id || index"
+          :class="['msg-block', msg.fromUserId === user.id ? 'msg-right' : 'msg-left']"
         >
           <div class="msg-time" v-if="shouldShowTime(index)">
-            {{ formatTime(msg.sendTime) }}
+            {{ formatTime(msg.timestamp) }}
           </div>
-          <div class="d-flex" :class="msg.senderId === user.id ? 'flex-row-reverse' : ''">
+          <div
+            class="d-flex"
+            :class="msg.fromUserId === user.id ? 'flex-row-reverse' : ''"
+          >
             <img :src="msg.avatar" class="msg-avatar" alt="用户头像" />
             <div class="msg-content">{{ msg.content }}</div>
           </div>
@@ -32,6 +35,25 @@
         <button class="btn btn-primary" type="button" @click="sendMessage">发送</button>
       </div>
     </div>
+
+    <!-- 消息通知 -->
+    <div
+      v-if="showNotification"
+      class="message-notification"
+      @click="handleNotificationClick"
+    >
+      <div class="notification-content">
+        <img
+          :src="notificationMessage.avatar"
+          class="notification-avatar"
+          alt="用户头像"
+        />
+        <div class="notification-text">
+          <div class="notification-name">{{ notificationMessage.username }}</div>
+          <div class="notification-message">{{ notificationMessage.content }}</div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -49,33 +71,66 @@ export default {
   data() {
     return {
       inputMessage: "",
-      messages: [],
+      localMessages: [],
+      showNotification: false,
+      notificationMessage: null,
+      notificationTimeout: null,
     };
   },
   computed: {
-    ...mapGetters("user", ["userInfo", "isLogin"]),
+    ...mapGetters("user", ["userInfo"]),
     user() {
-      console.log("Current user:", this.userInfo);
       return this.userInfo;
     },
+    sessionMessages() {
+      const sessionMsgs = this.session?.messages || [];
+      return [...this.localMessages, ...sessionMsgs].map((msg) => ({
+        ...msg,
+        fromUserId: msg.fromUserId || msg.sender_id,
+        toUserId: msg.toUserId || msg.receiver_id,
+        avatar: msg.avatar || msg.sender_avatar,
+        username: msg.username || msg.sender_name,
+        timestamp: msg.timestamp || msg.send_time,
+      }));
+    },
   },
-  mounted() {
-    console.log("Session data:", this.session);
-    console.log("Messages:", this.session?.messages);
+  watch: {
+    session: {
+      immediate: true,
+      handler(newSession) {
+        if (newSession && newSession.messages) {
+          this.localMessages = [];
+        }
+      },
+    },
+    sessionMessages: {
+      handler(newMessages) {
+        this.$nextTick(() => {
+          this.scrollToBottom();
+        });
+
+        // 检查是否有新消息
+        if (newMessages.length > 0) {
+          const lastMessage = newMessages[newMessages.length - 1];
+          if (lastMessage.fromUserId !== this.user.id) {
+            this.showNewMessageNotification(lastMessage);
+          }
+        }
+      },
+      deep: true,
+    },
   },
   methods: {
     shouldShowTime(index) {
-      if (!this.session || !this.session.messages) return true;
+      if (!this.sessionMessages.length) return true;
 
-      const messages = this.session.messages;
+      const curr = this.sessionMessages[index];
+      const prev = this.sessionMessages[index - 1];
 
-      const curr = messages[index];
-      const prev = messages[index - 1];
+      if (!curr || !prev || !curr.timestamp || !prev.timestamp) return true;
 
-      if (!curr || !prev || !curr.sendTime || !prev.sendTime) return true;
-
-      const currTime = dayjs(curr.sendTime);
-      const prevTime = dayjs(prev.sendTime);
+      const currTime = dayjs(curr.timestamp);
+      const prevTime = dayjs(prev.timestamp);
 
       if (!currTime.isValid() || !prevTime.isValid()) return true;
 
@@ -85,66 +140,64 @@ export default {
     formatTime(t) {
       return dayjs(t).format("HH:mm");
     },
+
     sendMessage() {
       if (!this.inputMessage.trim()) return;
 
-      // 判断对方用户
-      const isUser1 = this.session.user1Id === this.user.id;
-      const receiverId = isUser1 ? this.session.user2Id : this.session.user1Id;
-      const receiverName = isUser1 ? this.session.user2Name : this.session.user1Name;
-      const receiverAvatar = isUser1
-        ? this.session.user2Avatar
-        : this.session.user1Avatar;
-
-      const newMsg = {
-        // id 可由后端生成，前端临时用时间戳
-        id: Date.now(),
-        session_id: this.session.id,
+      const message = {
         content: this.inputMessage,
-        send_time: new Date().toISOString(),
-        sender_id: this.user.id,
-        sender_name: this.user.username,
-        sender_avatar: this.user.avatar,
-        receiver_id: receiverId,
-        receiver_name: receiverName,
-        receiver_avatar: receiverAvatar,
+        timestamp: new Date().toISOString(),
+        fromUserId: this.user.id,
+        toUserId:
+          this.session.user1Id === this.user.id
+            ? this.session.user2Id
+            : this.session.user1Id,
+        avatar: this.user.avatar,
+        username: this.user.username,
       };
 
-      this.$emit("send-message", newMsg);
+      this.localMessages.push(message);
+
+      this.$emit("sendMessage", message);
+
       this.inputMessage = "";
-      this.$nextTick(() => {
-        this.scrollToBottom();
-      });
     },
+
+    showNewMessageNotification(message) {
+      // 清除之前的通知
+      if (this.notificationTimeout) {
+        clearTimeout(this.notificationTimeout);
+      }
+
+      // 显示新通知
+      this.notificationMessage = message;
+      this.showNotification = true;
+
+      // 5秒后自动隐藏
+      this.notificationTimeout = setTimeout(() => {
+        this.showNotification = false;
+      }, 5000);
+    },
+
+    handleNotificationClick() {
+      this.showNotification = false;
+      this.scrollToBottom();
+    },
+
     scrollToBottom() {
-      const list = this.$refs.messageList;
-      if (list) {
-        list.scrollTop = list.scrollHeight;
+      const messageList = this.$refs.messageList;
+      if (messageList) {
+        messageList.scrollTop = messageList.scrollHeight;
       }
     },
   },
-  watch: {
-    session: {
-      handler(newSession) {
-        if (newSession && Array.isArray(newSession.messages)) {
-          this.messages = newSession.messages.map((msg) => ({
-            ...msg,
-            senderId: msg.sender_id,
-            senderName: msg.sender_name,
-            senderAvatar: msg.sender_avatar,
-            receiverId: msg.receiver_id,
-            receiverName: msg.receiver_name,
-            receiverAvatar: msg.receiver_avatar,
-            sessionId: msg.session_id,
-            sendTime: msg.send_time,
-            avatar: msg.sender_avatar, // 用于头像显示
-          }));
-        } else {
-          this.messages = [];
-        }
-      },
-      immediate: true,
-    },
+  mounted() {
+    this.scrollToBottom();
+  },
+  beforeUnmount() {
+    if (this.notificationTimeout) {
+      clearTimeout(this.notificationTimeout);
+    }
   },
 };
 </script>
@@ -166,6 +219,7 @@ export default {
 .messages-wrapper {
   max-width: 800px;
   margin: 0 auto;
+  margin-top: auto;
 }
 
 .input-area {
@@ -226,6 +280,56 @@ export default {
 
   .msg-content {
     max-width: 85%;
+  }
+}
+
+.message-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  cursor: pointer;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+}
+
+.notification-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+
+.notification-text {
+  flex: 1;
+}
+
+.notification-name {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.notification-message {
+  color: #666;
+  font-size: 14px;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
   }
 }
 </style>

@@ -283,6 +283,10 @@ export default {
         this.$message && this.$message.warning("请先登录后再聊天");
         return;
       }
+      if (this.userInfo.id === targetUserId) {
+        this.$message && this.$message.warning("不能和自己聊天");
+        return;
+      }
       try {
         await sessionApi.createSession({
           user1Id: this.userInfo.id,

@@ -3,7 +3,7 @@
     <div class="container-fluid position-absolute top-0 start-0">
       <div class="flex-shrink-0">
         <LeftNavMenu :fill="currentColor" />
-      </div>
+          </div>
       <div class="flex-grow-1 d-flex justify-content-center">
         <HotSearchList
           :search-history="searchHistory"
@@ -16,8 +16,8 @@
           @search="handleSearch"
           @clearHistory="clearHistory"
           @setSearchQuery="setSearchQuery"
-        />
-      </div>
+              />
+            </div>
       <div class="flex-shrink-0">
         <NavBarRightMenu :navbar-dynamics="navbarDynamics" :fill="currentColor" />
       </div>
@@ -93,10 +93,10 @@ export default {
           }
         }
         console.log("搜索:", this.searchQuery);
-        this.$router.push({
-          path: "/search",
-          query: { keyword: this.searchQuery },
-        });
+      this.$router.push({
+        path: "/search",
+        query: { keyword: this.searchQuery },
+      });
       }
     },
     clearHistory() {

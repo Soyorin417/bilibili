@@ -46,7 +46,7 @@
 import HotSearchList from "@/components/navBar/search/HotSearchList.vue";
 import NavBarRightMenu from "@/components/navBar/NavBarRightMenu.vue";
 import LeftNavMenu from "@/components/navBar/NavBarLeftMenu.vue";
-import { activityApi } from "@/api/activity";
+import { animeApi } from "@/api/anime";
 export default {
   name: "AnimeBar",
   components: {
@@ -116,24 +116,14 @@ export default {
     this.currentBackground = this.url;
     this.startAutoSwitch();
     this.getImages();
-    this.fetchNavbarDynamics();
   },
   beforeUnmount() {
     this.stopAutoSwitch();
   },
   methods: {
-    async fetchNavbarDynamics() {
-      try {
-        const res = await activityApi.getNavbarDynamics();
-        this.navbarDynamics = res.data;
-        console.log(this.navbarDynamics, "navbarDynamics");
-      } catch (e) {
-        console.error("获取动态失败", e);
-      }
-    },
     async getImages() {
       try {
-        const response = await activityApi.getCarouselImages();
+        const response = await animeApi.getCarouselImages();
         this.images = response.data.map((item) => item.url);
         console.log(this.images, "images");
       } catch (error) {

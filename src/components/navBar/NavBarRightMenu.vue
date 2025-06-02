@@ -62,7 +62,7 @@
       <ul class="dropdown-menu dropdown-menu-end" style="width: 320px">
         <li>
           <div class="dropdown-center-content">
-            <DynamicList :dynamics="navbarDynamics" />
+            <NavMiniList :list="navbarDynamics" title="动态" littleTitle="历史动态" />
           </div>
         </li>
       </ul>
@@ -79,10 +79,16 @@
         <div class="nav-text" :style="{ color: fill }">收藏</div></router-link
       >
 
-      <ul class="dropdown-menu">
-        <li><a class="dropdown-item" href="#">个人资料</a></li>
-        <li><a class="dropdown-item" href="#">设置</a></li>
-        <li><a class="dropdown-item" href="#">退出登录</a></li>
+      <ul class="dropdown-menu dropdown-menu-end" style="width: 320px">
+        <li>
+          <div class="dropdown-center-content">
+            <NavMiniList
+              :list="nabarCollections"
+              title="收藏"
+              littleTitle="历史收藏"
+            ></NavMiniList>
+          </div>
+        </li>
       </ul>
     </li>
     <li class="nav-item dropdown">
@@ -97,10 +103,12 @@
         <div class="nav-text" :style="{ color: fill }">历史</div></router-link
       >
 
-      <ul class="dropdown-menu">
-        <li><a class="dropdown-item" href="#">个人资料</a></li>
-        <li><a class="dropdown-item" href="#">设置</a></li>
-        <li><a class="dropdown-item" href="#">退出登录</a></li>
+      <ul class="dropdown-menu" style="width: 320px">
+        <li>
+          <div class="dropdown-center-content">
+            <NavMiniList :list="nabarHistory" title="历史" littleTitle="历史记录" />
+          </div>
+        </li>
       </ul>
     </li>
 
@@ -137,7 +145,7 @@
 <script>
 import { Upload } from "@icon-park/vue-next";
 import UserProfileCardMini from "@/components/user/UserProfileCardMini.vue";
-import DynamicList from "@/components/dynamic/DynamicList.vue";
+import NavMiniList from "@/components/littleCard/NavMiniList.vue";
 import { mapGetters, mapActions } from "vuex";
 import VipIcon from "@/components/ui/VipIcon.vue";
 import MessageIcon from "@/components/ui/MessageIcon.vue";
@@ -145,12 +153,15 @@ import CollectIcon from "@/components/ui/CollectIcon.vue";
 import HistoryIcon from "@/components/ui/HistoryIcon.vue";
 import CreateIcon from "@/components/ui/CreateIcon.vue";
 import ActivityIcon from "@/components/ui/ActivityIcon.vue";
+import { collectApi } from "@/api/collect.js";
+import { historyApi } from "@/api/history.js";
+import { activityApi } from "@/api/activity.js";
 export default {
   name: "NavBarRightMenu",
   components: {
     Upload,
     UserProfileCardMini,
-    DynamicList,
+    NavMiniList,
     VipIcon,
     MessageIcon,
     CollectIcon,
@@ -159,30 +170,51 @@ export default {
     ActivityIcon,
   },
   props: {
-    navbarDynamics: {
-      type: Array,
-      required: true,
-    },
     fill: {
       type: String,
-      default: "#000",
+      required: true,
     },
   },
   data() {
     return {
       isAvatarVisible: true,
+      navbarDynamics: [],
+      nabarCollections: [],
+      nabarHistory: [],
     };
   },
-  computed: {
-    ...mapGetters("user", ["userInfo", "isLogin"]),
-    user() {
-      return this.userInfo;
-    },
-    avatar() {
-      return this.user.avatar;
-    },
+  mounted() {
+    this.fetchNavbarDynamics();
+    this.fetchNabarCollections();
+    this.fetchNabarHistory();
   },
   methods: {
+    async fetchNavbarDynamics() {
+      try {
+        const res = await activityApi.getUserActivity();
+
+        this.navbarDynamics = res.data;
+      } catch (e) {
+        console.error("获取动态失败", e);
+      }
+    },
+    async fetchNabarCollections() {
+      try {
+        const res = await collectApi.getUserCollectedVideos();
+        this.nabarCollections = res.data;
+        console.log(this.nabarCollections, "this.nabarCollections");
+      } catch (error) {
+        console.error("获取收藏列表失败:", error);
+      }
+    },
+    async fetchNabarHistory() {
+      try {
+        const res = await historyApi.getUserHistory();
+        this.nabarHistory = res.data;
+      } catch (error) {
+        console.error("获取历史记录失败:", error);
+      }
+    },
     ...mapActions("user", ["logout"]),
     handleLogout() {
       this.logout();
@@ -191,6 +223,15 @@ export default {
       this.$router.push({
         path: "/upload",
       });
+    },
+  },
+  computed: {
+    ...mapGetters("user", ["userInfo", "isLogin"]),
+    user() {
+      return this.userInfo;
+    },
+    avatar() {
+      return this.user.avatar;
     },
   },
 };

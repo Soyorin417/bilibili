@@ -64,6 +64,10 @@ import SecurityView from '@/views/user/account/SecurityView.vue';
 import CoinView from '@/views/user/account/CoinView.vue';
 import SpaceView from '@/views/user/account/SpaceView.vue';
 import AdminView from '@/views/AdminView.vue'
+import DynamicView from '@/views/user/account/DynamicView.vue'
+import CidFetcherTestView from '@/views/CidFetcherTest.vue';
+import DanmakuFetcherTestView from '@/views/DanmakuFetcherTest.vue';
+import DanmakuXmlFetcherTestView from '@/views/DanmakuXmlFetcherTest.vue';
 
 // 定义路由配置数组
 const routes = [
@@ -120,6 +124,12 @@ const routes = [
     path: '/profile/face',
     name: 'FaceView',
     component: FaceView,
+  },
+  //个人动态页面
+  {
+    path: '/profile/dynamic',
+    name:'DynamicView',
+    component:DynamicView
   },
   // 首页路由
   {
@@ -380,6 +390,24 @@ const routes = [
     name: 'VideoView',
     component: VideoView,
     props: true
+  },
+  //测试获取视频cid
+  {
+    path:'/test-cid',
+    name:'CidFetcherTest',
+    component:CidFetcherTestView
+  },
+  //测试获取弹幕url
+  {
+    path:'/test-danmaku',
+    name:'DanmakuFetcherTest',
+    component:DanmakuFetcherTestView
+  },
+  //测试直接根据cid获取弹幕xml
+  {
+    path:'/test-danmaku-xml',
+    name:'DanmakuXmlFetcherTest',
+    component:DanmakuXmlFetcherTestView
   },
 ]
 

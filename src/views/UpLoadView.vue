@@ -7,168 +7,25 @@
 
       <!-- 主内容区 -->
       <div class="upload-main">
-        <!-- 上传进度条 -->
-        <div class="upload-progress" v-if="uploadProgress > 0 && uploadProgress < 100">
-          <div class="progress-bar">
-            <div class="progress" :style="{ width: uploadProgress + '%' }"></div>
-          </div>
-          <div class="progress-text">上传进度: {{ uploadProgress }}%</div>
-        </div>
-
         <!-- 上传区域 -->
-        <div
-          class="upload-area"
-          v-if="!selectedFile"
-          @dragover.prevent
-          @drop.prevent="handleDrop"
-        >
-          <div class="upload-box">
-            <i class="bi bi-cloud-arrow-up"></i>
-            <h3>点击选择文件或将文件拖入此处</h3>
-            <p>支持 mp4、flv、avi、mov、wmv、mpg、mkv 等格式</p>
-            <div class="upload-limits">
-              <span><i class="bi bi-clock"></i> 视频最长60分钟</span>
-              <span><i class="bi bi-hdd"></i> 文件最大8GB</span>
-            </div>
-            <input
-              type="file"
-              ref="fileInput"
-              @change="handleFileSelect"
-              accept="video/*"
-              class="file-input"
-            />
-            <button class="select-btn" @click="triggerFileInput">选择文件</button>
-          </div>
-        </div>
+        <VideoUploadArea v-if="!selectedFile" @file-selected="handleFileFromChild" />
 
         <!-- 视频信息表单 -->
-        <div class="video-form" v-else>
-          <div class="form-header">
-            <h2>视频投稿</h2>
-            <button class="cancel-btn" @click="resetUpload">
-              <i class="bi bi-x"></i>
-              取消投稿
-            </button>
-          </div>
-
-          <div class="form-content">
-            <!-- 基本信息 -->
-            <div class="form-section">
-              <h3>基本信息</h3>
-              <div class="form-group">
-                <label>标题 <span class="required">*</span></label>
-                <input
-                  type="text"
-                  v-model="videoInfo.title"
-                  placeholder="请输入稿件标题"
-                  maxlength="80"
-                />
-                <span class="char-count">{{ videoInfo.title.length }}/80</span>
-              </div>
-
-              <div class="form-group">
-                <label>分区 <span class="required">*</span></label>
-                <select v-model="videoInfo.category">
-                  <option value="">请选择分区</option>
-                  <option value="animation">动画</option>
-                  <option value="music">音乐</option>
-                  <option value="dance">舞蹈</option>
-                  <option value="game">游戏</option>
-                  <option value="knowledge">知识</option>
-                  <option value="tech">科技</option>
-                  <option value="sports">运动</option>
-                  <option value="car">汽车</option>
-                  <option value="life">生活</option>
-                  <option value="food">美食</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label>简介</label>
-                <textarea
-                  v-model="videoInfo.description"
-                  placeholder="填写更全面的相关信息，让更多人找到你的视频吧"
-                  rows="4"
-                ></textarea>
-              </div>
-
-              <div class="form-group">
-                <label>标签</label>
-                <div class="tags-input">
-                  <div class="tag" v-for="(tag, index) in videoInfo.tags" :key="index">
-                    {{ tag }}
-                    <i class="bi bi-x" @click="removeTag(index)"></i>
-                  </div>
-                  <input
-                    type="text"
-                    v-model="tagInput"
-                    @keydown.enter.prevent="addTag"
-                    placeholder="输入标签按回车添加，最多10个"
-                    :disabled="videoInfo.tags.length >= 10"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- 封面设置 -->
-            <div class="form-section">
-              <h3>封面设置</h3>
-              <div class="cover-upload">
-                <div class="cover-preview" v-if="videoInfo.cover">
-                  <img :src="videoInfo.cover" alt="视频封面" />
-                  <div class="cover-actions">
-                    <button @click="removeCover"><i class="bi bi-trash"></i></button>
-                  </div>
-                </div>
-                <div class="cover-upload-box" v-else @click="triggerCoverInput">
-                  <i class="bi bi-image"></i>
-                  <p>点击上传封面</p>
-                  <input
-                    type="file"
-                    ref="coverInput"
-                    @change="handleCoverSelect"
-                    accept="image/*"
-                    class="file-input"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- 发布设置 -->
-            <div class="form-section">
-              <h3>发布设置</h3>
-              <div class="form-group">
-                <label>发布时间</label>
-                <div class="radio-group">
-                  <label class="radio">
-                    <input type="radio" v-model="videoInfo.publishType" value="now" />
-                    <span>立即发布</span>
-                  </label>
-                  <label class="radio">
-                    <input
-                      type="radio"
-                      v-model="videoInfo.publishType"
-                      value="schedule"
-                    />
-                    <span>定时发布</span>
-                  </label>
-                </div>
-                <input
-                  type="datetime-local"
-                  v-if="videoInfo.publishType === 'schedule'"
-                  v-model="videoInfo.scheduleTime"
-                  class="schedule-time"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- 提交按钮 -->
-          <div class="form-actions" @click="submitVideo">
-            <button class="draft-btn">保存草稿</button>
-            <button class="submit-btn">立即投稿</button>
-          </div>
-        </div>
+        <VideoInfoForm
+          v-else
+          :videoInfo="videoInfo"
+          :tagInput="tagInput"
+          @reset-upload="resetUpload"
+          @save-draft="saveDraft"
+          @submit-video="submitVideo"
+          @add-tag="handleAddTag"
+          @remove-tag="removeTag"
+          @remove-cover="removeCover"
+          @handle-cover-select="handleCoverSelect"
+          @update:tagInput="(val) => (tagInput = val)"
+          @update-video-info="updateVideoInfo"
+          @fetch-danmaku="fetchBilibiliDanmaku"
+        />
       </div>
     </div>
   </div>
@@ -179,12 +36,17 @@ import VideoBar from "@/components/navBar/VideoBar.vue";
 import DataNav from "@/components/navBar/DataNav.vue";
 import { uploadApi } from "@/api/upload";
 import { mapGetters } from "vuex";
-
+import VideoUploadArea from "@/components/upload/videoUploadArea.vue";
+import VideoInfoForm from "@/components/upload/VideoInfoForm.vue";
+import { createTag, getAllTags, addTagToVideo } from "@/api/tag";
+import { danmakuApi } from "@/api/danmaku";
 export default {
   name: "UpLoadView",
   components: {
     VideoBar,
     DataNav,
+    VideoUploadArea,
+    VideoInfoForm,
   },
   computed: {
     ...mapGetters("user", ["userInfo"]),
@@ -203,7 +65,11 @@ export default {
         cover: null,
         publishType: "now",
         scheduleTime: null,
+        duration: 0,
+        cid: "",
+        danmakuFileName: "",
       },
+      durationReady: false,
     };
   },
   methods: {
@@ -225,24 +91,27 @@ export default {
     handleDrop(e) {
       const file = e.dataTransfer.files[0];
       if (file && file.type.startsWith("video/")) {
-        this.selectedFile = file;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.videoUrl = e.target.result;
-        };
-        reader.readAsDataURL(file);
+        this.getVideoDuration(file);
       }
     },
-    handleFileSelect(e) {
+    onFileSelect(e) {
       const file = e.target.files[0];
       if (file) {
-        this.selectedFile = file;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.videoUrl = e.target.result;
-        };
-        reader.readAsDataURL(file);
+        this.getVideoDuration(file);
       }
+    },
+    getVideoDuration(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.src = e.target.result;
+        video.onloadedmetadata = () => {
+          const duration = video.duration;
+          this.$emit("file-selected", { file, duration });
+        };
+      };
+      reader.readAsDataURL(file);
     },
     handleCoverSelect(e) {
       const file = e.target.files[0];
@@ -257,10 +126,22 @@ export default {
     removeCover() {
       this.videoInfo.cover = null;
     },
-    addTag() {
+    async addTag() {
       if (this.tagInput && this.videoInfo.tags.length < 10) {
-        this.videoInfo.tags.push(this.tagInput);
-        this.tagInput = "";
+        const tag = {
+          name: this.tagInput,
+          videoId: this.videoInfo.id,
+        };
+        try {
+          const response = await createTag(tag);
+          if (response.status === 200) {
+            this.videoInfo.tags.push(this.tagInput);
+            this.tagInput = "";
+            console.log("添加标签成功:", this.videoInfo.tags);
+          }
+        } catch (error) {
+          console.error("添加标签失败:", error);
+        }
       }
     },
     removeTag(index) {
@@ -277,6 +158,9 @@ export default {
         cover: null,
         publishType: "now",
         scheduleTime: null,
+        duration: 0,
+        cid: "",
+        danmakuFileName: "",
       };
     },
     async submitVideo() {
@@ -414,15 +298,30 @@ export default {
         formDataSubmit.append("videoFileName", videoFileName);
         formDataSubmit.append("coverFileName", coverFileName);
         formDataSubmit.append("description", this.videoInfo.description || "");
-        formDataSubmit.append("authorId", this.userInfo?.id);
+        formDataSubmit.append("authorId", Number(this.userInfo?.id));
         formDataSubmit.append("avatar", this.userInfo?.avatar || "");
+        formDataSubmit.append("duration", String(this.videoInfo.duration));
+        // 添加弹幕文件名，如果没有则使用空字符串
+        formDataSubmit.append("danmakuFileName", this.videoInfo.danmakuFileName || "");
+
+        console.log("提交的表单数据:", {
+          title: this.videoInfo.title,
+          videoFileName,
+          coverFileName,
+          danmakuFileName: this.videoInfo.danmakuFileName || "",
+          description: this.videoInfo.description,
+          authorId: this.userInfo?.id,
+          duration: this.videoInfo.duration,
+        });
 
         const submitResponse = await uploadApi.submitVideo(formDataSubmit);
+        const videoId = submitResponse.data.videoId;
 
         if (submitResponse.status === 200) {
+          await this.handleTagsAfterUpload(videoId, this.videoInfo.tags);
           alert("视频投稿成功！");
           this.resetUpload();
-          this.$router.push("/");
+          //this.$router.push("/");
         } else {
           throw new Error(submitResponse.data || "提交失败");
         }
@@ -439,11 +338,90 @@ export default {
         }
       }
     },
+    handleFileFromChild({ file, duration }) {
+      this.selectedFile = file;
+      this.videoInfo.duration = duration;
+      this.durationReady = true;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.videoUrl = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    },
+    updateVideoInfo(newInfo) {
+      this.videoInfo = newInfo;
+    },
+    handleAddTag() {
+      const tag = this.tagInput.trim();
+      if (tag && !this.videoInfo.tags.includes(tag) && this.videoInfo.tags.length < 10) {
+        this.videoInfo.tags.push(tag);
+        this.tagInput = "";
+      }
+    },
+    async handleTagsAfterUpload(videoId, tags) {
+      const allTagsRes = await getAllTags();
+      console.log("所有标签:", allTagsRes.data);
+      const allTags = allTagsRes.data;
+      for (const tagName of tags) {
+        let tagObj = allTags.find((t) => t.name === tagName);
+        if (!tagObj) {
+          const createRes = await createTag({ name: tagName });
+          tagObj = createRes.data;
+        }
+        console.log("添加标签", videoId, tagObj.id);
+        await addTagToVideo(videoId, Number(tagObj.id));
+      }
+    },
+    // 获取B站弹幕
+    async fetchBilibiliDanmaku() {
+      if (!this.videoInfo.cid) {
+        this.$message.warning("请先输入视频CID");
+        return;
+      }
+      try {
+        const response = await danmakuApi.getBilibiliDanmaku(this.videoInfo.cid);
+        if (response.data) {
+          // 将XML数据转换为Blob
+          const xmlBlob = new Blob([response.data], {
+            type: "application/xml;charset=UTF-8",
+          });
+          const xmlFile = new File([xmlBlob], `danmaku_${this.videoInfo.cid}.xml`, {
+            type: "application/xml;charset=UTF-8",
+          });
+
+          // 创建FormData并上传到MinIO
+          const formData = new FormData();
+          formData.append("file", xmlFile);
+
+          const uploadResponse = await uploadApi.uploadToMinIO(formData);
+          if (uploadResponse.status === 200) {
+            this.$message.success("弹幕获取并上传成功");
+            // 保存弹幕文件名到videoInfo
+            const danmakuFileName = this.extractFileNameFromUrl(
+              uploadResponse.data.fileName
+            );
+            this.videoInfo.danmakuFileName = danmakuFileName;
+            console.log("弹幕文件名:", danmakuFileName);
+          }
+        }
+      } catch (error) {
+        console.error("获取或上传弹幕失败:", error);
+        this.$message.error(
+          "获取或上传弹幕失败: " + (error.response?.data || error.message)
+        );
+      }
+    },
   },
 };
 </script>
 
 <style scoped>
+.upload-main {
+  flex: 1;
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+}
 .upload-view {
   min-height: 100vh;
   background-color: #f4f4f4;
@@ -455,302 +433,5 @@ export default {
   padding: 20px;
   display: flex;
   gap: 20px;
-}
-
-/* 主内容区样式 */
-.upload-main {
-  flex: 1;
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-}
-
-/* 上传区域样式 */
-.upload-area {
-  height: 400px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.upload-box {
-  text-align: center;
-  padding: 40px;
-  border: 2px dashed #ddd;
-  border-radius: 8px;
-  background: #fafafa;
-  width: 100%;
-  max-width: 600px;
-}
-
-.upload-box i {
-  font-size: 48px;
-  color: #00aeec;
-  margin-bottom: 16px;
-}
-
-.upload-box h3 {
-  margin: 0 0 8px;
-  font-size: 18px;
-  color: #18191c;
-}
-
-.upload-box p {
-  margin: 0 0 16px;
-  color: #61666d;
-}
-
-.upload-limits {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  margin-bottom: 24px;
-  color: #61666d;
-  font-size: 14px;
-}
-
-.file-input {
-  display: none;
-}
-
-.select-btn {
-  background: #00aeec;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background 0.3s ease;
-}
-
-.select-btn:hover {
-  background: #0095cc;
-}
-
-/* 表单样式 */
-.form-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.form-header h2 {
-  margin: 0;
-  font-size: 20px;
-}
-
-.cancel-btn {
-  background: none;
-  border: none;
-  color: #61666d;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.form-section {
-  margin-bottom: 32px;
-}
-
-.form-section h3 {
-  font-size: 16px;
-  margin: 0 0 16px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-  position: relative;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  color: #18191c;
-}
-
-.required {
-  color: #ff6b6b;
-}
-
-input[type="text"],
-textarea,
-select {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-textarea {
-  resize: vertical;
-}
-
-.char-count {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  color: #9499a0;
-  font-size: 12px;
-}
-
-/* 标签输入样式 */
-.tags-input {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.tag {
-  background: #f4f4f4;
-  padding: 4px 8px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-}
-
-.tag i {
-  cursor: pointer;
-}
-
-.tags-input input {
-  border: none;
-  outline: none;
-  padding: 4px;
-  flex: 1;
-  min-width: 100px;
-}
-
-/* 封面上传样式 */
-.cover-upload {
-  width: 240px;
-}
-
-.cover-preview {
-  position: relative;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.cover-preview img {
-  width: 100%;
-  display: block;
-}
-
-.cover-actions {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-}
-
-.cover-actions button {
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.cover-upload-box {
-  border: 2px dashed #ddd;
-  border-radius: 4px;
-  padding: 24px;
-  text-align: center;
-  cursor: pointer;
-}
-
-.cover-upload-box i {
-  font-size: 32px;
-  color: #9499a0;
-  margin-bottom: 8px;
-}
-
-/* 发布设置样式 */
-.radio-group {
-  display: flex;
-  gap: 24px;
-  margin-bottom: 16px;
-}
-
-.radio {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.schedule-time {
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-/* 表单操作按钮 */
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 16px;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #f4f4f4;
-}
-
-.draft-btn {
-  padding: 12px 24px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.submit-btn {
-  padding: 12px 24px;
-  background: #00aeec;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.submit-btn:hover {
-  background: #0095cc;
-}
-
-/* 上传进度条样式 */
-.upload-progress {
-  margin-bottom: 20px;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 4px;
-}
-
-.progress-bar {
-  height: 6px;
-  background: #e9ecef;
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.progress {
-  height: 100%;
-  background: #00aeec;
-  transition: width 0.3s ease;
-}
-
-.progress-text {
-  font-size: 14px;
-  color: #61666d;
-  text-align: center;
 }
 </style>

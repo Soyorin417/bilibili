@@ -33,24 +33,14 @@ api.interceptors.response.use(
   }
 );
 
-export const activityApi = {
-    // 获取用户收藏的视频列表
-  getUserActivity: () => {
-    return api.get(`/api/activity`);
+export const danmakuApi = {
+  // 获取本地弹幕列表
+  getDanmakuById: (id) => {
+    return api.get(`/danmaku/getDanmakuList?id=${id}`);
   },
 
-  // 收藏视频
-  addActivity: (videoId) => {
-    return api.post("/api/activity/add", { videoId });
-  },
-
-    // 取消收藏视频
-  removeActivity: (videoId) => {
-    return api.post("/api/activity/remove", { videoId });
-  },
-
-  // 检查视频是否已收藏
-  checkActivity: (videoId) => {
-    return api.get(`/api/activity/check/${videoId}`);
-  },
+  // 获取B站弹幕
+  getBilibiliDanmaku: (oid) => {
+    return api.get(`/danmaku/getBilibiliDanmaku?oid=${oid}`);
+  }
 };

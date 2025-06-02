@@ -39,13 +39,13 @@
                     <div class="img-info-bar">
                       <span class="me-2">
                         <i class="bi bi-play-fill"></i>
-                        {{ formatNumber(video.playCount) }}
+                        {{ video.playCount }}
                       </span>
                       <span class="me-2">
-                        <i class="bi bi-chat"></i> {{ formatNumber(video.commentCount) }}
+                        <i class="bi bi-chat"></i> {{ video.commentCount }}
                       </span>
                       <span class="ms-auto">
-                        {{ video.duration || "00:00" }}
+                        {{ video.duration }}
                       </span>
                     </div>
                   </div>
@@ -85,8 +85,10 @@
 <script>
 import NavBar from "@/components/navBar/NavBar.vue";
 import SpaceTopBar from "@/components/user/SpaceTopBar.vue";
-import axios from "axios";
 import { mapGetters } from "vuex";
+import { collectApi } from "@/api/collect.js";
+import { formatCount } from "@/utils/date.js";
+
 export default {
   name: "CollectionView",
 
@@ -96,10 +98,15 @@ export default {
       videos: [],
     };
   },
+  computed: {
+    ...mapGetters("user", ["userInfo", "isLogin"]),
+    user() {
+      return this.userInfo;
+    },
+  },
   async created() {
     try {
-      const userId = this.user.id;
-      const response = await axios.get(`http://localhost:8081/collect/list/${userId}`);
+      const response = await collectApi.getCollectionDetail();
       console.log(response, "res");
       if (response.status === 200) {
         const collects = Array.isArray(response.data)
@@ -107,33 +114,21 @@ export default {
           : response.data.data || [];
         this.videos = collects.map((video) => ({
           ...video,
-          playCount: video.views || 0,
-          commentCount: video.comments || 0,
+          videoId: video.id || video.videoId,
+          playCount: formatCount(video.views || 0),
+          commentCount: formatCount(video.comments || 0),
           duration: video.duration || "00:00",
         }));
+        console.log("处理后的视频数据:", this.videos);
       }
     } catch (error) {
       console.error("获取收藏列表失败:", error);
+      this.videos = [];
     }
-  },
-  computed: {
-    ...mapGetters("user", ["userInfo", "isLogin"]),
-    user() {
-      return this.userInfo;
-    },
   },
   methods: {
     goToVideo(id) {
       this.$router.push(`/video/${id}`);
-    },
-    formatNumber(num) {
-      const n = Number(num) || 0;
-      if (n >= 100000000) {
-        return (n / 100000000).toFixed(1).replace(/\.0$/, "") + "亿";
-      } else if (n >= 10000) {
-        return (n / 10000).toFixed(1).replace(/\.0$/, "") + "万";
-      }
-      return n.toString();
     },
   },
 };

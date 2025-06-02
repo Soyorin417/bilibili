@@ -20,15 +20,19 @@
       </div>
     </div>
     <div class="post-content">
-      <div v-if="post.media">
-        <div class="video-card-content">
-          <div class="video-thumbnail" v-if="post.is_image">
-            <img :src="post.media" alt="" />
+      <div v-if="post.video && post.video.image">
+        <div class="video-card-content" @click="handleVideoClick">
+          <div class="video-thumbnail">
+            <img :src="post.video.image" alt="视频封面" />
+            <span class="video-duration">{{ post.video.duration }}</span>
           </div>
           <div class="video-info">
             <div class="video-title">{{ post.content }}</div>
-            <div class="video-stats" v-if="post.is_image">
-              <i class="bi bi-play-btn me-1"></i><span>{{ post.views }}</span>
+            <div class="video-stats-line">
+              <span class="me-3"
+                ><i class="bi bi-play-fill"></i> {{ post.video.playCount }}</span
+              >
+              <span><i class="bi bi-chat"></i> {{ post.video.commentCount }}</span>
             </div>
           </div>
         </div>
@@ -192,6 +196,15 @@ export default {
         likes: 0,
         liked: false,
         shared: false,
+        video: {
+          // 确保 video 字段存在
+          id: "",
+          image: "",
+          title: "",
+          duration: "",
+          playCount: 0,
+          commentCount: 0,
+        },
       }),
     },
     userInfo: {
@@ -601,7 +614,7 @@ export default {
   margin-bottom: 8px;
 }
 
-.video-stats {
+.video-stats-line {
   font-size: 12px;
   color: #9499a0;
   text-align: left;

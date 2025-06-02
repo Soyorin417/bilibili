@@ -3,7 +3,7 @@
     <div class="container-fluid position-absolute top-0 start-0">
       <div class="flex-shrink-0">
         <LeftNavMenu :fill="currentColor" />
-          </div>
+      </div>
       <div class="flex-grow-1 d-flex justify-content-center">
         <HotSearchList
           :search-history="searchHistory"
@@ -16,8 +16,8 @@
           @search="handleSearch"
           @clearHistory="clearHistory"
           @setSearchQuery="setSearchQuery"
-              />
-            </div>
+        />
+      </div>
       <div class="flex-shrink-0">
         <NavBarRightMenu :navbar-dynamics="navbarDynamics" :fill="currentColor" />
       </div>
@@ -29,7 +29,6 @@
 import HotSearchList from "@/components/navBar/search/HotSearchList.vue";
 import LeftNavMenu from "@/components/navBar/NavBarLeftMenu.vue";
 import NavBarRightMenu from "@/components/navBar/NavBarRightMenu.vue";
-import axios from "axios";
 export default {
   name: "VideoBar",
   computed: {
@@ -44,9 +43,7 @@ export default {
     NavBarRightMenu,
     LeftNavMenu,
   },
-  mounted() {
-    this.fetchNavbarDynamics();
-  },
+
   data() {
     return {
       navbarDynamics: [],
@@ -93,10 +90,10 @@ export default {
           }
         }
         console.log("搜索:", this.searchQuery);
-      this.$router.push({
-        path: "/search",
-        query: { keyword: this.searchQuery },
-      });
+        this.$router.push({
+          path: "/search",
+          query: { keyword: this.searchQuery },
+        });
       }
     },
     clearHistory() {
@@ -110,15 +107,6 @@ export default {
     formatHotTitle(title) {
       if (!title) return "";
       return title.length > 10 ? title.slice(0, 10) + "..." : title;
-    },
-    async fetchNavbarDynamics() {
-      try {
-        const res = await axios.get("http://127.0.0.1:8081/api/activity/right");
-        this.navbarDynamics = res.data;
-        console.log(this.navbarDynamics, "navbarDynamics");
-      } catch (e) {
-        console.error("获取动态失败", e);
-      }
     },
   },
 };

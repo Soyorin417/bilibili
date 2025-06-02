@@ -23,36 +23,15 @@
                 查看更多<i class="bi bi-chevron-right"></i>
               </button>
             </div>
-            <div class="row mt-4">
-              <div
-                class="col-2-4 mb-2"
-                v-for="video in videos.slice(0, 10)"
-                :key="video.id"
-              >
-                <div
-                  class="card no-border video-card-hover"
-                  @click="goToVideo(video.id)"
-                  style="cursor: pointer"
-                >
-                  <div class="image-wrapper">
-                    <img :src="video.image" class="card-img-top video-img" />
-                    <div class="img-info-bar">
-                      <span class="me-2">
-                        <i class="bi bi-play-fill"></i> {{ video.playCount }}
-                      </span>
-                      <span class="me-2">
-                        <i class="bi bi-chat"></i> {{ video.commentCount }}
-                      </span>
-                      <span class="ms-auto">
-                        {{ video.duration }}
-                      </span>
-                    </div>
-                  </div>
-                  <div class="card-body p-2">
-                    <div class="video-title text-truncate mb-1">{{ video.title }}</div>
-                  </div>
-                </div>
-              </div>
+            <div class="dynamic-card-center mt-3">
+              <ActivityCard
+                class="mt-3"
+                v-for="post in posts"
+                :key="post.id"
+                :post="post"
+                :userInfo="userInfo"
+                @click="goToVideo(post.video.id)"
+              />
             </div>
           </div>
         </div>
@@ -71,7 +50,7 @@
           <div class="card profile-card">
             <div class="card-body">
               <div class="fw-bold mb-2">个人资料</div>
-              <div class="text-muted small">UID 596505986</div>
+              <div class="text-muted small">UID {{ userInfo.id }}</div>
               <div class="text-muted small">01-01</div>
             </div>
           </div>
@@ -84,37 +63,70 @@
 <script>
 import NavBar from "@/components/navBar/NavBar.vue";
 import SpaceTopBar from "@/components/user/SpaceTopBar.vue";
-import { spaceApi } from "@/api/space";
-import { formatCount } from "@/utils/date";
+import { formatCount, limitTextLength } from "@/utils/date";
+import ActivityCard from "@/components/ActivityCard.vue";
+import { dynamicApi } from "@/api/dynamic";
 
 export default {
-  name: "SpaceView",
-  components: { NavBar, SpaceTopBar },
+  name: "DynamicView",
+  components: { NavBar, SpaceTopBar, ActivityCard },
   data() {
     return {
       videos: [],
+      posts: [],
+      userInfo: {},
     };
   },
   async created() {
     try {
-      const response = await spaceApi.getUserPublishedVideos();
+      const response = await dynamicApi.getUserDynamics();
+      console.log("API Response:", response);
       if (response.status === 200) {
-        this.videos = response.data.map((video) => ({
-          ...video,
-          playCount: formatCount(video.views || 0),
-          commentCount: formatCount(video.comments || 0),
-          duration: video.duration || "00:00",
+        const dynamicData = Array.isArray(response.data) ? response.data : [];
+
+        this.posts = dynamicData.map((video) => ({
+          id: video.id,
+          user_id: video.authorId,
+          username: video.authorName || "用户名",
+          avatar: video.avatar || "默认头像url",
+          time: video.time,
+          content: limitTextLength(video.title || video.description || ""),
+          video: {
+            id: video.id,
+            image: video.image || "",
+            title: video.title || "无标题",
+            duration: video.duration || "00:00",
+            playCount: formatCount(video.views || 0),
+            commentCount: formatCount(video.comments || 0),
+          },
+          comments: formatCount(video.comments) || 0,
+          likeCount: video.likeCount || 0,
+          shared: video.shareCount || 0,
+          coinCount: video.coinCount || 0,
+          description: video.description || "",
+          status: video.status || "",
+          liked: false,
+          is_image: true,
         }));
-        console.log("处理后的视频数据:", this.videos);
+        console.log("处理后的动态数据:", this.posts);
+      } else {
+        console.error("获取动态列表失败: 无效的响应状态码", response.status);
+        this.posts = [];
       }
+      this.userInfo = JSON.parse(localStorage.getItem("userInfo")) || {}; // Ensure userInfo is loaded
     } catch (error) {
-      console.error("获取视频列表失败:", error);
-      this.videos = [];
+      console.error("获取动态列表失败:", error);
+      this.posts = [];
     }
   },
   methods: {
     goToVideo(id) {
-      this.$router.push(`/video/${id}`);
+      console.log("DynamicView: Received view-video event with ID:", id);
+      if (id) {
+        this.$router.push(`/video/${id}`);
+      } else {
+        console.warn("DynamicView: Cannot navigate, received invalid video ID:", id);
+      }
     },
   },
 };
@@ -209,5 +221,27 @@ export default {
 }
 .video-img {
   border-radius: 12px !important;
+}
+.dynamic-card-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.dynamic-card-center .post-card {
+  width: 800px;
+  max-width: 95vw;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  transform: scale(1.08);
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+.fw-bold {
+  text-align: left;
+}
+.text-muted {
+  text-align: left;
 }
 </style>

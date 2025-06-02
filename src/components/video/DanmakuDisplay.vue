@@ -32,7 +32,7 @@
 
 <script>
 import { parseDanmakuXml } from "../danmaku/danmakuParser";
-
+import { danmakuApi } from "@/api/danmaku";
 export default {
   name: "DanmakuDisplay",
   props: {
@@ -61,11 +61,15 @@ export default {
   },
   async mounted() {
     try {
-      const response = await fetch(
-        `http://121.36.211.155:9000/danmaku/bv${this.videoId}.xml`
-      );
-      const xmlText = await response.text();
-      this.danmakus = parseDanmakuXml(xmlText);
+      const responseData = await danmakuApi.getDanmakuById(this.videoId);
+      console.log(responseData, "responseData");
+      if (responseData.data && responseData.data.url) {
+        const url = responseData.data.url;
+        console.log(url, "url");
+        const response = await fetch(url);
+        const xmlText = await response.text();
+        this.danmakus = parseDanmakuXml(xmlText);
+      }
     } catch (error) {
       console.error("获取弹幕数据失败:", error);
     }

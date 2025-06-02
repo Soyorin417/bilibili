@@ -22,9 +22,9 @@
             </select>
             <select v-model="status">
               <option value="">全部状态</option>
-              <option value="published">已发布</option>
+              <option value="approved">已通过</option>
               <option value="draft">草稿</option>
-              <option value="review">审核中</option>
+              <option value="pending">审核中</option>
               <option value="rejected">未通过</option>
             </select>
           </div>
@@ -37,7 +37,12 @@
             <p>暂无投稿记录</p>
           </div>
           <div v-else class="upload-items">
-            <div v-for="upload in filteredUploads" :key="upload.id" class="upload-item">
+            <div
+              v-for="upload in filteredUploads"
+              :key="upload.id"
+              class="upload-item"
+              @click="goToVideo(upload)"
+            >
               <div class="upload-cover">
                 <img :src="upload.cover" :alt="upload.title" />
                 <div class="upload-type" :class="upload.type">
@@ -73,7 +78,7 @@
                   </span>
                 </div>
               </div>
-              <div class="upload-actions">
+              <div class="upload-actions" @click.stop>
                 <button class="action-btn" @click="editUpload(upload)">
                   <i class="bi bi-pencil"></i>
                   编辑
@@ -94,6 +99,8 @@
 <script>
 import VideoBar from "@/components/navBar/VideoBar.vue";
 import DataNav from "@/components/navBar/DataNav.vue";
+import { videoApi } from "@/api/video";
+import { formatDate, formatCount, limitTextLength, goToVideo } from "@/utils/date";
 
 export default {
   name: "UploadHistoryView",
@@ -106,57 +113,7 @@ export default {
       searchQuery: "",
       contentType: "",
       status: "",
-      uploads: [
-        {
-          id: 1,
-          title: "【MYGO×麦当劳 联名套餐】",
-          cover: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-          type: "video",
-          time: "2024-12-15 14:30",
-          status: "published",
-          views: "13.5万",
-          likes: "2.3万",
-          comments: "1.2万",
-        },
-        {
-          id: 2,
-          title: "明日方舟联动avemujica后续暴雷情况",
-          cover: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-          type: "video",
-          time: "2024-04-27 10:15",
-          status: "review",
-          views: "1万",
-          likes: "500",
-          comments: "200",
-        },
-        {
-          id: 3,
-          title: "祥子开黑店",
-          cover: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-          type: "video",
-          time: "2024-04-28 16:45",
-          status: "draft",
-        },
-        {
-          id: 4,
-          title: "B站UP主生存指南",
-          cover: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-          type: "article",
-          time: "2024-04-25 09:20",
-          status: "published",
-          views: "5.6万",
-          likes: "1.2万",
-          comments: "800",
-        },
-        {
-          id: 5,
-          title: "原创音乐 - 星空下的约定",
-          cover: "http://113.45.69.13:9000/image/lucy_moon.jpg",
-          type: "audio",
-          time: "2024-04-20 20:00",
-          status: "rejected",
-        },
-      ],
+      uploads: [],
     };
   },
   computed: {
@@ -174,21 +131,70 @@ export default {
   methods: {
     getStatusText(status) {
       const statusMap = {
-        published: "已发布",
         draft: "草稿",
-        review: "审核中",
         rejected: "未通过",
+        approved: "已通过",
+        pending: "审核中",
       };
       return statusMap[status] || status;
     },
+
     editUpload(upload) {
       // 实现编辑功能
       console.log("编辑投稿:", upload);
     },
-    deleteUpload(upload) {
-      // 实现删除功能
-      console.log("删除投稿:", upload);
+    async deleteUpload(upload) {
+      if (!upload.id) return;
+      if (!confirm("确定要删除该投稿吗？")) return;
+      try {
+        await videoApi.deleteVideo(upload.id);
+        this.uploads = this.uploads.filter((item) => item.id !== upload.id);
+        this.$message && this.$message.success
+          ? this.$message.success("删除成功")
+          : alert("删除成功");
+      } catch (e) {
+        this.$message && this.$message.error
+          ? this.$message.error("删除失败")
+          : alert("删除失败");
+        console.error("删除投稿失败:", e);
+      }
     },
+    async fetchUploads() {
+      try {
+        const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+        if (!userInfo || !userInfo.id) {
+          this.uploads = [];
+          return;
+        }
+        const res = await videoApi.getUserVideos(userInfo.id);
+        console.log("投稿历史返回：", res.data);
+        const list = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data.data)
+          ? res.data.data
+          : [];
+        this.uploads = list.map((item) => ({
+          id: item.id,
+          title: limitTextLength(item.title),
+          cover: item.image || item.cover || "",
+          type: item.type || "video",
+          status: item.status || "approved",
+          time: formatDate(item.time || item.createTime || ""),
+          views: formatCount(item.views) || 0,
+          likes: formatCount(item.likeCount) || item.likes || 0,
+          comments: formatCount(item.comments) || item.commentCount || 0,
+        }));
+      } catch (e) {
+        console.error("获取投稿历史失败:", e);
+        this.uploads = [];
+      }
+    },
+    goToVideo(upload) {
+      goToVideo(this.$router, upload.id);
+    },
+  },
+  mounted() {
+    this.fetchUploads();
   },
 };
 </script>
@@ -336,6 +342,7 @@ export default {
   margin: 0 0 8px;
   font-size: 16px;
   color: #18191c;
+  text-align: left;
 }
 
 .upload-meta {

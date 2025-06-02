@@ -19,7 +19,7 @@
         />
       </div>
       <div class="flex-shrink-0">
-        <NavBarRightMenu :navbar-dynamics="navbarDynamics" :fill="currentColor" />
+        <NavBarRightMenu :fill="currentColor" />
       </div>
     </div>
   </nav>
@@ -29,8 +29,6 @@
 import HotSearchList from "@/components/navBar/search/HotSearchList.vue";
 import NavBarRightMenu from "@/components/navBar/NavBarRightMenu.vue";
 import LeftNavMenu from "@/components/navBar/NavBarLeftMenu.vue";
-import axios from "axios";
-
 export default {
   name: "NavBar",
   components: {
@@ -41,7 +39,6 @@ export default {
   data() {
     return {
       currentColor: "#ffffff",
-
       searchQuery: "",
       isSearchFocused: false,
       searchHistory: [
@@ -71,20 +68,11 @@ export default {
         { title: "本科新增游戏艺术设计专业", tag: "", tagType: "" },
       ],
       navbarDynamics: [],
+      nabarCollections: [],
+      nabarHistory: [],
     };
   },
-  mounted() {
-    this.fetchNavbarDynamics();
-  },
   methods: {
-    async fetchNavbarDynamics() {
-      try {
-        const res = await axios.get("http://127.0.0.1:8081/api/activity/right");
-        this.navbarDynamics = res.data;
-      } catch (e) {
-        console.error("获取动态失败", e);
-      }
-    },
     handleSearch() {
       if (this.searchQuery.trim()) {
         if (!this.historyTags.includes(this.searchQuery)) {

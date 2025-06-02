@@ -33,24 +33,9 @@ api.interceptors.response.use(
   }
 );
 
-export const activityApi = {
-    // 获取用户收藏的视频列表
-  getUserActivity: () => {
-    return api.get(`/api/activity`);
-  },
-
-  // 收藏视频
-  addActivity: (videoId) => {
-    return api.post("/api/activity/add", { videoId });
-  },
-
-    // 取消收藏视频
-  removeActivity: (videoId) => {
-    return api.post("/api/activity/remove", { videoId });
-  },
-
-  // 检查视频是否已收藏
-  checkActivity: (videoId) => {
-    return api.get(`/api/activity/check/${videoId}`);
-  },
-};
+export const spaceApi = {
+  // 获取用户发布的视频列表
+  getUserPublishedVideos: () => {
+    return api.get("/api/space/videos");
+  }
+}; 

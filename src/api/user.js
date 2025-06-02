@@ -1,13 +1,13 @@
 import axios from "axios";
 
 // 创建axios实例
-const api = axios.create({
+const apiInstance = axios.create({
   baseURL: "http://localhost:8081",
-  timeout: 5000,
+  timeout: 15000,
 });
 
 // 请求拦截器
-api.interceptors.request.use(
+apiInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -19,7 +19,7 @@ api.interceptors.request.use(
 );
 
 // 响应拦截器
-api.interceptors.response.use(
+apiInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
@@ -35,34 +35,53 @@ api.interceptors.response.use(
 // 用户API
 export const userApi = {
   // 获取当前登录用户信息
-  getCurrentUser: () => api.get("/api/user/info"),
+  getCurrentUserInfo: () => {
+    return apiInstance.get("/api/user/info");
+  },
 
-  // 根据uid获取指定用户信息
-  getUserById: (uid) => api.get(`/api/user/${uid}`),
+  // 根据 uid 获取指定用户信息
+  getUserByUid: (uid) => {
+    return apiInstance.get(`/api/user/${uid}`);
+  },
+
+  // 更新用户信息
+  updateUser: (userInfo) => {
+    return apiInstance.put("/api/user/update", userInfo);
+  },
+
+  // 删除用户
+  deleteUser: (uid) => {
+    return apiInstance.delete(`/api/user/${uid}`);
+  },
+
+  // 更新用户头像等信息
+  updateProfile: (formData) => {
+    return apiInstance.post("/api/user/update/avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      timeout: 30000,
+    });
+  },
 
   // 用户登录
   login: (data) => {
-    return api.post("/user/login", data);
+    return apiInstance.post("/user/login", data);
   },
 
   // 用户注册
   register: (data) => {
-    return api.post("/user/register", data);
+    return apiInstance.post("/user/register", data);
   },
 
   // 获取用户信息
   getUserInfo: () => {
-    return api.get("/user/info");
-  },
-
-  // 更新用户信息
-  updateUserInfo: (data) => {
-    return api.put("/user/update", data);
+    return apiInstance.get("/user/info");
   },
 
   // 更新用户头像
   updateAvatar: (formData) => {
-    return api.post("/user/avatar", formData, {
+    return apiInstance.post("/user/avatar", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -71,76 +90,76 @@ export const userApi = {
 
   // 修改密码
   changePassword: (data) => {
-    return api.post("/user/password", data);
+    return apiInstance.post("/user/password", data);
   },
 
   // 获取用户收藏列表
   getFavorites: () => {
-    return api.get("/user/favorites");
+    return apiInstance.get("/user/favorites");
   },
 
   // 添加收藏
   addFavorite: (videoId) => {
-    return api.post("/user/favorites", { videoId });
+    return apiInstance.post("/user/favorites", { videoId });
   },
 
   // 取消收藏
   removeFavorite: (videoId) => {
-    return api.delete(`/user/favorites/${videoId}`);
+    return apiInstance.delete(`/user/favorites/${videoId}`);
   },
 
   // 获取用户历史记录
   getHistory: () => {
-    return api.get("/user/history");
+    return apiInstance.get("/user/history");
   },
 
   // 添加历史记录
   addHistory: (videoId) => {
-    return api.post("/user/history", { videoId });
+    return apiInstance.post("/user/history", { videoId });
   },
 
   // 清空历史记录
   clearHistory: () => {
-    return api.delete("/user/history");
+    return apiInstance.delete("/user/history");
   },
 
   // 获取用户关注列表
   getFollowings: () => {
-    return api.get("/user/followings");
+    return apiInstance.get("/user/followings");
   },
 
   // 关注用户
   followUser: (followerUid, followingUid, remark = "") => {
-    return api.post('/api/follow/follow', null, {
-      params: { followerUid, followingUid, remark }
+    return apiInstance.post("/api/follow/follow", null, {
+      params: { followerUid, followingUid, remark },
     });
   },
 
   // 取消关注
   unfollowUser: (followerUid, followingUid) => {
-    return api.post('/api/follow/unfollow', null, {
-      params: { followerUid, followingUid }
+    return apiInstance.post("/api/follow/unfollow", null, {
+      params: { followerUid, followingUid },
     });
   },
 
   // 获取用户粉丝列表
   getFollowers: () => {
-    return api.get("/user/followers");
+    return apiInstance.get("/user/followers");
   },
 
   // 获取用户通知
   getNotifications: () => {
-    return api.get("/user/notifications");
+    return apiInstance.get("/user/notifications");
   },
 
   // 标记通知为已读
   markNotificationRead: (notificationId) => {
-    return api.put(`/user/notifications/${notificationId}/read`);
+    return apiInstance.put(`/user/notifications/${notificationId}/read`);
   },
 
   // 获取用户统计数据
   getUserStats: () => {
-    return api.get("/user/stats");
+    return apiInstance.get("/user/stats");
   },
 };
 

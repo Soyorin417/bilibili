@@ -5,7 +5,7 @@ const uploadInstance = axios.create({
   baseURL: "http://localhost:8081",
   timeout: 30000,
   headers: {
-    "Content-Type": "multipart/form-data",
+    "Content-Type": "application/json",
   },
 });
 
@@ -112,27 +112,34 @@ export const compressImage = (file, maxWidth = 800, maxHeight = 800, quality = 0
 };
 
 /**
- * 上传文件
- * @param {File} file 文件对象
- * @param {string} url 上传地址
- * @param {Object} additionalData 额外的表单数据
- * @param {Function} onProgress 上传进度回调
+ * 获取预签名URL
+ * @param {string} fileName - 文件名
+ * @returns {Promise<string>} 预签名URL
+ */
+export const getPresignedUrl = async (fileName) => {
+  try {
+    const response = await uploadInstance.post('/api/upload/presigned-url', {
+      fileName: fileName
+    });
+    return response.data.url;
+  } catch (error) {
+    console.error('获取预签名URL失败:', error);
+    throw new Error('获取预签名URL失败');
+  }
+};
+
+/**
+ * 上传文件到服务器
+ * @param {File} file - 文件对象
+ * @param {string} url - 上传地址
+ * @param {Object} additionalData - 额外的表单数据
+ * @param {Function} onProgress - 上传进度回调
  * @returns {Promise<any>} 上传结果
  */
 export const uploadFile = async (file, url, additionalData = {}, onProgress = null) => {
   try {
-    // 验证文件
-    const error = await validateFile(file);
-    if (error) {
-      throw new Error(error);
-    }
-
-    // 压缩图片
-    const compressedFile = await compressImage(file);
-
-    // 创建表单数据
     const formData = new FormData();
-    formData.append("avatar", compressedFile);
+    formData.append("file", file);
 
     // 添加额外数据
     Object.entries(additionalData).forEach(([key, value]) => {
@@ -143,6 +150,9 @@ export const uploadFile = async (file, url, additionalData = {}, onProgress = nu
 
     // 上传文件
     const response = await uploadInstance.post(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
       onUploadProgress: (progressEvent) => {
         if (onProgress) {
           const percentCompleted = Math.round(
@@ -162,9 +172,9 @@ export const uploadFile = async (file, url, additionalData = {}, onProgress = nu
 
 /**
  * 上传用户头像
- * @param {File} file 头像文件
- * @param {Object} userInfo 用户信息
- * @param {Function} onProgress 上传进度回调
+ * @param {File} file - 头像文件
+ * @param {Object} userInfo - 用户信息
+ * @param {Function} onProgress - 上传进度回调
  * @returns {Promise<any>} 上传结果
  */
 export const uploadAvatar = async (file, userInfo = {}, onProgress = null) => {

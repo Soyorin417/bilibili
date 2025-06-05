@@ -37,7 +37,7 @@ api.interceptors.response.use(
 export const animeApi = {
   // 获取所有动漫
   getAllAnime: () => {
-    return api.get("/getAllAnime");
+    return api.get("/api/getAllAnime");
   },
 
   // 获取动漫时间表
@@ -104,7 +104,7 @@ export const animeApi = {
 
   // 获取轮播图
   getCarouselImages: () => {
-    return api.get("/getAllCarousel");
+    return api.get("/api/getAllCarousel");
   },
 };
 

@@ -123,10 +123,10 @@
 </template>
 
 <script>
-import VideoCard from "@/components/homeView/VideoCard.vue";
+import VideoCard from "@/components/content/homeView/VideoCard.vue";
 import NavBar from "@/components/navBar/NavBar.vue";
 import TopNav from "@/components/navBar/TopNav.vue";
-import { videoApi } from "@/api/video";
+import { videoApi } from "@/api/content/video";
 
 export default {
   name: "HomeView",

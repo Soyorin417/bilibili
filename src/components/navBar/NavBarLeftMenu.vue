@@ -53,7 +53,7 @@
 
 <script>
 import { Download } from "@icon-park/vue-next";
-import BilibiliIcon from "@/components/ui/BilibiliIcon.vue";
+import BilibiliIcon from "@/components/utils/ui/BilibiliIcon.vue";
 export default {
   name: "LeftNavMenu",
   props: {

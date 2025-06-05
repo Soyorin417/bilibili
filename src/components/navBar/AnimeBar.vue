@@ -46,7 +46,7 @@
 import HotSearchList from "@/components/navBar/search/HotSearchList.vue";
 import NavBarRightMenu from "@/components/navBar/NavBarRightMenu.vue";
 import LeftNavMenu from "@/components/navBar/NavBarLeftMenu.vue";
-import { animeApi } from "@/api/anime";
+import { animeApi } from "@/api/content/anime";
 export default {
   name: "AnimeBar",
   components: {

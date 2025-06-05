@@ -1,73 +1,70 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import AnimeView from '@/views/AnimeView.vue'
-import CaricatureView from '@/views/CaricatureView.vue'
-import DownLoadView from '@/views/DownLoadView.vue'
-import EventsView from '@/views/EventsView.vue'
-import GameCenterView from '@/views/GameCenterView.vue'
-import BroadcastView from '@/views/BroadcastView.vue'
-import MemberView from '@/views/MemberView.vue'
-import PurchaseView from '@/views/PurchaseView.vue'
-import PddView from '@/views/PddView.vue'
-import NewSongsView from '@/views/NewSongsView.vue'
-import CommunityCentersView from '@/views/CommunityCentersView.vue'
-import ClassroomView from '@/views/ClassroomView.vue'
-import ActivityView from '@/views/ActivityView.vue'
-import ColumnView from '@/views/ColumnView.vue'
-import MovieView from '@/views/MovieView.vue';
-import OriginalView from '@/views/OriginalView.vue';
-import DramaView from '@/views/DramaView.vue';
-import ShowView from '@/views/ShowView.vue';
-import DocView from '@/views/DocView.vue';
-import CartoonView from '@/views/CartoonView.vue';
-import GameView from '@/views/GameView.vue';
-import RemixView from '@/views/RemixView.vue';
-import MusicView from '@/views/MusicView.vue';
-import DanceView from '@/views/DanceView.vue';
-import FunView from '@/views/FunView.vue';
-import StudyView from '@/views/StudyView.vue';
-import TechView from '@/views/TechView.vue';
-import NewsView from '@/views/NewsView.vue';
-import FoodView from '@/views/FoodView.vue';
-import StageView from '@/views/StageView.vue';
-import AutoView from '@/views/AutoView.vue';
-import StyleView from '@/views/StyleView.vue';
-import SportView from '@/views/SportView.vue';
-import PetView from '@/views/PetView.vue';
-import VlogView from '@/views/VlogView.vue';
-import MoreView from '@/views/MoreView.vue';
-import UserView from '@/views/UserView.vue';
-import VipView from '@/views/VipView.vue';
-import MessageView from '@/views/MessageView.vue';
-import CollectionView from '@/views/CollectionView.vue';
-import WatchHistoryView from '@/views/WatchHistoryView.vue';
-import UploadHistoryView from '@/views/UploadHistoryView.vue';
-import CreateView from '@/views/CreateView.vue';
-import VideoView from '@/views/VideoView.vue';
-import HotView from '@/views/HotView.vue';
-import SearchView from '@/views/SearchView.vue';
-import UpLoadView from '@/views/UpLoadView.vue';
-import DataView from '@/views/DataView.vue';
-import AudioView from '@/views/AudioView.vue';
-import ContentView from '@/views/ContentView.vue';
-import ArticleView from '@/views/ArticleView.vue';
+import AnimeView from '@/views/partition/AnimeView.vue'
+import CaricatureView from '@/views/content/CaricatureView.vue'
+import DownLoadView from '@/views/content/platform/DownLoadView.vue'
+import EventsView from '@/views/content/EventsView.vue'
+import GameCenterView from '@/views/content/GameCenterView.vue'
+import BroadcastView from '@/views/content/BroadcastView.vue'
+import MemberView from '@/views/member/MemberView.vue'
+import PurchaseView from '@/views/commerce/PurchaseView.vue'
+import PddView from '@/views/commerce/PddView.vue'
+import NewSongsView from '@/views/content/NewSongsView.vue'
+import CommunityCentersView from '@/views/community/CommunityCentersView.vue'
+import ClassroomView from '@/views/content/ClassroomView.vue'
+import ActivityView from '@/views/user/ActivityView.vue'
+import ColumnView from '@/views/content/ColumnView.vue'
+import MovieView from '@/views/partition/MovieView.vue';
+import OriginalView from '@/views/partition/OriginalView.vue';
+import DramaView from '@/views/partition/DramaView.vue';
+import ShowView from '@/views/partition/ShowView.vue';
+import DocView from '@/views/partition/DocView.vue';
+import CartoonView from '@/views/partition/CartoonView.vue';
+import GameView from '@/views/partition/GameView.vue';
+import RemixView from '@/views/partition/RemixView.vue';
+import MusicView from '@/views/partition/MusicView.vue';
+import DanceView from '@/views/partition/DanceView.vue';
+import FunView from '@/views/partition/FunView.vue';
+import StudyView from '@/views/partition/StudyView.vue';
+import TechView from '@/views/partition/TechView.vue';
+import NewsView from '@/views/partition/NewsView.vue';
+import FoodView from '@/views/partition/FoodView.vue';
+import StageView from '@/views/partition/StageView.vue';
+import AutoView from '@/views/partition/AutoView.vue';
+import StyleView from '@/views/partition/StyleView.vue';
+import SportView from '@/views/partition/SportView.vue';
+import PetView from '@/views/partition/PetView.vue';
+import VlogView from '@/views/partition/VlogView.vue';
+import MoreView from '@/views/partition/MoreView.vue';
+import UserView from '@/views/user/UserView.vue';
+import VipView from '@/views/member/VipView.vue';
+import MessageView from '@/views/message/MessageView.vue';
+import CollectionView from '@/views/user/show/CollectionView.vue';
+import WatchHistoryView from '@/views/user/WatchHistoryView.vue';
+import UploadHistoryView from '@/views/upload/UploadHistoryView.vue';
+import CreateView from '@/views/upload/CreateView.vue';
+import VideoView from '@/views/content/VideoView.vue';
+import HotView from '@/views/content/HotView.vue';
+import SearchView from '@/views/content/SearchView.vue';
+import UpLoadView from '@/views/upload/UpLoadView.vue';
+import DataView from '@/views/upload/DataView.vue';
+import AudioView from '@/views/upload/AudioView.vue';
+import ContentView from '@/views/upload/ContentView.vue';
+import ArticleView from '@/views/upload/ArticleView.vue';
 import LoginView from '@/views/user/account/LoginView.vue';
 import RegisterView from '@/views/user/account/RegisterView.vue';
 import ProfileView from '@/views/user/account/ProfileView.vue';
-import FaceView from '@/views/user/account/FaceView.vue';
-import SettingView from '@/views/user/account/SettingView.vue';
-import BlacklistView from '@/views/user/account/BlacklistView.vue';
-import PointsView from '@/views/user/account/PointsView.vue';
-import LiveFansmedalWall from '@/views/user/account/LiveFansmedalWall.vue';
-import AchievementView from '@/views/user/account/AchievementView.vue';
-import SecurityView from '@/views/user/account/SecurityView.vue';
-import CoinView from '@/views/user/account/CoinView.vue';
-import SpaceView from '@/views/user/account/SpaceView.vue';
-import AdminView from '@/views/AdminView.vue'
-import DynamicView from '@/views/user/account/DynamicView.vue'
-import CidFetcherTestView from '@/views/CidFetcherTest.vue';
-import DanmakuFetcherTestView from '@/views/DanmakuFetcherTest.vue';
-import DanmakuXmlFetcherTestView from '@/views/DanmakuXmlFetcherTest.vue';
+import FaceView from '@/views/user/profile/FaceView.vue';
+import SettingView from '@/views/user/profile/SettingView.vue';
+import BlacklistView from '@/views/user/profile/BlacklistView.vue';
+import PointsView from '@/views/user/profile/PointsView.vue';
+import LiveFansmedalWall from '@/views/user/profile/LiveFansmedalWall.vue';
+import AchievementView from '@/views/user/profile/AchievementView.vue';
+import SecurityView from '@/views/user/profile/SecurityView.vue';
+import CoinView from '@/views/user/profile/CoinView.vue';
+import SpaceView from '@/views/user/profile/SpaceView.vue';
+import AdminView from '@/views/admin/AdminView.vue'
+import DynamicView from '@/views/user/profile/DynamicView.vue'
 
 // 定义路由配置数组
 const routes = [
@@ -390,24 +387,6 @@ const routes = [
     name: 'VideoView',
     component: VideoView,
     props: true
-  },
-  //测试获取视频cid
-  {
-    path:'/test-cid',
-    name:'CidFetcherTest',
-    component:CidFetcherTestView
-  },
-  //测试获取弹幕url
-  {
-    path:'/test-danmaku',
-    name:'DanmakuFetcherTest',
-    component:DanmakuFetcherTestView
-  },
-  //测试直接根据cid获取弹幕xml
-  {
-    path:'/test-danmaku-xml',
-    name:'DanmakuXmlFetcherTest',
-    component:DanmakuXmlFetcherTestView
   },
 ]
 

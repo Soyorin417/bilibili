@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import VideoCard from "@/components/common/VideoCard.vue";
+import VideoCard from "@/components/utils/VideoCard.vue";
 
 export default {
   name: "NavMiniList",

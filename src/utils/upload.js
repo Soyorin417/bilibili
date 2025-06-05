@@ -1,4 +1,3 @@
-// 文件上传工具类
 import axios from "axios";
 
 // 创建上传专用的 axios 实例

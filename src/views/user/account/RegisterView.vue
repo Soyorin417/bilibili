@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import StarfieldBackground from "@/components/three/StarfieldBackground.vue";
+import StarfieldBackground from "@/components/utils/three/StarfieldBackground.vue";
 import axios from "axios";
 import Swal from "sweetalert2";
 export default {

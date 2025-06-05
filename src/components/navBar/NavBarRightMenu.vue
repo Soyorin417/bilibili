@@ -147,14 +147,14 @@ import { Upload } from "@icon-park/vue-next";
 import UserProfileCardMini from "@/components/user/UserProfileCardMini.vue";
 import NavMiniList from "@/components/littleCard/NavMiniList.vue";
 import { mapGetters, mapActions } from "vuex";
-import VipIcon from "@/components/ui/VipIcon.vue";
-import MessageIcon from "@/components/ui/MessageIcon.vue";
-import CollectIcon from "@/components/ui/CollectIcon.vue";
-import HistoryIcon from "@/components/ui/HistoryIcon.vue";
-import CreateIcon from "@/components/ui/CreateIcon.vue";
-import ActivityIcon from "@/components/ui/ActivityIcon.vue";
-import { collectApi } from "@/api/collect.js";
-import { historyApi } from "@/api/history.js";
+import VipIcon from "@/components/utils/ui/VipIcon.vue";
+import MessageIcon from "@/components/utils/ui/MessageIcon.vue";
+import CollectIcon from "@/components/utils/ui/CollectIcon.vue";
+import HistoryIcon from "@/components/utils/ui/HistoryIcon.vue";
+import CreateIcon from "@/components/utils/ui/CreateIcon.vue";
+import ActivityIcon from "@/components/utils/ui/ActivityIcon.vue";
+import { collectApi } from "@/api/user/collect.js";
+import { historyApi } from "@/api/user/history.js";
 import { activityApi } from "@/api/activity.js";
 export default {
   name: "NavBarRightMenu",

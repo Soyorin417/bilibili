@@ -61,8 +61,8 @@
 </template>
 
 <script>
-import TagButton from "@/components/homeView/TagButton.vue";
-import IconButton from "@/components/homeView/IconButton.vue";
+import TagButton from "@/components/content/homeView/TagButton.vue";
+import IconButton from "@/components/content/homeView/IconButton.vue";
 
 export default {
   name: "TopNav",

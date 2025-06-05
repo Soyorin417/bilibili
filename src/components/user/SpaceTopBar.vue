@@ -34,7 +34,7 @@
 
 <script>
 import { WindmillTwo, Home } from "@icon-park/vue-next";
-import CollectIcon from "@/components/ui/CollectIcon.vue";
+import CollectIcon from "@/components/utils/ui/CollectIcon.vue";
 export default {
   name: "SpaceTopBar",
   components: { WindmillTwo, Home, CollectIcon },

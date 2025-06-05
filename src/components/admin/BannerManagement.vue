@@ -18,17 +18,17 @@
           <tr>
             <th>预览</th>
             <th>分类</th>
-            <th>排序</th>
+            <th>ID</th>
             <th>操作</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="banner in filteredBanners" :key="banner.id">
+          <tr v-for="banner in banners" :key="banner.id">
             <td>
-              <img :src="banner.imageUrl" class="banner-preview" alt="轮播图" />
+              <img :src="banner.url" class="banner-preview" alt="轮播图" />
             </td>
             <td>{{ banner.category === "home" ? "首页" : "动漫" }}</td>
-            <td>{{ banner.sort }}</td>
+            <td>{{ banner.id }}</td>
             <td>
               <button class="btn btn-info btn-sm me-2" @click="handleEdit(banner)">
                 编辑
@@ -64,12 +64,6 @@
                 class="form-control"
                 accept="image/*"
                 :required="!showEditModal"
-              />
-              <img
-                v-if="formData.imageUrl"
-                :src="formData.imageUrl"
-                class="image-preview mt-2"
-                alt="预览"
               />
             </div>
 
@@ -109,83 +103,41 @@ export default {
       },
     };
   },
-  computed: {
-    filteredBanners() {
-      return this.banners.filter((banner) => banner.category === this.currentCategory);
-    },
-  },
   methods: {
     handleImageChange(event) {
       const file = event.target.files[0];
       if (file) {
-        // 验证文件类型
-        if (!file.type.startsWith("image/")) {
-          this.$message.error("请选择图片文件");
-          return;
-        }
-        // 验证文件大小（例如限制为5MB）
-        if (file.size > 5 * 1024 * 1024) {
-          this.$message.error("图片大小不能超过5MB");
-          return;
-        }
         this.formData.image = file;
-        // 创建预览URL
-        this.formData.imageUrl = URL.createObjectURL(file);
       }
     },
     handleEdit(banner) {
       this.currentId = banner.id;
       this.formData = {
-        category: banner.category,
+        image: null,
       };
-      this.formData.imageUrl = banner.imageUrl;
       this.showEditModal = true;
     },
     handleDelete(id) {
       this.$emit("delete", id);
     },
     async handleSubmit() {
-      try {
-        if (!this.formData.image) {
-          this.$message.error("请选择图片");
-          return;
-        }
-
-        const formData = new FormData();
-        formData.append("image", this.formData.image);
-
-        let response;
-        if (this.currentId) {
-          // 更新轮播图
-          response = await this.$emit("update", this.currentId, formData);
-        } else {
-          // 添加轮播图
-          response = await this.$emit("add", formData);
-        }
-
-        // 检查响应
-        if (response && response.error_message === "success") {
-          this.$message.success(this.currentId ? "轮播图更新成功" : "轮播图添加成功");
-          this.closeModal();
-        } else {
-          const errorMsg = response?.error_message || response?.message || "操作失败";
-          this.$message.error(errorMsg);
-          throw new Error(errorMsg);
-        }
-      } catch (e) {
-        console.error("操作失败，完整错误:", e);
-        if (e.code === "ECONNABORTED") {
-          this.$message.error("请求超时，请检查网络连接");
-        } else if (e.response) {
-          const errorMsg =
-            e.response.data?.error_message || e.response.data?.message || e.message;
-          this.$message.error(`服务器响应错误: ${errorMsg}`);
-        } else if (e.request) {
-          this.$message.error("无法连接到服务器，请确保后端服务已启动");
-        } else {
-          this.$message.error(`请求错误: ${e.message}`);
-        }
+      if (!this.formData.image) {
+        this.$message.error("请选择图片");
+        return;
       }
+
+      const formData = new FormData();
+      formData.append("image", this.formData.image);
+
+      if (this.currentId) {
+        // 更新轮播图
+        this.$emit("update", this.currentId, formData);
+      } else {
+        // 添加轮播图
+        this.$emit("add", formData);
+      }
+
+      this.closeModal();
     },
     closeModal() {
       this.showAddModal = false;
@@ -195,6 +147,12 @@ export default {
         image: null,
       };
       this.uploadProgress = 0;
+    },
+    resetForm() {
+      this.formData = {
+        image: null,
+      };
+      this.currentId = null;
     },
   },
 };
@@ -219,8 +177,6 @@ export default {
 
 .banner-list {
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .banner-preview {

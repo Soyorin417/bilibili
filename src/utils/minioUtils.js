@@ -1,4 +1,4 @@
-import { getPresignedUrl } from './upload';
+import { getPresignedUrl } from "./upload";
 
 class MinioUtils {
   // 文件限制配置
@@ -19,7 +19,7 @@ class MinioUtils {
    * @param {string} extension - 文件扩展名
    * @returns {string} 生成的文件名
    */
-  static generateRandomFileName(prefix, extension = 'jpg') {
+  static generateRandomFileName(prefix, extension = "jpg") {
     const timestamp = new Date().getTime();
     const randomStr = Math.random().toString(36).substring(2, 8);
     return `${prefix}_${timestamp}_${randomStr}.${extension}`;
@@ -42,7 +42,7 @@ class MinioUtils {
    * @param {string} type - 文件类型 ('IMAGE' 或 'VIDEO')
    * @returns {Promise<string>} 错误信息，如果没有错误返回空字符串
    */
-  static validateFile(file, type = 'IMAGE') {
+  static validateFile(file, type = "IMAGE") {
     return new Promise((resolve) => {
       if (!file) {
         resolve("请选择文件");
@@ -144,15 +144,15 @@ class MinioUtils {
       // 获取预签名URL
       const presignedUrl = await getPresignedUrl(file.name);
       if (!presignedUrl) {
-        throw new Error('获取预签名URL失败');
+        throw new Error("获取预签名URL失败");
       }
 
       // 使用预签名URL上传文件
       const response = await fetch(presignedUrl, {
-        method: 'PUT',
+        method: "PUT",
         body: file,
         headers: {
-          'Content-Type': file.type,
+          "Content-Type": file.type,
         },
       });
 
@@ -162,9 +162,9 @@ class MinioUtils {
       }
 
       // 从预签名URL中提取基础URL（移除查询参数）
-      const baseUrl = presignedUrl.split('?')[0];
+      const baseUrl = presignedUrl.split("?")[0];
       if (!baseUrl) {
-        throw new Error('无法从预签名URL中提取基础URL');
+        throw new Error("无法从预签名URL中提取基础URL");
       }
 
       return {
@@ -172,7 +172,7 @@ class MinioUtils {
         url: baseUrl,
       };
     } catch (error) {
-      console.error('文件上传失败:', error);
+      console.error("文件上传失败:", error);
       throw new Error(`文件上传失败: ${error.message}`);
     }
   }
@@ -193,4 +193,4 @@ class MinioUtils {
   }
 }
 
-export default MinioUtils; 
+export default MinioUtils;

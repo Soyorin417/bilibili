@@ -100,12 +100,7 @@ import UserManagement from "@/components/admin/UserManagement.vue";
 import SystemSettings from "@/components/admin/SystemSettings.vue";
 import StatisticsPanel from "@/components/admin/Statistics.vue";
 import BannerManagement from "@/components/admin/BannerManagement.vue";
-import {
-  getAllCarousel,
-  addCarousel,
-  updateCarousel,
-  deleteCarousel,
-} from "@/api/admin/carousel";
+import animeCarouselApi from "@/api/admin/animeCarousel";
 
 export default {
   name: "AdminView",
@@ -326,7 +321,7 @@ export default {
     },
     async fetchBanners() {
       try {
-        const res = await getAllCarousel();
+        const res = await animeCarouselApi.getAllCarousel();
         this.banners = res.data || [];
       } catch (error) {
         console.error("获取轮播图列表失败:", error);
@@ -335,68 +330,89 @@ export default {
     },
     async handleAddBanner(formData) {
       try {
-        const response = await addCarousel(formData);
+        const response = await animeCarouselApi.addCarousel(formData);
         if (response.data.error_message === "success") {
           this.$message.success("轮播图添加成功");
           this.fetchBanners();
+          return response.data;
         } else {
-          throw new Error(response.data.error_message || "添加失败");
+          const errorMsg =
+            response.data.error_message || response.data.message || "添加失败";
+          this.$message.error(errorMsg);
+          throw new Error(errorMsg);
         }
       } catch (error) {
         console.error("添加轮播图失败:", error);
         if (error.response) {
-          this.$message.error(
-            `服务器响应错误: ${error.response.data?.error_message || error.message}`
-          );
+          const errorMsg =
+            error.response.data?.error_message ||
+            error.response.data?.message ||
+            error.message;
+          this.$message.error(`服务器响应错误: ${errorMsg}`);
         } else if (error.request) {
           this.$message.error("无法连接到服务器，请确保后端服务已启动");
         } else {
           this.$message.error(`请求错误: ${error.message}`);
         }
+        throw error;
       }
     },
     async handleUpdateBanner(id, formData) {
       try {
-        const response = await updateCarousel(id, formData);
+        const response = await animeCarouselApi.updateCarousel(id, formData);
         if (response.data.error_message === "success") {
           this.$message.success("轮播图更新成功");
           this.fetchBanners();
+          return response.data;
         } else {
-          throw new Error(response.data.error_message || "更新失败");
+          const errorMsg =
+            response.data.error_message || response.data.message || "更新失败";
+          this.$message.error(errorMsg);
+          throw new Error(errorMsg);
         }
       } catch (error) {
         console.error("更新轮播图失败:", error);
         if (error.response) {
-          this.$message.error(
-            `服务器响应错误: ${error.response.data?.error_message || error.message}`
-          );
+          const errorMsg =
+            error.response.data?.error_message ||
+            error.response.data?.message ||
+            error.message;
+          this.$message.error(`服务器响应错误: ${errorMsg}`);
         } else if (error.request) {
           this.$message.error("无法连接到服务器，请确保后端服务已启动");
         } else {
           this.$message.error(`请求错误: ${error.message}`);
         }
+        throw error;
       }
     },
     async handleDeleteBanner(id) {
       try {
-        const response = await deleteCarousel(id);
+        const response = await animeCarouselApi.deleteCarousel(id);
         if (response.data.error_message === "success") {
           this.$message.success("轮播图删除成功");
           this.fetchBanners();
+          return response.data;
         } else {
-          throw new Error(response.data.error_message || "删除失败");
+          const errorMsg =
+            response.data.error_message || response.data.message || "删除失败";
+          this.$message.error(errorMsg);
+          throw new Error(errorMsg);
         }
       } catch (error) {
         console.error("删除轮播图失败:", error);
         if (error.response) {
-          this.$message.error(
-            `服务器响应错误: ${error.response.data?.error_message || error.message}`
-          );
+          const errorMsg =
+            error.response.data?.error_message ||
+            error.response.data?.message ||
+            error.message;
+          this.$message.error(`服务器响应错误: ${errorMsg}`);
         } else if (error.request) {
           this.$message.error("无法连接到服务器，请确保后端服务已启动");
         } else {
           this.$message.error(`请求错误: ${error.message}`);
         }
+        throw error;
       }
     },
   },

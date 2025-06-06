@@ -2,19 +2,17 @@ package com.backend.bilibili.controller.message;
 
 import com.backend.bilibili.pojo.message.Message;
 import com.backend.bilibili.service.message.MessageService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/messages")
+@RequestMapping("/api/messages")
 public class MessageController {
 
-    private final MessageService messageService;
-
-    public MessageController(MessageService messageService) {
-        this.messageService = messageService;
-    }
+    @Autowired
+    private  MessageService messageService;
 
     @PostMapping
     public void saveMessage(@RequestBody Message message) {

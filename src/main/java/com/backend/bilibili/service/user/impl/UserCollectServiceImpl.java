@@ -40,19 +40,24 @@ public class UserCollectServiceImpl extends ServiceImpl<UserCollectMapper, UserC
     public UserCollect getOne(Long userId, Long videoId) {
         QueryWrapper<UserCollect> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId).eq("video_id", videoId);
-        return this.getOne(queryWrapper);
+        return baseMapper.selectOne(queryWrapper);
     }
 
     // 添加收藏
     @Override
     public boolean addCollect(Long userId, Long videoId) {
+        QueryWrapper<UserCollect> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("user_id", userId).eq("video_id", videoId);
+        if (baseMapper.selectCount(queryWrapper) > 0) {
+            return false;
+        }
         UserCollect userCollect = new UserCollect();
         userCollect.setUserId(userId);
         userCollect.setVideoId(videoId);
         userCollect.setCollectTime(new Date());
-        // 可加重复收藏判断逻辑
         return save(userCollect);
     }
+
 
     // 删除收藏
     @Override
@@ -65,49 +70,29 @@ public class UserCollectServiceImpl extends ServiceImpl<UserCollectMapper, UserC
     // 更新收藏（更新时间或其他字段）
     @Override
     public boolean updateCollect(UserCollect collect) {
-        QueryWrapper<UserCollect> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id", collect.getUserId()).eq("video_id", collect.getVideoId());
-        return update(collect, queryWrapper);
+        return updateById(collect);
     }
 
     @Override
     public List<UserCollectVideoDTO> getUserCollectedVideos(Long userId) {
-        // 1. 查询收藏记录
-        List<UserCollect> collects = userCollectMapper.selectList(
-                new QueryWrapper<UserCollect>().eq("user_id", userId)
-        );
-
-        if (collects.isEmpty()) return Collections.emptyList();
-
-        // 2. 获取 videoId 列表
-        List<Long> videoIds = collects.stream()
+        // 1. 查询用户收藏的视频ID
+        List<Long> videoIds = userCollectMapper.selectList(
+                        new QueryWrapper<UserCollect>().eq("user_id", userId)
+                ).stream()
                 .map(UserCollect::getVideoId)
                 .collect(Collectors.toList());
 
-        // 3. 查询视频信息
+        if (videoIds.isEmpty()) return Collections.emptyList();
+
+        // 2. 查询视频信息
         List<VideoInfo> videos = videoInfoMapper.selectBatchIds(videoIds);
 
-        // 4. 获取作者 ID 列表
-        Set<Long> authorIds = videos.stream()
-                .map(VideoInfo::getAuthorId)
-                .collect(Collectors.toSet());
+        // 3. 批量查询作者信息并映射
+        Map<Long, UserInfo> authorMap = userInfoMapper.selectBatchIds(
+                videos.stream().map(VideoInfo::getAuthorId).collect(Collectors.toSet())
+        ).stream().collect(Collectors.toMap(UserInfo::getUid, a -> a));
 
-        // 5. 查询作者信息
-        List<UserInfo> authors = userInfoMapper.selectList(
-                new QueryWrapper<UserInfo>().in("uid", authorIds)
-        );
-
-        Map<Long, UserInfo> authorMap = authors.stream()
-                .collect(Collectors.toMap(UserInfo::getUid, a -> a));
-
-        // 6. 映射收藏时间
-        Map<Long, String> collectTimeMap = collects.stream()
-                .collect(Collectors.toMap(
-                        UserCollect::getVideoId,
-                        c -> c.getCollectTime().toString()  // 可用 DateTimeFormatter 格式化
-                ));
-
-        // 7. 封装成 DTO
+        // 4. 封装为 DTO
         return videos.stream().map(video -> {
             UserInfo author = authorMap.get(video.getAuthorId());
             return new UserCollectVideoDTO(
@@ -120,5 +105,7 @@ public class UserCollectServiceImpl extends ServiceImpl<UserCollectMapper, UserC
                     video.getDuration()
             );
         }).collect(Collectors.toList());
+
     }
+
 }

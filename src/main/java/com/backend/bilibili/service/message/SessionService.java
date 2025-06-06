@@ -13,4 +13,6 @@ public interface SessionService {
     Session getSessionById(Long id);
 
     void deleteSessionById(Long id);
+
+    List<Session> getSessionsByUserId(Long userId);
 }

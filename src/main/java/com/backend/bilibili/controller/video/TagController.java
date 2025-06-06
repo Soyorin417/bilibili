@@ -27,20 +27,21 @@ public class TagController {
 
     // 添加标签
     @PostMapping
-    public boolean createTag(@RequestBody Tag tag) {
-        return tagService.save(tag);
+    public Tag createTag(@RequestBody Tag tag) {
+        Tag savedTag = tagService.createTag(tag); // 返回带id的Tag对象
+        return savedTag;
     }
 
     // 更新标签
     @PutMapping
     public boolean updateTag(@RequestBody Tag tag) {
-        return tagService.updateById(tag);
+        return tagService.updateTag(tag);
     }
 
     // 删除标签
     @DeleteMapping("/{id}")
     public boolean deleteTag(@PathVariable Long id) {
-        return tagService.removeById(id);
+        return tagService.deleteTagById(id);
     }
 }
 

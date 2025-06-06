@@ -1,12 +1,16 @@
 package com.backend.bilibili.service.user.impl;
 
+import com.backend.bilibili.mapper.user.UserInfoMapper;
 import com.backend.bilibili.mapper.user.UserMapper;
 import com.backend.bilibili.pojo.user.User;
+import com.backend.bilibili.pojo.user.UserInfo;
 import com.backend.bilibili.service.user.account.RegisterService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +19,9 @@ import java.util.Map;
 public class RegisterServiceImpl implements RegisterService {
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private UserInfoMapper userInfoMapper;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -70,6 +77,16 @@ public class RegisterServiceImpl implements RegisterService {
         User user = new User(null,username,encodedPassword);
         //数据库注入
         userMapper.insert(user);
+
+
+        Long uid = user.getId();
+        UserInfo userInfo = new UserInfo();
+        userInfo.setUid(uid);
+        userInfo.setUsername(username);
+        userInfo.setRegisterTime(LocalDateTime.now());
+
+        userInfoMapper.insert(userInfo);
+
 
         map.put("error_message","success");
         return map;

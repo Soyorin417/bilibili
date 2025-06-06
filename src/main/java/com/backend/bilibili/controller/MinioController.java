@@ -9,7 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/minio")
@@ -67,6 +69,25 @@ public class MinioController {
     @GetMapping("/object/url")
     public String getObjectUrl(@RequestParam String bucketName, @RequestParam String objectName) throws Exception {
         return minioService.getObjectUrl(bucketName, objectName);
+    }
+
+    @GetMapping("/presigned-get-url")
+    public Map<String, Object> getPresignedGetUrl(@RequestParam String filename) {
+        String url = minioService.generatePresignedGetUrl(filename, 3600); // 1小时
+        Map<String, Object> result = new HashMap<>();
+        result.put("error_message", "success");
+        result.put("url", url);
+        return result;
+    }
+
+    @GetMapping("/presigned-put-url")
+    public Map<String, Object> getPresignedPutUrl(@RequestParam String filename) {
+        String url = minioService.generatePresignedPutUrl(filename, 3600); // 1小时
+        Map<String, Object> result = new HashMap<>();
+        result.put("error_message", "success");
+        result.put("url", url);
+        return result;
+
     }
 }
 

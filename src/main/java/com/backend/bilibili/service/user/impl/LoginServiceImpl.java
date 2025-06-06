@@ -36,14 +36,8 @@ public class LoginServiceImpl implements LoginService {
                 UserDetailsImpl loginUser = (UserDetailsImpl) authenticate.getPrincipal();
                 User user = loginUser.getUser();
 
-                // 调试信息：显示用户信息
-                System.out.println("Authentication successful for user: " + user.getUsername());
-
                 // 生成JWT token
                 String jwt = JwtUtil.createJWT(user.getUsername());
-
-                // 调试信息：显示生成的JWT
-                System.out.println("Generated JWT token: " + jwt);
 
                 // 返回token
                 Map<String, String> map = new HashMap<>();
@@ -60,7 +54,6 @@ public class LoginServiceImpl implements LoginService {
             }
         } catch (Exception e) {
             // 捕获异常并输出异常信息
-            System.out.println("Authentication exception: " + e.getMessage());
             e.printStackTrace(); // 打印堆栈信息，方便调试
 
             // 异常返回

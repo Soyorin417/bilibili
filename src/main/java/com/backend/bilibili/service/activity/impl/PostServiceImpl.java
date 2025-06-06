@@ -10,13 +10,13 @@ import com.backend.bilibili.pojo.activity.PostLike;
 import com.backend.bilibili.pojo.user.UserInfo;
 import com.backend.bilibili.service.activity.PostService;
 import com.backend.bilibili.service.dto.PostDTO;
+import com.backend.bilibili.utils.UserTokenUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +36,31 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     private UserInfoMapper userInfoMapper;
+
+
+    //查询某条动态的评论数
+    private int getCommentCount(Long postId) {
+        return Math.toIntExact(postCommentMapper.selectCount(
+                new QueryWrapper<PostComment>().eq("post_id", postId)
+        ));
+    }
+
+    //查询某条动态的点赞数
+    private int getLikeCount(Long postId) {
+        return Math.toIntExact(postLikeMapper.selectCount(
+                new QueryWrapper<PostLike>().eq("post_id", postId)
+        ));
+    }
+
+    //判断指定用户是否给该动态点赞
+    private boolean isLikedByUser(Long postId, Long userId) {
+        if (userId == null) return false;
+        return postLikeMapper.selectCount(
+                new QueryWrapper<PostLike>().eq("post_id", postId).eq("user_id", userId)
+        ) > 0;
+    }
+
+
     @Override
     public Post getPostById(Long id) {
         return postMapper.selectById(id);
@@ -57,59 +82,50 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public List<PostDTO> getAllPostDTOs(Long currentUserId) {
-        // 1. 查出所有动态
         List<Post> posts = postMapper.selectList(new QueryWrapper<Post>().orderByDesc("create_time"));
 
-        // 2. 获取所有动态的 userId
         Set<Long> userIds = posts.stream().map(Post::getUserId).collect(Collectors.toSet());
-
-        // 3. 查用户信息（头像、昵称）
         List<UserInfo> users = userInfoMapper.selectBatchIds(userIds);
         Map<Long, UserInfo> userMap = users.stream().collect(Collectors.toMap(UserInfo::getUid, u -> u));
 
-        // 4. 查每条动态的评论数、点赞数、是否被当前用户点赞
-        List<PostDTO> dtoList = new ArrayList<>();
-        for (Post post : posts) {
+        return posts.stream().map(post -> {
             PostDTO dto = new PostDTO();
             BeanUtils.copyProperties(post, dto);
 
-            // 用户信息
             UserInfo user = userMap.get(post.getUserId());
             if (user != null) {
                 dto.setUsername(user.getUsername());
                 dto.setAvatar(user.getAvatar());
             }
 
-            // 评论数
-            int commentCount = Math.toIntExact(postCommentMapper.selectCount(
-                    new QueryWrapper<PostComment>().eq("post_id", post.getId())
-            ));
-            dto.setCommentCount(commentCount);
+            dto.setCommentCount(getCommentCount(post.getId()));
+            dto.setLikeCount(getLikeCount(post.getId()));
+            dto.setLiked(isLikedByUser(post.getId(), currentUserId));
 
-            // 点赞数
-            int likeCount = Math.toIntExact(postLikeMapper.selectCount(
-                    new QueryWrapper<PostLike>().eq("post_id", post.getId())
-            ));
-            dto.setLikeCount(likeCount);
-
-            // 是否被当前用户点赞（可选）
-            boolean liked = postLikeMapper.selectCount(
-                    new QueryWrapper<PostLike>().eq("post_id", post.getId()).eq("user_id", currentUserId)
-            ) > 0;
-            dto.setLiked(liked);
-
-            dtoList.add(dto);
-        }
-
-        return dtoList;
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     @Override
-    public void createPost(PostDTO postDTO) {
+    public void addComment(PostComment comment) {
+        Long uid = UserTokenUtil.getUid();
+        comment.setUserId(uid);
+        comment.setLikes(0);
+        comment.setStatus(1);
+        LocalDateTime now = LocalDateTime.now();
+        comment.setCreateTime(now);
+        comment.setUpdateTime(now);
+        postCommentMapper.insert(comment);
+    }
+
+    @Override
+    public boolean createPost(PostDTO postDTO) {
         Post post = new Post();
         BeanUtils.copyProperties(postDTO, post);
-        postMapper.insert(post);
+        int rows = postMapper.insert(post);
+        return rows > 0;
     }
+
 
     @Override
     public void updatePost(PostDTO postDTO) {
@@ -119,8 +135,8 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public void deletePostById(Long id) {
-        postMapper.deleteById(id);
+    public boolean deletePostById(Long id) {
+        return postMapper.deleteById(id) > 0;
     }
 
     @Override
@@ -131,43 +147,21 @@ public class PostServiceImpl implements PostService {
         PostDTO dto = new PostDTO();
         BeanUtils.copyProperties(post, dto);
 
-        // 用户信息
         UserInfo user = userInfoMapper.selectById(post.getUserId());
         if (user != null) {
             dto.setUsername(user.getUsername());
             dto.setAvatar(user.getAvatar());
         }
 
-        // 评论数
-        int commentCount = Math.toIntExact(postCommentMapper.selectCount(
-                new QueryWrapper<PostComment>().eq("post_id", post.getId())
-        ));
-        dto.setCommentCount(commentCount);
+        dto.setCommentCount(getCommentCount(post.getId()));
+        dto.setLikeCount(getLikeCount(post.getId()));
+        dto.setLiked(isLikedByUser(post.getId(), currentUserId));
 
-        // 点赞数
-        int likeCount = Math.toIntExact(postLikeMapper.selectCount(
-                new QueryWrapper<PostLike>().eq("post_id", post.getId())
-        ));
-        dto.setLikeCount(likeCount);
-
-        // 当前用户是否点赞
-        boolean liked = postLikeMapper.selectCount(
-                new QueryWrapper<PostLike>().eq("post_id", post.getId()).eq("user_id", currentUserId)
-        ) > 0;
-        dto.setLiked(liked);
-
-        // 浏览量（若字段存在）
         dto.setViews(post.getViews() != null ? post.getViews() : 0L);
-
-        // 分享数
         dto.setShareCount(post.getShares() != null ? post.getShares() : 0);
-
-        // 当前用户是否转发（如果你后面实现了分享记录表，可以补充逻辑）
-        dto.setShared(false); // 先默认 false
+        dto.setShared(false);
 
         return dto;
     }
-
-
-
 }
+

@@ -22,6 +22,7 @@ public class VideoServiceImpl implements VideoService {
     @Autowired
     private UserInfoMapper userInfoMapper;
 
+
     @Override
     public List<VideoCardDTO> getVideoCardList() {
         QueryWrapper<VideoInfo> queryWrapper = new QueryWrapper<>();
@@ -32,9 +33,6 @@ public class VideoServiceImpl implements VideoService {
                 .map(VideoInfo::getAuthorId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-
-
-
 
         QueryWrapper<UserInfo> wrapper = new QueryWrapper<>();
         wrapper.in("uid", authorIds);

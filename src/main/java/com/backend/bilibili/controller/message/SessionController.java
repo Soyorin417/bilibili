@@ -2,18 +2,22 @@ package com.backend.bilibili.controller.message;
 
 import com.backend.bilibili.pojo.message.Session;
 import com.backend.bilibili.service.message.SessionService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/sessions")
+@RequestMapping("/api/sessions")
 public class SessionController {
 
-    private final SessionService sessionService;
+    @Autowired
+    private  SessionService sessionService;
 
-    public SessionController(SessionService sessionService) {
-        this.sessionService = sessionService;
+
+    @GetMapping("/byUserId")
+    public List<Session> getSessionsByUserId(@RequestParam Long userId) {
+        return sessionService.getSessionsByUserId(userId);
     }
 
     @PostMapping

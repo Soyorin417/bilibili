@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,4 +26,6 @@ public class UserInfo {
     private int fans;
     private int dynamic;
     private String role;
+    private LocalDateTime registerTime;
+    private Boolean isBanned;
 }

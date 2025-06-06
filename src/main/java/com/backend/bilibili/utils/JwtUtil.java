@@ -88,4 +88,16 @@ public class JwtUtil {
             System.out.println("Token解析失败：" + e.getMessage());
         }
     }
+
+    public static String getUsername(String token) throws Exception {
+        SecretKey secretKey = generalKey();
+        return Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+    }
+
+
 }

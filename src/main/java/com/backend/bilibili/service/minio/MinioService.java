@@ -1,6 +1,7 @@
 package com.backend.bilibili.service.minio;
 
 import io.minio.*;
+import io.minio.http.Method;
 import io.minio.messages.Bucket;
 import io.minio.messages.Item;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
@@ -17,6 +18,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class MinioService implements InitializingBean {
@@ -50,21 +52,25 @@ public class MinioService implements InitializingBean {
         if (!minioClient.bucketExists(this.bucket)) {
             minioClient.makeBucket(this.bucket);
         }
-        String fileName = multipartFile.getOriginalFilename();
-        long fileSize = multipartFile.getSize();
+
+        // 给文件加上 UUID，防止重名
+        String fileName = UUID.randomUUID().toString() + "-" + multipartFile.getOriginalFilename();
 
         try (InputStream inputStream = multipartFile.getInputStream()) {
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(this.bucket)
                             .object(fileName)
-                            .stream(inputStream, fileSize, -1) // -1表示不指定分块大小，自动处理
+                            .stream(inputStream, multipartFile.getSize(), -1)
                             .contentType(multipartFile.getContentType())
                             .build()
             );
         }
-        return this.url + UriUtils.encode(fileName, StandardCharsets.UTF_8);
+        System.out.println(minioClient.getObjectUrl(this.bucket, fileName));
+
+        return minioClient.getObjectUrl(this.bucket, fileName);
     }
+
 
 
 
@@ -191,13 +197,11 @@ public class MinioService implements InitializingBean {
         if (flag) {
             Iterable<Result<Item>> myObjects = listObjects(bucketName);
             for (Result<Item> result : myObjects) {
-                Item item = result.get();
-// 有对象文件，则删除失败
+                Item item = result.get();// 有对象文件，则删除失败
                 if (item.size() > 0) {
                     return false;
                 }
-            }
-// 删除存储桶，注意，只有存储桶为空时才能删除成功。
+            }// 删除存储桶，注意，只有存储桶为空时才能删除成功。
             minioClient.removeBucket(bucketName);
             flag = bucketExists(bucketName);
             if (!flag) {
@@ -279,5 +283,35 @@ public class MinioService implements InitializingBean {
             url = minioClient.getObjectUrl(bucketName, objectName);
         }
         return url;
+    }
+
+    public String generatePresignedGetUrl(String objectName, int expirySeconds) {
+        try {
+            return minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .bucket(bucket)
+                            .object(objectName)
+                            .method(Method.GET)
+                            .expiry(expirySeconds) // 有效时间，单位：秒，最大604800（7天）
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("生成GET预签名URL失败: " + e.getMessage(), e);
+        }
+    }
+
+    public String generatePresignedPutUrl(String objectName, int expirySeconds) {
+        try {
+            return minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .bucket(bucket)
+                            .object(objectName)
+                            .method(Method.PUT)
+                            .expiry(expirySeconds) // 有效时间，单位：秒
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("生成PUT预签名URL失败: " + e.getMessage(), e);
+        }
     }
 }

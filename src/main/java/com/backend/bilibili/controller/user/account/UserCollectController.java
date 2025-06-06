@@ -1,6 +1,5 @@
 package com.backend.bilibili.controller.user.account;
 
-import com.backend.bilibili.pojo.user.UserCollect;
 import com.backend.bilibili.service.dto.UserCollectVideoDTO;
 import com.backend.bilibili.service.user.account.UserCollectService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/collect")
+@RequestMapping("/api/collect")
 public class UserCollectController {
 
     @Autowired
@@ -19,6 +18,4 @@ public class UserCollectController {
     public List<UserCollectVideoDTO> getUserCollectedVideos(@PathVariable Long userId) {
         return userCollectService.getUserCollectedVideos(userId);
     }
-
-
 }

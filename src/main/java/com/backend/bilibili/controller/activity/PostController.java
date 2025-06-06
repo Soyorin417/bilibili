@@ -4,6 +4,7 @@ import com.backend.bilibili.pojo.activity.Post;
 import com.backend.bilibili.service.activity.PostService;
 import com.backend.bilibili.service.dto.PostDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class PostController {
     public Post getPostById(@PathVariable Long id) {
         return postService.getPostById(id);
     }
+
     @GetMapping("/post/dtoList")
     public List<PostDTO> getAllPostDTOs(@RequestParam Long userId) {
         System.out.println(postService.getPostsByUserId(userId));
@@ -41,10 +43,13 @@ public class PostController {
 
     // 新增动态
     @PostMapping
-    public String createPost(@RequestBody PostDTO post) {
-        postService.createPost(post);
-        return "动态创建成功";
+    public ResponseEntity<?> createPost(@RequestBody PostDTO post) {
+        boolean success = postService.createPost(post);
+        return success
+                ? ResponseEntity.ok("动态创建成功")
+                : ResponseEntity.badRequest().body("动态创建失败");
     }
+
 
     // 更新动态
     @PutMapping("/{id}")
@@ -56,8 +61,11 @@ public class PostController {
 
     // 删除动态
     @DeleteMapping("/{id}")
-    public String deletePost(@PathVariable Long id) {
-        postService.deletePostById(id);
-        return "动态删除成功";
+    public ResponseEntity<?> deletePost(@PathVariable Long id) {
+        boolean success = postService.deletePostById(id);
+        return success
+                ? ResponseEntity.ok("动态删除成功")
+                : ResponseEntity.badRequest().body("删除失败");
     }
+
 }

@@ -159,7 +159,7 @@
 import AnimeBar from "@/components/navBar/AnimeBar.vue";
 import AnimeSchedule from "@/components/content/anime/AnimeSchedule.vue";
 import AnimeRanking from "@/components/content/anime/AnimeRanking.vue";
-import { animeApi } from '@/api/content/anime';
+import { animeApi } from "@/api/content/anime";
 export default {
   name: "AnimeView",
   components: {
@@ -171,9 +171,9 @@ export default {
     async getAnimeList() {
       try {
         const response = await animeApi.getAllAnime();
-      this.animeList = response.data;
+        this.animeList = response.data;
       } catch (error) {
-        console.error('获取动漫列表失败:', error);
+        console.error("获取动漫列表失败:", error);
       }
     },
   },

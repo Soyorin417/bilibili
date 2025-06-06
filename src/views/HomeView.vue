@@ -127,6 +127,7 @@ import VideoCard from "@/components/content/homeView/VideoCard.vue";
 import NavBar from "@/components/navBar/NavBar.vue";
 import TopNav from "@/components/navBar/TopNav.vue";
 import { videoApi } from "@/api/content/video";
+import { carouselApi } from "@/api/admin/carousel";
 
 export default {
   name: "HomeView",
@@ -141,34 +142,7 @@ export default {
       videoInfos: [],
       videoCards: [],
       otherVideos: [],
-      loop_videoCards: [
-        {
-          id: "1",
-          url:
-            "http://113.45.69.13:9000/image/78845e847febc6fdf4f41eeb6306c25c23396569.jpg",
-          title: "《一等情事》",
-          message: "红宝石戒指",
-        },
-        {
-          id: "2",
-          url: "http://113.45.69.13:9000/image/91953835_p3_master1200.jpg",
-          title:
-            "小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥小祥",
-          message: "红宝石戒指",
-        },
-        {
-          id: "3",
-          url: "http://113.45.69.13:9000/image/91953835_p4_master1200.jpg",
-          title: "【芙莉莲/静止系MAD】想不想看花海盛开",
-          message: "红宝石戒指",
-        },
-        {
-          id: "4",
-          url: "http://113.45.69.13:9000/image/91953835_p1_master1200.jpg",
-          title: "三秒喜欢不上486的都是神人",
-          message: "白小鱼",
-        },
-      ],
+      loop_videoCards: [],
       showPlaceholder: true,
       loadedVideos: [],
     };
@@ -199,6 +173,22 @@ export default {
         alert("获取视频信息失败，请稍后再试");
       }
     },
+    async getCarouselImages() {
+      try {
+        const response = await carouselApi.getAllCarousels();
+        // 过滤出type为home的轮播图
+        this.loop_videoCards = (response.data || [])
+          .filter((item) => item.type === "home")
+          .map((item) => ({
+            id: item.id,
+            url: item.url,
+            title: item.title || "",
+            message: item.description || "",
+          }));
+      } catch (error) {
+        console.error("获取轮播图失败:", error);
+      }
+    },
   },
   mounted() {
     // 模拟网络延迟
@@ -216,6 +206,7 @@ export default {
     });
 
     this.getVideoInfos();
+    this.getCarouselImages();
   },
 };
 </script>

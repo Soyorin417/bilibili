@@ -3,7 +3,12 @@
     <div class="banner-header">
       <h4>轮播图管理</h4>
       <div class="header-actions">
-        <select v-model="currentCategory" class="form-select me-3" style="width: 150px">
+        <select
+          v-model="currentCategory"
+          class="form-select me-3"
+          style="width: 150px"
+          @change="$emit('type-change', currentCategory)"
+        >
           <option value="home">首页轮播</option>
           <option value="anime">动漫轮播</option>
         </select>

@@ -54,6 +54,7 @@
             @add="handleAddBanner"
             @update="handleUpdateBanner"
             @delete="handleDeleteBanner"
+            @type-change="handleBannerTypeChange"
           />
         </div>
 
@@ -100,7 +101,7 @@ import UserManagement from "@/components/admin/UserManagement.vue";
 import SystemSettings from "@/components/admin/SystemSettings.vue";
 import StatisticsPanel from "@/components/admin/Statistics.vue";
 import BannerManagement from "@/components/admin/BannerManagement.vue";
-import animeCarouselApi from "@/api/admin/animeCarousel";
+import carouselApi from "@/api/admin/carousel";
 
 export default {
   name: "AdminView",
@@ -172,6 +173,11 @@ export default {
         pendingReviews: 0,
       },
       banners: [],
+      currentBannerType: "home",
+      bannerTypes: [
+        { label: "首页轮播图", value: "home" },
+        { label: "动漫轮播图", value: "anime" },
+      ],
     };
   },
   methods: {
@@ -321,74 +327,54 @@ export default {
     },
     async fetchBanners() {
       try {
-        const res = await animeCarouselApi.getAllCarousel();
-        this.banners = res.data || [];
+        const res = await carouselApi.getAllCarousels();
+        this.banners = (res.data || []).filter(
+          (banner) => banner.type === this.currentBannerType
+        );
       } catch (error) {
         console.error("获取轮播图列表失败:", error);
         this.$message.error("获取轮播图列表失败");
       }
     },
+    handleBannerTypeChange(type) {
+      this.currentBannerType = type;
+      this.fetchBanners();
+    },
     async handleAddBanner(formData) {
       try {
-        const response = await animeCarouselApi.addCarousel(formData);
-        if (response.data.error_message === "success") {
-          this.$message.success("轮播图添加成功");
+        formData.append("type", this.currentBannerType);
+        const res = await carouselApi.addCarousel(formData);
+        if (res.data.error_message === "success") {
+          this.$message.success("添加轮播图成功");
           this.fetchBanners();
-          return response.data;
         } else {
-          const errorMsg =
-            response.data.error_message || response.data.message || "添加失败";
-          this.$message.error(errorMsg);
-          throw new Error(errorMsg);
+          this.$message.error(res.data.error_message || "添加失败");
         }
       } catch (error) {
         console.error("添加轮播图失败:", error);
-        if (error.response) {
-          const errorMsg =
-            error.response.data?.error_message ||
-            error.response.data?.message ||
-            error.message;
-          this.$message.error(`服务器响应错误: ${errorMsg}`);
-        } else if (error.request) {
-          this.$message.error("无法连接到服务器，请确保后端服务已启动");
-        } else {
-          this.$message.error(`请求错误: ${error.message}`);
-        }
-        throw error;
+        this.$message.error("添加轮播图失败");
       }
     },
-    async handleUpdateBanner(id, formData) {
+    async handleUpdateBanner(formData) {
       try {
-        const response = await animeCarouselApi.updateCarousel(id, formData);
-        if (response.data.error_message === "success") {
-          this.$message.success("轮播图更新成功");
+        if (!formData.get("type")) {
+          formData.append("type", this.currentBannerType);
+        }
+        const res = await carouselApi.updateCarousel(formData);
+        if (res.data.error_message === "success") {
+          this.$message.success("更新轮播图成功");
           this.fetchBanners();
-          return response.data;
         } else {
-          const errorMsg =
-            response.data.error_message || response.data.message || "更新失败";
-          this.$message.error(errorMsg);
-          throw new Error(errorMsg);
+          this.$message.error(res.data.error_message || "更新失败");
         }
       } catch (error) {
         console.error("更新轮播图失败:", error);
-        if (error.response) {
-          const errorMsg =
-            error.response.data?.error_message ||
-            error.response.data?.message ||
-            error.message;
-          this.$message.error(`服务器响应错误: ${errorMsg}`);
-        } else if (error.request) {
-          this.$message.error("无法连接到服务器，请确保后端服务已启动");
-        } else {
-          this.$message.error(`请求错误: ${error.message}`);
-        }
-        throw error;
+        this.$message.error("更新轮播图失败");
       }
     },
     async handleDeleteBanner(id) {
       try {
-        const response = await animeCarouselApi.deleteCarousel(id);
+        const response = await carouselApi.deleteCarousel(id);
         if (response.data.error_message === "success") {
           this.$message.success("轮播图删除成功");
           this.fetchBanners();

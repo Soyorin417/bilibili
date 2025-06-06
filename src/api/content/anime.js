@@ -73,6 +73,13 @@ export const animeApi = {
   getCarouselImages: () => {
     return request.get("/api/getAllCarousel");
   },
+
+  // 根据类型获取轮播图
+  getCarouselByType: (type) => {
+    return request.get("/api/getCarouselByType", {
+      params: { type }
+    });
+  },
 };
 
 export default animeApi;

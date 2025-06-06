@@ -123,7 +123,7 @@ export default {
   methods: {
     async getImages() {
       try {
-        const response = await animeApi.getCarouselImages();
+        const response = await animeApi.getCarouselByType("anime");
         this.images = response.data.map((item) => item.url);
         console.log(this.images, "images");
       } catch (error) {

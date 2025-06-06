@@ -3,7 +3,7 @@ import axios from "axios";
 // 创建上传专用的 axios 实例
 const uploadInstance = axios.create({
   baseURL: "http://localhost:8081",
-  timeout: 30000,
+  timeout: 300000,
   headers: {
     "Content-Type": "application/json",
   },

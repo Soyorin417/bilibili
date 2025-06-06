@@ -14,7 +14,6 @@
 
       <!-- 中间动态列表 -->
       <div class="main-content">
-        <!-- 替换原来的 post-box 为 PostEditor 组件 -->
         <PostEditor
           v-model="postContent"
           @post="handlePost"
@@ -152,7 +151,6 @@ export default {
       }
       if (!content.trim() && !image) return;
 
-      // 1. 先本地插入一条临时动态
       const tempId = "temp_" + Date.now();
       this.posts.unshift({
         id: tempId,
@@ -160,7 +158,7 @@ export default {
         username: this.userInfo.username,
         avatar: this.userInfo.avatar,
         time: "刚刚",
-        content: content,
+        content,
         media: image || null,
         is_image: !!image,
         views: 0,
@@ -172,31 +170,32 @@ export default {
 
       const postData = {
         userId: this.userInfo.id,
-        content: content,
+        content,
         media: image || null,
         isImage: !!image,
       };
 
-      // 2. 发请求
       try {
         const res = await postApi.createPost(postData);
-        if (res === "动态创建成功") {
+        if (res && res.data === "动态创建成功") {
           console.log("创建动态成功");
         } else {
-          // 失败则移除临时动态
           this.posts = this.posts.filter((post) => post.id !== tempId);
+          alert("创建动态失败，请稍后再试");
         }
       } catch (e) {
         this.posts = this.posts.filter((post) => post.id !== tempId);
         alert("创建动态失败，请稍后再试");
+        console.error(e);
       }
     },
+
     async fetchPosts() {
       if (!this.userInfo || !this.userInfo.id) return;
 
       try {
         const response = await postApi.getPosts(this.userInfo.id);
-        this.posts = response.map((post) => ({
+        this.posts = response.data.map((post) => ({
           id: post.id,
           user_id: post.userId,
           username: post.username,
@@ -213,27 +212,25 @@ export default {
           is_image: post.isImage,
           shareCount: post.shareCount,
         }));
+
         console.log("获取动态成功:", this.posts);
       } catch (error) {
         console.error("获取动态失败:", error);
       }
     },
     async deletePost(id) {
-      // 1. 先本地移除
       const oldPosts = [...this.posts];
       this.posts = this.posts.filter((post) => post.id !== id);
 
-      // 2. 如果是临时动态（本地假数据），不请求后端
       if (typeof id === "string" && id.startsWith("temp_")) {
         return;
       }
 
       try {
         const res = await postApi.deletePost(id);
-        if (res === "动态删除成功") {
+        if (res.status === 200) {
           console.log("删除成功");
         } else {
-          // 失败回滚
           this.posts = oldPosts;
           alert("删除失败，请稍后再试");
         }
@@ -259,6 +256,20 @@ export default {
       console.log("Avatar clicked:", userInfo);
     },
 
+    async submitComment(postId, parentCommentId, content) {
+      const commentData = {
+        postId,
+        parentCommentId: parentCommentId || null,
+        content,
+      };
+
+      try {
+        const res = await postApi.addComment(commentData);
+        console.log("评论成功", res);
+      } catch (error) {
+        console.error("评论失败", error);
+      }
+    },
     // 处理用户名点击
     handleUsernameClick(userInfo) {
       // 可以跳转到用户主页

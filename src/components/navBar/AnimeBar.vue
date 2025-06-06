@@ -35,7 +35,7 @@
         @mouseleave="resetBackground"
       >
         <div class="body">
-          <img :src="image" alt="" />
+          <img :src="image.url" alt="" />
         </div>
       </div>
     </div>
@@ -47,6 +47,7 @@ import HotSearchList from "@/components/navBar/search/HotSearchList.vue";
 import NavBarRightMenu from "@/components/navBar/NavBarRightMenu.vue";
 import LeftNavMenu from "@/components/navBar/NavBarLeftMenu.vue";
 import { animeApi } from "@/api/content/anime";
+
 export default {
   name: "AnimeBar",
   components: {
@@ -113,19 +114,22 @@ export default {
     },
   },
   mounted() {
-    this.currentBackground = this.url;
-    this.startAutoSwitch();
     this.getImages();
+    this.startTimer();
   },
   beforeUnmount() {
-    this.stopAutoSwitch();
+    this.stopTimer();
   },
   methods: {
     async getImages() {
       try {
         const response = await animeApi.getCarouselByType("anime");
-        this.images = response.data.map((item) => item.url);
-        console.log(this.images, "images");
+        this.images = response.data;
+        // 设置初始背景图
+        if (this.images.length > 0) {
+          this.currentBackground = this.images[0].url;
+        }
+        console.log("轮播图数据:", this.images);
       } catch (error) {
         console.error("获取轮播图失败:", error);
       }
@@ -161,27 +165,23 @@ export default {
       this.handleSearch();
     },
 
-    //随时间切换
-    startAutoSwitch() {
+    startTimer() {
       this.timer = setInterval(() => {
         if (!this.isHovered) {
-          this.switchToNext();
+          this.currentIndex = (this.currentIndex + 1) % this.images.length;
+          this.currentBackground = this.images[this.currentIndex].url;
         }
-      }, 5000);
+      }, 3000);
     },
-    stopAutoSwitch() {
+    stopTimer() {
       if (this.timer) {
         clearInterval(this.timer);
         this.timer = null;
       }
     },
-    switchToNext() {
-      this.currentIndex = (this.currentIndex + 1) % this.images.length;
-      this.currentBackground = this.images[this.currentIndex];
-    },
     setBackground(image, index) {
       this.isHovered = true;
-      this.currentBackground = image;
+      this.currentBackground = image.url;
       this.currentIndex = index;
     },
     resetBackground() {

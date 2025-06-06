@@ -14,17 +14,10 @@
         <VideoInfoForm
           v-else
           :videoInfo="videoInfo"
-          :tagInput="tagInput"
           @reset-upload="resetUpload"
-          @save-draft="saveDraft"
           @submit-video="submitVideo"
-          @add-tag="handleAddTag"
-          @remove-tag="removeTag"
           @remove-cover="removeCover"
-          @handle-cover-select="handleCoverSelect"
-          @update:tagInput="(val) => (tagInput = val)"
           @update-video-info="updateVideoInfo"
-          @fetch-danmaku="fetchBilibiliDanmaku"
         />
       </div>
     </div>
@@ -37,9 +30,8 @@ import DataNav from "@/components/navBar/DataNav.vue";
 import { mapGetters } from "vuex";
 import VideoUploadArea from "@/components/upload/videoUploadArea.vue";
 import VideoInfoForm from "@/components/upload/VideoInfoForm.vue";
-import { createTag, getAllTags, addTagToVideo } from "@/api/tag";
 import { danmakuApi } from "@/api/content/danmaku";
-import UploadUtils from "@/utils/uploadUtils";
+import { videoApi } from "@/api/content/video";
 
 export default {
   name: "UpLoadView",
@@ -58,6 +50,7 @@ export default {
       videoUrl: null,
       tagInput: "",
       uploadProgress: 0,
+      isUploading: false,
       videoInfo: {
         title: "",
         category: "",
@@ -74,79 +67,14 @@ export default {
     };
   },
   methods: {
-    extractFileNameFromUrl(url) {
-      try {
-        const decoded = decodeURIComponent(url);
-        return decoded.substring(decoded.lastIndexOf("/") + 1);
-      } catch (e) {
-        console.warn("无法解析URL，返回原值");
-        return url;
-      }
-    },
     triggerFileInput() {
       this.$refs.fileInput.click();
     },
     triggerCoverInput() {
       this.$refs.coverInput.click();
     },
-    handleDrop(e) {
-      const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith("video/")) {
-        this.getVideoDuration(file);
-      }
-    },
-    onFileSelect(e) {
-      const file = e.target.files[0];
-      if (file) {
-        this.getVideoDuration(file);
-      }
-    },
-    getVideoDuration(file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const video = document.createElement("video");
-        video.preload = "metadata";
-        video.src = e.target.result;
-        video.onloadedmetadata = () => {
-          const duration = video.duration;
-          this.$emit("file-selected", { file, duration });
-        };
-      };
-      reader.readAsDataURL(file);
-    },
-    handleCoverSelect(e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.videoInfo.cover = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-    },
     removeCover() {
       this.videoInfo.cover = null;
-    },
-    async addTag() {
-      if (this.tagInput && this.videoInfo.tags.length < 10) {
-        const tag = {
-          name: this.tagInput,
-          videoId: this.videoInfo.id,
-        };
-        try {
-          const response = await createTag(tag);
-          if (response.status === 200) {
-            this.videoInfo.tags.push(this.tagInput);
-            this.tagInput = "";
-            console.log("添加标签成功:", this.videoInfo.tags);
-          }
-        } catch (error) {
-          console.error("添加标签失败:", error);
-        }
-      }
-    },
-    removeTag(index) {
-      this.videoInfo.tags.splice(index, 1);
     },
     resetUpload() {
       this.selectedFile = null;
@@ -165,80 +93,108 @@ export default {
       };
     },
     async submitVideo() {
-      if (!this.videoInfo.title.trim()) {
-        alert("请输入视频标题");
-        return;
-      }
-      if (!this.videoInfo.category) {
-        alert("请选择视频分区");
-        return;
-      }
       if (!this.selectedFile) {
-        alert("请选择要上传的视频文件");
+        this.$message.error("请先上传视频文件");
         return;
       }
 
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("请先登录");
-        this.$router.push("/login");
+      if (!this.videoInfo.title) {
+        this.$message.error("请输入视频标题");
         return;
       }
+
+      if (!this.userInfo || !this.userInfo.id) {
+        this.$message.error("请先登录");
+        return;
+      }
+
+      this.isUploading = true;
+      this.uploadProgress = 0;
 
       try {
-        // 1. 上传视频文件
-        const videoFileName = await UploadUtils.uploadVideo(
-          this.selectedFile,
-          (progress) => {
-            this.uploadProgress = progress;
-            console.log(`视频上传进度: ${progress}%`);
+        // 构建视频信息
+        const formData = new FormData();
+        formData.append("title", this.videoInfo.title);
+        formData.append("videoFile", this.selectedFile);
+        formData.append("description", this.videoInfo.description || "");
+        const rawDuration = 18668; // 毫秒
+        const totalSeconds = Math.floor(rawDuration / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        const formattedDuration = `${String(minutes).padStart(2, "0")}:${String(
+          seconds
+        ).padStart(2, "0")}`;
+
+        formData.append("duration", formattedDuration);
+        formData.append("authorId", String(this.userInfo.id));
+
+        // 如果有封面，添加封面文件
+        if (this.videoInfo.cover) {
+          const coverBlob = await fetch(this.videoInfo.cover).then((r) => r.blob());
+          formData.append(
+            "coverFile",
+            new File([coverBlob], "cover.jpg", { type: "image/jpeg" })
+          );
+        }
+
+        // 如果有弹幕数据，添加弹幕文件
+        if (this.videoInfo.cid) {
+          console.log("准备获取B站弹幕，CID:", this.videoInfo.cid);
+          const response = await danmakuApi.getBilibiliDanmaku(this.videoInfo.cid);
+          console.log("B站弹幕API响应:", response);
+
+          if (response.data) {
+            console.log("获取到的B站弹幕数据:", response.data.substring(0, 200) + "...");
+
+            // 将弹幕字符串转换为文件
+            const danmakuBlob = new Blob([response.data], { type: "application/xml" });
+            const danmakuFile = new File(
+              [danmakuBlob],
+              `danmaku_${this.videoInfo.cid}.xml`,
+              {
+                type: "application/xml",
+              }
+            );
+            console.log("创建的弹幕文件:", danmakuFile);
+
+            formData.append("danmakuFileName", danmakuFile);
+          } else {
+            console.warn("B站弹幕API返回数据为空");
           }
-        );
+        }
 
-        // 重置进度条
-        this.uploadProgress = 0;
-
-        // 2. 上传封面
-        const coverFileName = await UploadUtils.uploadCover(this.videoInfo.cover);
-
-        // 3. 提交视频信息
-        const videoInfo = {
-          title: this.videoInfo.title,
-          videoFileName,
-          coverFileName,
-          description: this.videoInfo.description || "",
-          duration: this.videoInfo.duration,
-          danmakuFileName: this.videoInfo.danmakuFileName || "",
-        };
-
-        const submitResponse = await UploadUtils.submitVideoInfo(
-          videoInfo,
-          this.userInfo
-        );
-        const videoId = submitResponse.videoId;
-
-        if (videoId) {
-          await this.handleTagsAfterUpload(videoId, this.videoInfo.tags);
-          alert("视频投稿成功！");
-          this.resetUpload();
+        // 添加标签
+        const tags = Array.from(this.videoInfo.tags || []);
+        if (tags.length > 0) {
+          tags.forEach((tag) => {
+            formData.append("tags", tag);
+          });
+        }
+        // 提交视频信息
+        const response = await videoApi.uploadVideo(formData);
+        if (response.data) {
+          this.$message.success("视频上传成功");
+          this.$router.push("/");
         }
       } catch (error) {
-        console.error("投稿失败:", error);
-        if (error.code === "ECONNABORTED") {
-          alert("请求超时，请检查网络连接");
-        } else if (error.response) {
-          alert(`服务器响应错误: ${error.response.data || error.message}`);
-        } else if (error.request) {
-          alert("无法连接到服务器，请确保后端服务已启动");
+        console.error("上传失败:", error);
+        if (error.response) {
+          console.error("错误响应:", error.response.data);
+          this.$message.error(error.response.data.message || "上传失败，请稍后重试");
         } else {
-          alert(`请求错误: ${error.message}`);
+          this.$message.error(error.message || "上传失败，请稍后重试");
         }
+      } finally {
+        this.isUploading = false;
+        this.uploadProgress = 0;
       }
     },
     handleFileFromChild({ file, duration }) {
       this.selectedFile = file;
       this.videoInfo.duration = duration;
       this.durationReady = true;
+      // 生成视频预览URL
       const reader = new FileReader();
       reader.onload = (e) => {
         this.videoUrl = e.target.result;
@@ -247,51 +203,6 @@ export default {
     },
     updateVideoInfo(newInfo) {
       this.videoInfo = newInfo;
-    },
-    handleAddTag() {
-      const tag = this.tagInput.trim();
-      if (tag && !this.videoInfo.tags.includes(tag) && this.videoInfo.tags.length < 10) {
-        this.videoInfo.tags.push(tag);
-        this.tagInput = "";
-      }
-    },
-    async handleTagsAfterUpload(videoId, tags) {
-      const allTagsRes = await getAllTags();
-      console.log("所有标签:", allTagsRes.data);
-      const allTags = allTagsRes.data;
-      for (const tagName of tags) {
-        let tagObj = allTags.find((t) => t.name === tagName);
-        if (!tagObj) {
-          const createRes = await createTag({ name: tagName });
-          tagObj = createRes.data;
-        }
-        console.log("添加标签", videoId, tagObj.id);
-        await addTagToVideo(videoId, Number(tagObj.id));
-      }
-    },
-    // 获取B站弹幕
-    async fetchBilibiliDanmaku() {
-      if (!this.videoInfo.cid) {
-        this.$message.warning("请先输入视频CID");
-        return;
-      }
-      try {
-        const response = await danmakuApi.getBilibiliDanmaku(this.videoInfo.cid);
-        if (response.data) {
-          const danmakuFileName = await UploadUtils.uploadDanmaku(
-            response.data,
-            this.videoInfo.cid
-          );
-          this.$message.success("弹幕获取并上传成功");
-          this.videoInfo.danmakuFileName = danmakuFileName;
-          console.log("弹幕文件名:", danmakuFileName);
-        }
-      } catch (error) {
-        console.error("获取或上传弹幕失败:", error);
-        this.$message.error(
-          "获取或上传弹幕失败: " + (error.response?.data || error.message)
-        );
-      }
     },
   },
 };

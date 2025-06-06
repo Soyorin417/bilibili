@@ -7,7 +7,7 @@
         v-model="localSearchQuery"
         class="form-control"
         placeholder="搜索用户..."
-        @input="handleSearch"
+        @keyup.enter="handleSearch"
       />
     </div>
     <table class="table">
@@ -15,7 +15,7 @@
         <tr>
           <th>ID</th>
           <th>用户名</th>
-          <th>邮箱</th>
+
           <th>注册时间</th>
           <th>状态</th>
           <th>操作</th>
@@ -25,18 +25,17 @@
         <tr v-for="user in users" :key="user.id">
           <td>{{ user.id }}</td>
           <td>{{ user.username }}</td>
-          <td>{{ user.email }}</td>
-          <td>{{ formatDate(user.registerTime) }}</td>
+          <td>{{ formatDate(user.register_time) }}</td>
           <td>
             <span
-              :class="['badge', user.status === 'active' ? 'bg-success' : 'bg-danger']"
+              :class="['badge', user.is_banned === false ? 'bg-success' : 'bg-danger']"
             >
-              {{ user.status === "active" ? "正常" : "禁用" }}
+              {{ user.is_banned === false ? "正常" : "已封禁" }}
             </span>
           </td>
           <td>
             <button class="btn btn-warning btn-sm me-2" @click="handleToggleStatus(user)">
-              {{ user.status === "active" ? "禁用" : "启用" }}
+              {{ user.is_banned === false ? "封禁" : "解封" }}
             </button>
             <button class="btn btn-danger btn-sm" @click="handleDelete(user.id)">
               删除

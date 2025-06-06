@@ -1,182 +1,49 @@
 <template>
   <div v-if="post && userInfo" class="post-card card">
-    <div class="post-header">
-      <div class="post-user">
-        <img :src="post.avatar" class="avatar" alt="用户头像" />
-        <div class="post-info">
-          <div class="post-author">{{ post.username }}</div>
-          <div class="post-meta">
-            <span class="post-time">{{ formatTime(post.time) }}</span>
-            <span class="post-type">投稿了视频</span>
-          </div>
-        </div>
-      </div>
-      <div
-        v-if="post.user_id && userInfo.id && post.user_id === userInfo.id"
-        class="post-more"
-        @click="handleDelete"
-      >
-        <i class="bi bi-x"></i>
-      </div>
-    </div>
-    <div class="post-content">
-      <div v-if="post.video && post.video.image">
-        <div class="video-card-content" @click="handleVideoClick">
-          <div class="video-thumbnail">
-            <img :src="post.video.image" alt="视频封面" />
-            <span class="video-duration">{{ post.video.duration }}</span>
-          </div>
-          <div class="video-info">
-            <div class="video-title">{{ post.content }}</div>
-            <div class="video-stats-line">
-              <span class="me-3"
-                ><i class="bi bi-play-fill"></i> {{ post.video.playCount }}</span
-              >
-              <span><i class="bi bi-chat"></i> {{ post.video.commentCount }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div v-else>
-        <div class="post-content-text">{{ post.content }}</div>
-      </div>
-    </div>
-    <div class="post-actions">
-      <div class="action-btn" :class="{ active: localShared }" @click="handleShare">
-        <share-two
-          v-if="!localShared"
-          theme="outline"
-          size="21"
-          fill="#000000"
-          :strokeWidth="2"
-          strokeLinecap="square"
-        />
-        <share-two
-          v-else
-          theme="filled"
-          size="21"
-          fill="#00aeec"
-          :strokeWidth="2"
-          strokeLinecap="square"
-        />
-        <span>转发</span>
-      </div>
-      <div class="action-btn" :class="{ active: is_comments }" @click="handleComments">
-        <i class="bi bi-chat"></i>
-        <span>评论 {{ post.comments }}</span>
-      </div>
-      <div class="action-btn" :class="{ active: localLiked }" @click="handleLike">
-        <thumbs-up
-          v-if="!localLiked"
-          theme="outline"
-          size="21"
-          fill="#000000"
-          :strokeWidth="2"
-          strokeLinecap="square"
-        />
-        <thumbs-up
-          v-else
-          theme="filled"
-          size="21"
-          fill="#00aeec"
-          :strokeWidth="2"
-          strokeLinecap="square"
-        />
-        <span>{{ localLikes }}</span>
-      </div>
-    </div>
-
-    <div class="post-box card" v-if="localShared || is_comments">
-      <textarea
-        class="post-input"
-        :placeholder="localShared ? '转发时添加评论...' : '写下你的评论...'"
-        v-model="postContent"
-      ></textarea>
-      <div class="post-tools">
-        <div class="tool-icons">
-          <div class="emoji-picker-container">
-            <button class="tool-btn" @click="toggleEmojiPicker">
-              <i class="bi bi-emoji-smile"></i>
-            </button>
-            <EmojiPicker
-              v-if="showEmojiPicker"
-              @select="onSelectEmoji"
-              :style="{ position: 'absolute', 'z-index': 1000, top: '100%', left: 0 }"
-            />
-          </div>
-          <button class="tool-btn" @click="triggerFileInput">
-            <i class="bi bi-image"></i>
-          </button>
-          <input
-            type="file"
-            ref="fileInput"
-            accept="image/*"
-            @change="handleImageUpload"
-            style="display: none"
-          />
-          <button class="tool-btn"><i class="bi bi-at"></i></button>
-          <button class="tool-btn"><i class="bi bi-bar-chart"></i></button>
-          <button class="tool-btn"><i class="bi bi-hash"></i></button>
-        </div>
-        <div class="post-actions">
-          <span class="word-count">{{ postContent.length }}/200</span>
-          <button class="publish-btn" @click="sendPost">
-            {{ localShared ? "转发" : "评论" }}
-          </button>
-        </div>
-      </div>
-      <div v-if="selectedImage" class="selected-image">
-        <img :src="selectedImage" alt="Selected" />
-        <button class="remove-image" @click="removeImage">
-          <i class="bi bi-x"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- 评论列表 -->
-    <div v-if="is_comments" class="comments-list">
-      <div v-for="comment in comments" :key="comment.id" class="comment-item">
-        <img :src="comment.avatar" class="comment-avatar" alt="用户头像" />
-        <div class="comment-content">
-          <div class="comment-header">
-            <span class="comment-author">{{ comment.username }}</span>
-            <span class="comment-time">{{ comment.time }}</span>
-            <button
-              v-if="userInfo && comment.userId === userInfo.id"
-              class="comment-action-btn"
-              @click="handleDeleteComment(comment.id)"
-            >
-              删除
-            </button>
-          </div>
-          <div class="comment-text">{{ comment.content }}</div>
-          <div class="comment-actions">
-            <button class="comment-action-btn" @click="likeComment(comment)">
-              <i class="bi bi-hand-thumbs-up"></i>
-              <span>{{ comment.likes }}</span>
-            </button>
-            <button class="comment-action-btn" @click="replyComment(comment)">
-              <i class="bi bi-reply"></i>
-              <span>回复</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <PostHeader
+      :post="post"
+      :userInfo="userInfo"
+      @delete="$emit('deletePost', post.id)"
+    />
+    <PostContent :post="post" @video-click="handleVideoClick" />
+    <PostActions
+      :shared="localShared"
+      :is-comments="is_comments"
+      :liked="localLiked"
+      :comment-count="post.comments"
+      :like-count="localLikes"
+      @share="handleShare"
+      @comments="handleComments"
+      @like="handleLike"
+    />
+    <CommentSection
+      :show-comment-box="localShared || is_comments"
+      :show-comments="is_comments"
+      :is-share="localShared"
+      :comments="comments"
+      :user-info="userInfo"
+      @send-post="handleSendPost"
+      @delete-comment="handleDeleteComment"
+      @like-comment="handleCommentLike"
+      @reply-comment="replyComment"
+    />
   </div>
 </template>
 
 <script>
-import { ShareTwo, ThumbsUp } from "@icon-park/vue-next";
-import EmojiPicker from "vue3-emoji-picker";
-import axios from "axios";
+import PostHeader from "./PostHeader.vue";
+import PostContent from "./PostContent.vue";
+import PostActions from "./PostActions.vue";
+import CommentSection from "./CommentSection.vue";
+import { postApi } from "@/api/post";
 
 export default {
   name: "ActivityCard",
   components: {
-    ShareTwo,
-    ThumbsUp,
-    EmojiPicker,
+    PostHeader,
+    PostContent,
+    PostActions,
+    CommentSection,
   },
   props: {
     post: {
@@ -197,7 +64,6 @@ export default {
         liked: false,
         shared: false,
         video: {
-          // 确保 video 字段存在
           id: "",
           image: "",
           title: "",
@@ -219,11 +85,7 @@ export default {
       localLikes: this.post.likeCount,
       localComments: this.post.comments,
       is_comments: false,
-      postContent: "",
-      showEmojiPicker: false,
-      selectedImage: null,
       comments: [],
-      replies: [],
     };
   },
   methods: {
@@ -238,7 +100,6 @@ export default {
       }
       const postId = this.post.id;
       const userId = this.userInfo.id;
-      const token = localStorage.getItem("token");
 
       // 1. 本地先更新
       const oldLiked = this.localLiked;
@@ -254,14 +115,7 @@ export default {
       try {
         if (!oldLiked) {
           // 点赞
-          const res = await axios.post(
-            `http://127.0.0.1:8081/post/like/${postId}`,
-            null,
-            {
-              params: { userId },
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
+          const res = await postApi.likePost(postId, userId);
           if (res.data !== "点赞成功") {
             // 失败回滚
             this.localLiked = oldLiked;
@@ -269,10 +123,7 @@ export default {
           }
         } else {
           // 取消点赞
-          const res = await axios.delete(`http://127.0.0.1:8081/post/like/${postId}`, {
-            params: { userId },
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const res = await postApi.unlikePost(postId, userId);
           if (res.data !== "取消点赞成功") {
             // 失败回滚
             this.localLiked = oldLiked;
@@ -300,161 +151,117 @@ export default {
       this.localShared = !this.localShared;
       this.$emit("share", { id: this.post.id, shared: this.localShared });
     },
-    handleDelete() {
-      this.$emit("deletePost", this.post.id);
+    handleVideoClick() {
+      // 处理视频点击事件
+      this.$emit("video-click", this.post.video);
     },
-    toggleEmojiPicker() {
-      this.showEmojiPicker = !this.showEmojiPicker;
-    },
-    onSelectEmoji(emoji) {
-      this.postContent += emoji;
-      this.showEmojiPicker = false;
-    },
-    triggerFileInput() {
-      this.$refs.fileInput.click();
-    },
-    handleImageUpload(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.selectedImage = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-    },
-    removeImage() {
-      this.selectedImage = null;
-      this.$refs.fileInput.value = "";
-    },
-    sendPost() {
-      if (!this.postContent.trim() && !this.selectedImage) return;
-
+    async handleSendPost(data) {
       if (this.localShared) {
         // 处理转发
         this.$emit("share-post", {
           id: this.post.id,
-          content: this.postContent,
-          image: this.selectedImage,
+          content: data.content,
+          image: data.image,
         });
       } else {
-        // 处理评论
-        this.comments.unshift({
-          id: this.comments.length + 1,
-          username: this.userInfo.username,
-          avatar: this.userInfo.avatar,
-          time: "刚刚",
-          content: this.postContent,
-          likes: 0,
-        });
-        this.localComments++;
-        this.$emit("new-comment", {
-          id: this.post.id,
-          comments: this.localComments,
-        });
+        try {
+          // 处理评论
+          const comment = {
+            postId: this.post.id,
+            content: data.content,
+            parentCommentId: data.parentCommentId, // 如果是回复评论，则包含父评论ID
+          };
+
+          const res = await postApi.addComment(comment);
+          if (res.data === "评论成功") {
+            // 刷新评论列表
+            await this.fetchComments(this.post.id);
+            this.localComments++;
+            this.$emit("new-comment", {
+              id: this.post.id,
+              comments: this.localComments,
+            });
+          }
+        } catch (e) {
+          console.error("发送评论失败", e);
+          alert("发送失败，请稍后重试");
+        }
+      }
+    },
+    async handleCommentLike(comment) {
+      if (!this.userInfo?.id) {
+        alert("请先登录");
+        return;
       }
 
-      this.postContent = "";
-      this.removeImage();
-      this.showEmojiPicker = false;
+      if (comment.liked) {
+        await this.unlikeComment(comment);
+      } else {
+        await this.likeComment(comment);
+      }
     },
-    likeComment(comment) {
-      comment.likes++;
+    async likeComment(comment) {
+      try {
+        const res = await postApi.likeComment(comment.id);
+        if (res.data === "点赞成功") {
+          comment.likes++;
+          comment.liked = true;
+        }
+      } catch (e) {
+        console.error("点赞失败", e);
+        alert("点赞失败，请稍后重试");
+      }
+    },
+    async unlikeComment(comment) {
+      try {
+        const res = await postApi.unlikeComment(comment.id);
+        if (res.data === "取消点赞成功") {
+          comment.likes--;
+          comment.liked = false;
+        }
+      } catch (e) {
+        console.error("取消点赞失败", e);
+        alert("取消点赞失败，请稍后重试");
+      }
     },
     replyComment(comment) {
-      this.postContent = `@${comment.username} `;
-      this.is_comments = true;
-    },
-    formatTime(isoString) {
-      if (!isoString) return "";
-      // 兼容 Safari，替换 T 为空格
-      const str = isoString.replace("T", " ");
-      // 你可以用 dayjs、moment.js 或原生 Date
-      const date = new Date(str);
-      if (isNaN(date.getTime())) return isoString; // 解析失败就原样返回
-
-      // 返回 yyyy-MM-dd HH:mm:ss
-      const pad = (n) => n.toString().padStart(2, "0");
-      return (
-        date.getFullYear() +
-        "-" +
-        pad(date.getMonth() + 1) +
-        "-" +
-        pad(date.getDate()) +
-        " " +
-        pad(date.getHours()) +
-        ":" +
-        pad(date.getMinutes()) +
-        ":" +
-        pad(date.getSeconds())
-      );
-    },
-    async fetchComments(postId) {
-      try {
-        const res = await axios.get(`http://127.0.0.1:8081/post/comment/list/${postId}`);
-        // res.data 是评论数组
-        this.comments = res.data;
-      } catch (e) {
-        console.error("获取评论失败", e);
-      }
-    },
-    async addComment(postId, content, userId) {
-      try {
-        const comment = {
-          postId,
-          content,
-          userId,
-        };
-        const res = await axios.post("http://127.0.0.1:8081/post/comment/add", comment);
-        if (res.data === "评论成功") {
-          // 重新拉取评论
-          await this.fetchComments(postId);
-        }
-      } catch (e) {
-        console.error("评论失败", e);
-      }
-    },
-    async fetchReplies(parentId) {
-      try {
-        const res = await axios.get(
-          `http://127.0.0.1:8081/post/comment/replies/${parentId}`
-        );
-        // res.data 是回复数组
-        this.replies = res.data;
-      } catch (e) {
-        console.error("获取回复失败", e);
-      }
-    },
-    async deleteComment(commentId, postId) {
-      try {
-        const res = await axios.delete(
-          `http://127.0.0.1:8081/post/comment/delete/${commentId}`
-        );
-        if (res.data === "删除成功") {
-          // 重新拉取评论
-          console.log("删除成功");
-          await this.fetchComments(postId);
-        }
-      } catch (e) {
-        console.error("删除评论失败", e);
-      }
+      this.$emit("reply-comment", comment);
     },
     async handleDeleteComment(commentId) {
       if (!window.confirm("确定要删除这条评论吗？")) return;
       try {
-        const res = await axios.delete(
-          `http://127.0.0.1:8081/post/comment/delete/${commentId}`
-        );
+        const res = await postApi.deleteComment(commentId);
         if (res.data === "删除成功") {
-          // 前端本地移除
-          this.comments = this.comments.filter((c) => c.id !== commentId);
-          alert("删除成功");
+          // 刷新评论列表
+          await this.fetchComments(this.post.id);
+          this.localComments--;
+          this.$emit("new-comment", {
+            id: this.post.id,
+            comments: this.localComments,
+          });
         } else {
           alert(typeof res.data === "string" ? res.data : JSON.stringify(res.data));
         }
       } catch (e) {
         alert("删除失败，请稍后再试");
         console.error("删除评论失败", e);
+      }
+    },
+    async fetchComments(postId) {
+      try {
+        const res = await postApi.getComments(postId, this.userInfo?.id);
+        this.comments = res.data;
+      } catch (e) {
+        console.error("获取评论失败", e);
+      }
+    },
+    async loadReplies(parentCommentId) {
+      try {
+        const res = await postApi.getReplies(parentCommentId);
+        return res.data;
+      } catch (e) {
+        console.error("获取回复失败", e);
+        return [];
       }
     },
   },
@@ -470,6 +277,11 @@ export default {
     },
     "post.comments"(newVal) {
       this.localComments = newVal;
+    },
+    is_comments(newVal) {
+      if (newVal) {
+        this.fetchComments(this.post.id);
+      }
     },
   },
 };
@@ -487,370 +299,5 @@ export default {
 
 .post-card:hover {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.post-content-text {
-  font-size: 14px;
-  text-align: left;
-}
-.post-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
-}
-
-.post-user {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  box-shadow: none;
-  transition: transform 0.3s ease;
-}
-
-.avatar:hover {
-  transform: scale(1.05);
-}
-
-.post-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.post-author {
-  font-size: 13px;
-  font-weight: 500;
-  text-align: left;
-  color: #18191c;
-}
-
-.post-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #9499a0;
-}
-
-.post-type {
-  color: #9499a0;
-}
-
-.post-more {
-  color: #9499a0;
-  padding: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-}
-
-.post-more:hover {
-  color: #fb7299;
-  background-color: rgba(251, 114, 153, 0.1);
-}
-
-.post-content {
-  margin-bottom: 8px;
-  padding-left: 44px;
-}
-
-.video-card-content {
-  display: flex;
-  gap: 12px;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-.video-card-content:hover {
-  transform: translateY(-2px);
-}
-
-.video-thumbnail {
-  flex-shrink: 0;
-  width: 160px;
-  height: 90px;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.video-thumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.video-thumbnail:hover img {
-  transform: scale(1.05);
-}
-
-.video-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  text-align: left;
-  padding: 4px 0;
-}
-
-.video-title {
-  font-size: 13px;
-  color: #18191c;
-  line-height: 1.5;
-  display: -webkit-box;
-
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-align: left;
-  margin-bottom: 8px;
-}
-
-.video-stats-line {
-  font-size: 12px;
-  color: #9499a0;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.post-actions {
-  display: flex;
-  gap: 24px;
-  padding: 8px 0 0 44px;
-  border-top: 1px solid #f1f2f3;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #9499a0;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-
-.action-btn:hover {
-  color: #00aeec;
-  background-color: rgba(0, 174, 236, 0.1);
-}
-
-.action-btn.active {
-  color: #00aeec;
-}
-
-.action-btn i {
-  font-size: 15px;
-}
-
-/* Post Box Styles */
-.post-box {
-  margin-top: 12px;
-  padding: 12px;
-  border: none;
-}
-
-.post-input {
-  width: 100%;
-  border: none;
-  resize: none;
-  padding: 8px;
-  font-size: 14px;
-  height: 60px;
-  outline: none;
-  background: #f8f9fa;
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
-
-.post-tools {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 8px;
-  border-top: 1px solid #f0f0f0;
-  position: relative;
-}
-
-.tool-icons {
-  display: flex;
-  gap: 8px;
-}
-
-.tool-btn {
-  border: none;
-  background: none;
-  color: #757575;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-}
-
-.tool-btn:hover {
-  background: #f5f5f5;
-  color: #00aeec;
-}
-
-.word-count {
-  color: #999;
-  font-size: 14px;
-  margin-right: 12px;
-}
-
-.publish-btn {
-  background: #00aeec;
-  color: #fff;
-  border: none;
-  padding: 6px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.publish-btn:hover {
-  background: #0098d4;
-}
-
-/* Emoji Picker Styles */
-.emoji-picker-container {
-  position: relative;
-  display: inline-block;
-}
-
-/* Selected Image Styles */
-.selected-image {
-  position: relative;
-  margin-top: 12px;
-  width: 160px;
-  height: 90px;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.selected-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.remove-image {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
-  border: none;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.3s ease;
-}
-
-.remove-image:hover {
-  background: rgba(0, 0, 0, 0.7);
-}
-
-.remove-image i {
-  font-size: 12px;
-}
-
-/* Comments List Styles */
-.comments-list {
-  margin-top: 12px;
-  padding: 0 44px;
-}
-
-.comment-item {
-  display: flex;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid #f1f2f3;
-}
-
-.comment-item:last-child {
-  border-bottom: none;
-}
-
-.comment-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.comment-content {
-  flex: 1;
-}
-
-.comment-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.comment-author {
-  font-size: 13px;
-  font-weight: 500;
-  color: #18191c;
-}
-
-.comment-time {
-  font-size: 12px;
-  color: #9499a0;
-}
-
-.comment-text {
-  font-size: 14px;
-  color: #18191c;
-  line-height: 1.5;
-  margin-bottom: 8px;
-  text-align: left;
-}
-
-.comment-actions {
-  display: flex;
-  gap: 16px;
-}
-
-.comment-action-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #9499a0;
-  font-size: 12px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-}
-
-.comment-action-btn:hover {
-  color: #00aeec;
-  background: rgba(0, 174, 236, 0.1);
-}
-
-.comment-action-btn i {
-  font-size: 14px;
 }
 </style>

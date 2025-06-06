@@ -27,25 +27,24 @@ class UploadUtils {
     return response.data;
   }
 
-  static async uploadVideo(videoFile, onProgress = null) {
+  static async uploadVideo(file, onProgress) {
+    const formData = new FormData();
+    formData.append("file", file);
+
     try {
-      const videoResponse = await this.uploadFileToMinIO(videoFile, onProgress);
-
-      if (typeof videoResponse === "object" && videoResponse !== null) {
-        const { fileName } = videoResponse;
-        const videoFileName = this.extractFileNameFromUrl(fileName);
-
-        if (!videoFileName || videoFileName === "undefined") {
-          throw new Error("无法获取有效的视频文件名");
-        }
-
-        return videoFileName;
+      const response = await uploadApi.uploadToMinIO(formData, onProgress);
+      if (response.data && response.data.fileName) {
+        return response.data.fileName;
       }
-
-      throw new Error("视频上传返回数据格式不正确");
+      throw new Error("上传返回数据格式不正确");
     } catch (error) {
-      console.error("视频上传失败:", error);
-      throw error;
+      if (error.code === "ECONNABORTED") {
+        throw new Error("上传超时，请检查网络连接或尝试上传较小的文件");
+      }
+      if (error.response) {
+        throw new Error(error.response.data.message || "上传失败");
+      }
+      throw new Error("上传失败，请稍后重试");
     }
   }
 

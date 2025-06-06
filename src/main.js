@@ -20,7 +20,6 @@ if (token) {
       localStorage.setItem("userInfo", JSON.stringify(userInfo));
       store.commit("user/SET_USER_INFO", userInfo);
 
-      // Initialize WebSocket connection after user is authenticated
       websocketClient.connect();
     })
     .catch(err => {

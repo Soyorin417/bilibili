@@ -73,10 +73,22 @@ export default {
     } catch (error) {
       console.error("获取弹幕数据失败:", error);
     }
+
+    this.$nextTick(() => {
+      if (this.$refs.videoPlayer) {
+        console.log("视频播放器已加载");
+        this.$refs.videoPlayer.addEventListener("error", (e) => {
+          console.error("视频播放错误:", e);
+        });
+      }
+    });
   },
   computed: {
     videoUrl() {
-      return this.url ? encodeURI(this.url) : "";
+      console.log("原始URL:", this.url);
+      const finalUrl = this.url;
+      console.log("处理后的URL:", finalUrl);
+      return finalUrl;
     },
   },
   methods: {

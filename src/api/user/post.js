@@ -13,6 +13,7 @@ export default {
     return request.post('/posts', data);
   },
 
+
   // 删除动态
   deletePost(id) {
     return request.delete(`/posts/${id}`);
@@ -44,7 +45,9 @@ export default {
   },
 
   // 添加评论
-  addComment(postId, data) {
-    return request.post(`/posts/${postId}/comments`, data);
+  // 直接调用后端 add 评论接口
+  addComment(data) {
+    return request.post('/post/comment/add', data);
   }
+
 };

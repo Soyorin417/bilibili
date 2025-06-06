@@ -107,26 +107,30 @@
       <!-- 分区 -->
       <div class="form-group d-flex">
         <label>分区 <span class="required">*</span></label>
-        <select
-          class="long-input"
-          :value="videoInfo.category"
-          @change="
-            $emit('update-video-info', { ...videoInfo, category: $event.target.value })
-          "
-          required
-        >
-          <option value="" disabled>请选择分区</option>
-          <option value="animation">动画</option>
-          <option value="music">音乐</option>
-          <option value="dance">舞蹈</option>
-          <option value="game">游戏</option>
-          <option value="knowledge">知识</option>
-          <option value="tech">科技</option>
-          <option value="sports">运动</option>
-          <option value="car">汽车</option>
-          <option value="life">生活</option>
-          <option value="food">美食</option>
-        </select>
+        <div class="tags-input">
+          <div class="tag" v-if="videoInfo.category">
+            {{ videoInfo.category }}
+            <i class="bi bi-x" @click="removeCategory"></i>
+          </div>
+          <select
+            class="short-input"
+            :value="tagInput"
+            @change="addCategory"
+            :disabled="!!videoInfo.category"
+          >
+            <option value="" disabled>请选择分区</option>
+            <option value="animation">动画</option>
+            <option value="music">音乐</option>
+            <option value="dance">舞蹈</option>
+            <option value="game">游戏</option>
+            <option value="knowledge">知识</option>
+            <option value="tech">科技</option>
+            <option value="sports">运动</option>
+            <option value="car">汽车</option>
+            <option value="life">生活</option>
+            <option value="food">美食</option>
+          </select>
+        </div>
       </div>
 
       <!-- 标签 -->
@@ -141,18 +145,12 @@
             type="text"
             class="short-input"
             :value="tagInput"
-            @input="$emit('update:tagInput', $event.target.value)"
-            @keydown.enter.prevent="$emit('add-tag')"
+            @input="handleTagInput"
+            @keydown.enter.prevent="addTag"
             placeholder="输入标签按回车添加，最多10个"
             :disabled="videoInfo.tags.length >= 10"
           />
         </div>
-      </div>
-
-      <div class="recommend-tags">
-        <span class="recommend-tag" v-for="tag in recommendTags" :key="tag">{{
-          tag
-        }}</span>
       </div>
 
       <!-- 简介 -->
@@ -162,10 +160,7 @@
           class="long-input"
           :value="videoInfo.description"
           @input="
-            $emit('update-video-info', {
-              ...videoInfo,
-              description: $event.target.value,
-            })
+            $emit('update-video-info', { ...videoInfo, description: $event.target.value })
           "
           placeholder="填写更全面的相关信息，让更多人找到你的视频吧"
           rows="4"
@@ -251,39 +246,81 @@
 <script>
 export default {
   name: "VideoInfoForm",
-  props: {
-    videoInfo: { type: Object, required: true },
-    tagInput: { type: String, required: true },
-    recommendTags: { type: Array, required: true },
+  data() {
+    return {
+      tagInput: "",
+      uploadProgress: 0,
+    };
   },
-  emits: [
-    "reset-upload",
-    "save-draft",
-    "submit-video",
-    "update:tagInput",
-    "remove-tag",
-    "add-tag",
-    "remove-cover",
-    "update-video-info",
-    "handle-cover-select",
-    "replace-video",
-    "fetch-danmaku",
-  ],
-  methods: {
-    triggerCoverInput() {
-      this.$refs.coverInput.click();
+  props: {
+    videoInfo: {
+      type: Object,
+      required: true,
     },
-    handleCoverSelect(e) {
-      this.$emit("handle-cover-select", e);
+  },
+  methods: {
+    resetUpload() {
+      this.$emit("reset-upload");
+    },
+    submitVideo() {
+      this.$emit("submit-video");
     },
     removeCover() {
       this.$emit("remove-cover");
     },
+    handleCoverSelect(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.$emit("update-video-info", {
+            ...this.videoInfo,
+            cover: e.target.result,
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+    },
+    handleTagInput(e) {
+      this.tagInput = e.target.value;
+    },
     addTag() {
-      this.$emit("add-tag");
+      const tag = this.tagInput.trim();
+      if (tag && this.videoInfo.tags.length < 10) {
+        this.$emit("update-video-info", {
+          ...this.videoInfo,
+          tags: [...this.videoInfo.tags, tag],
+        });
+        this.tagInput = "";
+      }
     },
     removeTag(index) {
-      this.$emit("remove-tag", index);
+      const newTags = [...this.videoInfo.tags];
+      newTags.splice(index, 1);
+      this.$emit("update-video-info", {
+        ...this.videoInfo,
+        tags: newTags,
+      });
+    },
+    addCategory(e) {
+      this.$emit("update-video-info", {
+        ...this.videoInfo,
+        category: e.target.value,
+      });
+    },
+    removeCategory() {
+      this.$emit("update-video-info", {
+        ...this.videoInfo,
+        category: "",
+      });
+    },
+  },
+  watch: {
+    videoInfo: {
+      handler(newVal) {
+        this.$emit("update-video-info", newVal);
+      },
+      deep: true,
     },
   },
 };

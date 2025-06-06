@@ -169,16 +169,26 @@ export const videoApi = {
   // 关注用户
   followUser: (followerUid, followingUid) => {
     return request.post("/api/follow/follow", null, {
-      params: { followerUid, followingUid }
+      params: { followerUid, followingUid },
     });
   },
 
   // 取消关注用户
   unfollowUser: (followerUid, followingUid) => {
     return request.post("/api/follow/unfollow", null, {
-      params: { followerUid, followingUid }
+      params: { followerUid, followingUid },
     });
-  }
+  },
+
+  // 上传视频
+  uploadVideo: (formData) => {
+    return request.post("/video/submit-test", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      timeout: 300000, // 5分钟超时
+    });
+  },
 };
 
 export default videoApi;

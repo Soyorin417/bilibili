@@ -170,7 +170,7 @@ export default {
   methods: {
     async getAnimeList() {
       try {
-        const response = await animeApi.getAllAnime();
+        const response = await animeApi.getCarouselByType("anime");
         this.animeList = response.data;
       } catch (error) {
         console.error("获取动漫列表失败:", error);

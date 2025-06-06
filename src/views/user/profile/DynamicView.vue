@@ -51,7 +51,9 @@
             <div class="card-body">
               <div class="fw-bold mb-2">个人资料</div>
               <div class="text-muted small">UID {{ userInfo.id }}</div>
-              <div class="text-muted small">01-01</div>
+              <div class="text-muted small">
+                注册时间：{{ formatDate(userInfo.register_time) }}
+              </div>
             </div>
           </div>
         </div>
@@ -63,7 +65,7 @@
 <script>
 import NavBar from "@/components/navBar/NavBar.vue";
 import SpaceTopBar from "@/components/user/SpaceTopBar.vue";
-import { formatCount, limitTextLength } from "@/utils/date";
+import { formatDate, formatCount, limitTextLength } from "@/utils/date";
 import ActivityCard from "@/components/activity/ActivityCard.vue";
 import { dynamicApi } from "@/api/user/dynamic";
 
@@ -120,6 +122,7 @@ export default {
     }
   },
   methods: {
+    formatDate,
     goToVideo(id) {
       console.log("DynamicView: Received view-video event with ID:", id);
       if (id) {

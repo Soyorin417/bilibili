@@ -125,21 +125,33 @@ export default {
     };
   },
   mounted() {
-    this.initCharts();
+    this.$nextTick(() => {
+      this.initCharts();
+    });
     window.addEventListener("resize", this.onWindowResize);
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.onWindowResize);
-    if (this.viewsChart) this.viewsChart.destroy();
-    if (this.interactionChart) this.interactionChart.destroy();
+    if (this.viewsChart) {
+      this.viewsChart.destroy();
+      this.viewsChart = null;
+    }
+    if (this.interactionChart) {
+      this.interactionChart.destroy();
+      this.interactionChart = null;
+    }
   },
   methods: {
     initCharts() {
-      this.initViewsChart();
-      this.initInteractionChart();
+      if (this.$refs.viewsChart && this.$refs.interactionChart) {
+        this.initViewsChart();
+        this.initInteractionChart();
+      }
     },
     initViewsChart() {
       const ctx = this.$refs.viewsChart.getContext("2d");
+      if (!ctx) return;
+
       this.viewsChart = new Chart(ctx, {
         type: "line",
         data: {
@@ -192,6 +204,8 @@ export default {
     },
     initInteractionChart() {
       const ctx = this.$refs.interactionChart.getContext("2d");
+      if (!ctx) return;
+
       this.interactionChart = new Chart(ctx, {
         type: "line",
         data: {

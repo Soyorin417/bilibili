@@ -12,6 +12,20 @@ export const adminApi = {
     return request.get("/api/admin/user/getUserCount");
   },
 
+  // 通过用户ID查用户
+  getUserById: (uid) => {
+    return request.get("/api/admin/user/getById", {
+      params: { uid },
+    });
+  },
+
+  // 通过用户名查用户
+  getUserByUsername: (username) => {
+    return request.get("/api/admin/user/getByUsername", {
+      params: { username },
+    });
+  },
+
   // 获取视频数量
   getVideoCount: () => {
     return request.get("/api/admin/video/getUserCount");
@@ -25,6 +39,16 @@ export const adminApi = {
   // 审核视频
   reviewVideo: (id, status) => {
     return request.post("/api/admin/videos/review", { id, status });
+  },
+
+  // 封禁用户
+  banUser: (uid) => {
+    return request.post("/api/admin/ban", { uid });
+  },
+
+  // 解封用户
+  unbanUser: (uid) => {
+    return request.post("/api/admin/unban", { uid });
   },
 };
 

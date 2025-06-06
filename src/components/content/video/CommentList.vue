@@ -20,7 +20,7 @@
             </div>
             <p class="mb-1">{{ comment.content }}</p>
             <div class="d-flex align-items-center text-muted">
-              <small class="me-3">{{ formatDate(comment.createTime) }}</small>
+              <small class="me-3">{{ formatDateType(comment.createTime) }}</small>
               <div class="d-flex align-items-center me-3">
                 <thumbs-up
                   @click="handleLike(comment)"
@@ -99,7 +99,7 @@
                     </div>
                     <p class="mb-1">{{ reply.content }}</p>
                     <div class="d-flex align-items-center text-muted">
-                      <small class="me-3">{{ formatDate(reply.createTime) }}</small>
+                      <small class="me-3">{{ formatDateType(reply.createTime) }}</small>
                       <div class="d-flex align-items-center me-3">
                         <thumbs-up
                           @click="$emit('like', reply)"
@@ -197,9 +197,8 @@
 <script>
 import { ThumbsUp, ThumbsDown, CommentOne } from "@icon-park/vue-next";
 import { mapGetters } from "vuex";
-import axios from "axios";
-import commentApi from "@/api/message/comment";
-
+import { commentApi } from "@/api/comment";
+import { formatDateType } from "@/utils/date";
 export default {
   name: "CommentList",
   components: {
@@ -233,39 +232,7 @@ export default {
     },
   },
   methods: {
-    formatDate(dateString) {
-      if (!dateString) return "";
-
-      const date = new Date(dateString);
-      const now = new Date();
-      const diff = now - date;
-
-      // 小于1分钟
-      if (diff < 60000) {
-        return "刚刚";
-      }
-      // 小于1小时
-      if (diff < 3600000) {
-        return `${Math.floor(diff / 60000)}分钟前`;
-      }
-      // 小于24小时
-      if (diff < 86400000) {
-        return `${Math.floor(diff / 3600000)}小时前`;
-      }
-      // 小于30天
-      if (diff < 2592000000) {
-        return `${Math.floor(diff / 86400000)}天前`;
-      }
-
-      // 超过30天显示具体日期
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const hour = String(date.getHours()).padStart(2, "0");
-      const minute = String(date.getMinutes()).padStart(2, "0");
-
-      return `${year}-${month}-${day} ${hour}:${minute}`;
-    },
+    formatDateType,
     handleOutsideClick(event) {
       // 检查点击的元素是否在回复区域内
       const isReplyElement =
@@ -284,149 +251,162 @@ export default {
       }
     },
     async toggleReplies(comment) {
+      console.log("toggleReplies called for comment:", comment);
       if (comment.showReplies) {
+        console.log("Closing replies for comment:", comment.id);
         comment.showReplies = false;
         this.activeCommentId = null;
         return;
       }
 
+      // 关闭其他评论的回复框
       this.localComments.forEach((c) => {
         if (c !== comment && c.showReplies) {
+          console.log("Closing replies for other comment:", c.id);
           c.showReplies = false;
         }
       });
 
+      console.log("Opening replies for comment:", comment.id);
       comment.showReplies = true;
       this.activeCommentId = comment.id;
 
-      if (!comment.replies || comment.replies.length === 0) {
-        try {
-          // 检查点赞状态
-          await this.checkLikeStatus(comment);
-          // 获取回复列表
-          const response = await commentApi.getReplies(comment.id);
-          comment.replies = response.data || [];
-        } catch (error) {
-          console.error("获取回复失败:", error);
+      try {
+        // 获取回复列表
+        console.log("Fetching replies for comment:", comment.id);
+        const response = await commentApi.getReplies(comment.id);
+        console.log("Replies response:", response);
+        if (response.data) {
+          comment.replies = response.data;
+          console.log("Setting replies for comment:", comment.id, comment.replies);
+          // 检查每条回复的点赞状态
+          for (const reply of comment.replies) {
+            if (this.userInfo?.id) {
+              console.log("Checking like status for reply:", reply.id);
+              const likeStatus = await commentApi.checkLikeStatus(
+                reply.id,
+                this.userInfo.id
+              );
+              console.log("Like status for reply:", reply.id, likeStatus);
+              reply.isLiked = likeStatus.data;
+            }
+          }
         }
+      } catch (error) {
+        console.error("获取回复失败:", error);
+        console.error("Error details:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
+        alert("获取回复失败，请稍后重试");
       }
     },
     async handleSendReply(comment) {
+      console.log("handleSendReply called for comment:", comment);
       if (!this.userInfo) {
+        console.log("User not logged in");
         alert("请先登录后再评论");
         return;
       }
 
-      if (!comment.replyContent || !comment.replyContent.trim()) return;
+      if (!comment.replyContent || !comment.replyContent.trim()) {
+        console.log("Empty reply content");
+        return;
+      }
 
       const tempContent = comment.replyContent;
+      console.log("Prepared reply content:", tempContent);
 
       try {
-        const newReply = {
-          type: "reply",
-          content: tempContent.trim(),
-          userUid: this.userInfo.id,
-          username: this.userInfo.username,
-          avatar: this.userInfo.avatar,
-          level: this.userInfo.level,
-          isUp: this.userInfo.id === this.$route.params.id,
-          createTime: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
-          likeCount: 0,
-          isLiked: false,
-          commentId: comment.id,
-          id: Date.now(),
-        };
-
-        // 清空输入框
-        comment.replyContent = "";
-
-        // 通过事件发送到父组件
-        this.$emit("send-reply", newReply);
-
-        // 保存到后端数据库
         const replyData = {
           commentId: comment.id,
           userUid: this.userInfo.id,
           content: tempContent.trim(),
-          createTime: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
         };
+        console.log("Sending reply data:", replyData);
 
-        const response = await commentApi.addReply(replyData, { timeout: 10000 });
+        const response = await commentApi.addReply(replyData);
+        console.log("Reply response:", response);
         if (response.data === "回复添加成功") {
-          newReply.id = response.data.id;
-          this.$emit("comment-added");
+          console.log("Reply added successfully, refreshing replies");
+          comment.replyContent = "";
+          // 重新获取回复列表
+          await this.toggleReplies(comment);
+        } else {
+          console.log("Reply failed:", response.data);
+          alert("回复发布失败，请稍后重试");
         }
       } catch (error) {
         console.error("发送回复失败:", error);
+        console.error("Error details:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
         comment.replyContent = tempContent;
         alert("发送回复失败，请稍后重试");
       }
     },
-    toggleReplyReplies(reply) {
-      reply.showReplies = !reply.showReplies;
-      if (reply.showReplies && !reply.replyContent) {
-        reply.replyContent = "";
-      }
-    },
-    handleSendReplyToReply(comment, reply) {
-      if (!reply.replyContent || !reply.replyContent.trim()) return;
-
-      const token = localStorage.getItem("token");
-      if (token) {
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      }
-
-      const content = `@${reply.username} ${reply.replyContent.trim()}`;
-      const newReplyData = {
-        commentId: comment.id,
-        userUid: this.userInfo.uid,
-        content,
-      };
-
-      axios
-        .post("http://127.0.0.1:8081/replies/add", newReplyData)
-        .then((res) => {
-          if (res.data === "回复发布成功") {
-            // 重新获取回复列表
-            this.toggleReplies(comment);
-            reply.replyContent = "";
-            reply.showReplies = false;
-          } else {
-            console.error("回复发布失败");
-          }
-        })
-        .catch((err) => {
-          console.error("回复回复失败", err);
-        });
-    },
-    async handleDeleteComment(comment) {
-      if (!confirm("确定要删除这条评论吗？")) {
+    async handleSendReplyToReply(comment, reply) {
+      console.log("handleSendReplyToReply called:", { comment, reply });
+      if (!this.userInfo) {
+        console.log("User not logged in");
+        alert("请先登录后再回复");
         return;
       }
 
+      if (!reply.replyContent || !reply.replyContent.trim()) {
+        console.log("Empty reply content");
+        return;
+      }
+
+      const content = `@${reply.username} ${reply.replyContent.trim()}`;
+      console.log("Prepared reply content:", content);
+      const newReplyData = {
+        commentId: comment.id,
+        userUid: this.userInfo.id,
+        content,
+        parentReplyId: reply.id,
+      };
+      console.log("Sending reply data:", newReplyData);
+
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          return;
+        const response = await commentApi.addReply(newReplyData);
+        console.log("Reply response:", response);
+        if (response.data === "回复添加成功") {
+          console.log("Reply added successfully, refreshing replies");
+          // 重新获取回复列表
+          await this.toggleReplies(comment);
+          reply.replyContent = "";
+          reply.showReplies = false;
+        } else {
+          console.log("Reply failed:", response.data);
+          alert("回复发布失败，请稍后重试");
         }
+      } catch (error) {
+        console.error("回复回复失败", error);
+        console.error("Error details:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
+        alert("回复失败，请稍后重试");
+      }
+    },
+    async handleDeleteComment(comment) {
+      if (!confirm("确定要删除这条评论吗？")) return;
 
-        const response = await axios.delete(
-          `http://127.0.0.1:8081/comments/delete/${comment.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.data === "评论删除成功") {
+      try {
+        const response = await commentApi.deleteComment(comment.id);
+        if (response.data === "删除成功") {
           this.$emit("comment-deleted");
         }
       } catch (error) {
         console.error("删除评论失败:", error);
+        alert("删除评论失败，请稍后重试");
       }
     },
-    // 视频相关事件保持不变
     videoLike() {
       this.$emit("video-like");
     },
@@ -459,75 +439,31 @@ export default {
     },
     async handleLike(comment) {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("Token is missing");
+        if (!this.userInfo?.id) {
+          alert("请先登录");
           return;
         }
 
-        if (!this.userInfo || !this.userInfo.id) {
-          console.error("用户信息不完整");
-          return;
-        }
-
-        console.log("评论信息:", comment);
-        console.log("用户信息:", this.userInfo);
-
-        const params = {
-          commentId: comment.id,
-          userUid: this.userInfo.id,
-        };
-
-        const url = comment.isLiked
-          ? `http://127.0.0.1:8081/comment-like/unlike`
-          : `http://127.0.0.1:8081/comment-like/like`;
-
-        console.log("点赞请求URL:", url);
-        console.log("请求参数:", params);
-
-        const response = await axios.post(url, null, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          params: params,
-        });
-
-        console.log("点赞响应:", response);
+        const response = await (comment.isLiked
+          ? commentApi.unlikeComment(comment.id, this.userInfo.id)
+          : commentApi.likeComment(comment.id, this.userInfo.id));
 
         if (response.data === "点赞成功" || response.data === "取消点赞成功") {
-          // 更新点赞状态
           comment.isLiked = !comment.isLiked;
-          // 更新点赞数
           comment.likeCount = comment.isLiked
             ? comment.likeCount + 1
             : comment.likeCount - 1;
         } else {
-          console.log("点赞操作提示:", response.data);
           alert(response.data);
         }
       } catch (error) {
-        // 处理业务逻辑错误（如已点赞）
-        if (error.response?.status === 400) {
-          console.log("点赞操作提示:", error.response.data);
-          alert(error.response.data);
-          return;
-        }
-
-        // 处理其他错误
-        console.error("点赞操作失败:", {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          params: error.config?.params,
-        });
+        console.error("点赞操作失败:", error);
         alert("操作失败，请稍后重试");
       }
     },
     async checkLikeStatus(comment) {
       try {
         if (!this.userInfo?.id) return;
-
         const response = await commentApi.checkLikeStatus(comment.id, this.userInfo.id);
         comment.isLiked = Boolean(response.data);
       } catch (error) {
@@ -539,7 +475,7 @@ export default {
 
       try {
         const response = await commentApi.deleteReply(reply.id);
-        if (response.data === "回复删除成功") {
+        if (response.data === "删除成功") {
           const comment = this.localComments.find((c) =>
             c.replies.some((r) => r.id === reply.id)
           );
@@ -560,7 +496,7 @@ export default {
         const updateData = {
           id: reply.id,
           commentId: reply.commentId,
-          userUid: reply.userUid,
+          userId: reply.userUid,
           content: reply.editContent.trim(),
           createTime: reply.createTime,
           username: this.userInfo.username,
@@ -593,18 +529,20 @@ export default {
       try {
         const commentData = {
           videoId: this.$route.params.id,
-          userUid: this.userInfo.id,
+          userId: this.userInfo.id,
           content: this.newComment.trim(),
-          createTime: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
         };
 
         const response = await commentApi.addComment(commentData);
-        if (response.data === "评论添加成功") {
+        if (response.data === "评论发布成功") {
           this.newComment = "";
           this.$emit("comment-added");
+        } else {
+          alert("评论发布失败，请稍后重试");
         }
       } catch (error) {
         console.error("发送评论失败:", error);
+        alert("发送评论失败，请稍后重试");
       }
     },
     // 添加处理新回复的方法
@@ -632,12 +570,10 @@ export default {
   },
 
   mounted() {
-    // 初始化评论数据
+    console.log("CommentList component mounted");
+    console.log("Initial comments:", this.comments);
     this.localComments = this.comments;
-  },
-
-  beforeUnmount() {
-    // 清理工作
+    console.log("Local comments set:", this.localComments);
   },
 };
 </script>

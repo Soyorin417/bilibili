@@ -241,32 +241,40 @@ export default {
         this.$message.error("获取用户列表失败");
       }
     },
-    async searchUsers() {
-      if (!this.searchQuery.trim()) {
+    async searchUsers(query) {
+      this.searchQuery = query;
+      if (!query.trim()) {
         await this.fetchUsers();
         return;
       }
+
       try {
-        const res = await adminApi.searchUsers(this.searchQuery);
-        if (res && res.data) {
-          this.users = res.data;
+        let res;
+        if (/^\d+$/.test(query.trim())) {
+          res = await adminApi.getUserById(Number(query.trim()));
+          this.users = res.data ? [res.data] : [];
         } else {
-          this.users = [];
+          res = await adminApi.getUserByUsername(query.trim());
+          this.users = res.data ? [res.data] : [];
         }
       } catch (error) {
         console.error("搜索用户失败:", error);
         this.$message.error("搜索用户失败");
       }
     },
+
     async toggleUserStatus(user) {
       try {
-        const newStatus = user.status === "active" ? "disabled" : "active";
-        await adminApi.updateUser({
-          id: user.id,
-          status: newStatus,
-        });
-        user.status = newStatus;
-        this.$message.success("状态更新成功");
+        if (user.is_banned === false) {
+          await adminApi.banUser(user.id);
+          user.is_banned = true;
+          console.log(user.id);
+          this.$message.success("用户已封禁");
+        } else {
+          await adminApi.unbanUser(user.id);
+          user.is_banned = false;
+          this.$message.success("用户已解封");
+        }
       } catch (error) {
         console.error("更新用户状态失败:", error);
         this.$message.error("操作失败");

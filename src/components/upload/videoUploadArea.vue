@@ -58,7 +58,6 @@ export default {
 </script>
 
 <style scoped>
-/* 复制原有 upload-area/upload-box 样式 */
 .upload-area {
   height: 400px;
   display: flex;

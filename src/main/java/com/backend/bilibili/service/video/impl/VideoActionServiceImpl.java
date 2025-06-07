@@ -5,13 +5,17 @@ import com.backend.bilibili.mapper.video.VideoActionMapper;
 import com.backend.bilibili.mapper.video.VideoInfoMapper;
 import com.backend.bilibili.pojo.user.UserCollect;
 import com.backend.bilibili.pojo.video.VideoActionInfo;
+import com.backend.bilibili.service.recommend.UserTagScoreService;
+import com.backend.bilibili.service.recommend.UserVideoScoreService;
 import com.backend.bilibili.service.user.account.InfoService;
 import com.backend.bilibili.service.user.account.UserCollectService;
 import com.backend.bilibili.service.video.VideoActionService;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.backend.bilibili.service.video.VideoTagService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class VideoActionServiceImpl extends ServiceImpl<VideoActionMapper, VideoActionInfo> implements VideoActionService {
@@ -23,16 +27,24 @@ public class VideoActionServiceImpl extends ServiceImpl<VideoActionMapper, Video
     private VideoInfoMapper videoInfoMapper;
 
     @Autowired
+    private VideoTagService videoTagService;
+
+    @Autowired
     private InfoService infoService;
 
     @Autowired
-    private UserCollectService userCollectService; // 注入收藏服务
+    private UserCollectService userCollectService;
+
+    @Autowired
+    private UserTagScoreService userTagScoreService;
+
+    @Autowired
+    private UserVideoScoreService userVideoScoreService;
 
     @Override
     public VideoActionInfo getUserVideoAction(Long videoId, Long userUid) {
         VideoActionInfo actionInfo = actionMapper.selectByUserAndVideo(userUid, videoId);
         if (actionInfo == null) {
-            // 如果没有记录，返回一个默认未操作状态的对象
             actionInfo = new VideoActionInfo();
             actionInfo.setVideoId(videoId);
             actionInfo.setUserUid(userUid);
@@ -50,7 +62,6 @@ public class VideoActionServiceImpl extends ServiceImpl<VideoActionMapper, Video
         if (action != null && Boolean.TRUE.equals(action.getIsLike())) {
             return false; // 已点赞
         }
-
         if (action == null) {
             action = new VideoActionInfo();
             action.setUserUid(userUid);
@@ -62,8 +73,14 @@ public class VideoActionServiceImpl extends ServiceImpl<VideoActionMapper, Video
             actionMapper.updateById(action);
         }
 
-        // 增加点赞数
         videoInfoMapper.increaseLikeCount(videoId);
+
+        // 加分
+        userVideoScoreService.saveOrUpdateScore(userUid, videoId, "like");
+        List<Long> tagIds = videoTagService.getTagIdsByVideoId(videoId);
+        for (Long tagId : tagIds) {
+            userTagScoreService.saveOrUpdateScore(userUid, tagId, "like");
+        }
         return true;
     }
 
@@ -74,6 +91,13 @@ public class VideoActionServiceImpl extends ServiceImpl<VideoActionMapper, Video
             action.setIsLike(false);
             actionMapper.updateById(action);
             videoInfoMapper.decreaseLikeCount(videoId);
+
+            // 扣分
+            userVideoScoreService.saveOrUpdateScore(userUid, videoId, "unlike");
+            List<Long> tagIds = videoTagService.getTagIdsByVideoId(videoId);
+            for (Long tagId : tagIds) {
+                userTagScoreService.saveOrUpdateScore(userUid, tagId, "unlike");
+            }
             return true;
         }
         return false;
@@ -81,11 +105,10 @@ public class VideoActionServiceImpl extends ServiceImpl<VideoActionMapper, Video
 
     @Override
     public boolean collectVideo(Long videoId, Long userUid) {
-        UserCollect exist = userCollectService.getOne(userUid,videoId);
+        UserCollect exist = userCollectService.getOne(userUid, videoId);
         if (exist != null) {
-            return false; // 已存在，不重复添加
+            return false; // 已收藏
         }
-        // 1. 先更新或插入 VideoActionInfo 状态
         VideoActionInfo action = actionMapper.selectByUserAndVideo(userUid, videoId);
         if (action == null) {
             action = new VideoActionInfo();
@@ -97,59 +120,53 @@ public class VideoActionServiceImpl extends ServiceImpl<VideoActionMapper, Video
             action.setIsCollect(true);
             actionMapper.updateById(action);
         }
-
-        // 2. 添加收藏记录（封装在 UserCollectService）
         userCollectService.addCollect(userUid, videoId);
-
-        // 3. 更新视频收藏数
         videoInfoMapper.increaseCollectCount(videoId);
+
+        // 加分
+        userVideoScoreService.saveOrUpdateScore(userUid, videoId, "collect");
+        List<Long> tagIds = videoTagService.getTagIdsByVideoId(videoId);
+        for (Long tagId : tagIds) {
+            userTagScoreService.saveOrUpdateScore(userUid, tagId, "collect");
+        }
         return true;
     }
-
 
     @Override
     public boolean cancelCollect(Long videoId, Long userUid) {
         UserCollect exist = userCollectService.getOne(userUid, videoId);
         if (exist == null) {
-            return false; // 不存在收藏记录，直接返回
+            return false; // 无收藏记录
         }
-
-        // 删除收藏记录
         userCollectService.deleteCollect(userUid, videoId);
 
-        // 更新 VideoActionInfo 状态
         VideoActionInfo action = actionMapper.selectByUserAndVideo(userUid, videoId);
         if (action != null && Boolean.TRUE.equals(action.getIsCollect())) {
             action.setIsCollect(false);
             actionMapper.updateById(action);
-
-            // 减少收藏数
             videoInfoMapper.decreaseCollectCount(videoId);
-        }
 
+            // 扣分
+            userVideoScoreService.saveOrUpdateScore(userUid, videoId, "uncollected");
+            List<Long> tagIds = videoTagService.getTagIdsByVideoId(videoId);
+            for (Long tagId : tagIds) {
+                userTagScoreService.saveOrUpdateScore(userUid, tagId, "uncollected");
+            }
+        }
         return true;
     }
 
-
     @Override
     public boolean coinVideo(Long videoId, Long userUid) {
-
-        // 查询是否已经投过币
         VideoActionInfo action = actionMapper.selectByUserAndVideo(userUid, videoId);
-
-        // 如果已经投币，则直接返回 false，不再处理
         if (action != null && Boolean.TRUE.equals(action.getIsCoined())) {
-            return false;
+            return false; // 已投币
         }
-
-        // 尝试减少用户硬币
         try {
-            infoService.decreaseCoin(1); // 每次投币消耗1个硬币
+            infoService.decreaseCoin(1);
         } catch (RuntimeException e) {
             return false; // 硬币不足
         }
-
-        // 更新或新增投币记录
         if (action == null) {
             action = new VideoActionInfo();
             action.setVideoId(videoId);
@@ -160,14 +177,16 @@ public class VideoActionServiceImpl extends ServiceImpl<VideoActionMapper, Video
             action.setIsCoined(true);
             actionMapper.updateById(action);
         }
-
-        // 增加视频的投币数
         videoInfoMapper.increaseCoinCount(videoId);
 
+        // 投币加分（取消投币不扣分，业务规定）
+        userVideoScoreService.saveOrUpdateScore(userUid, videoId, "coin");
+        List<Long> tagIds = videoTagService.getTagIdsByVideoId(videoId);
+        for (Long tagId : tagIds) {
+            userTagScoreService.saveOrUpdateScore(userUid, tagId, "coin");
+        }
         return true;
     }
-
-
 
     @Override
     public boolean cancelCoin(Long videoId, Long userUid) {
@@ -195,6 +214,15 @@ public class VideoActionServiceImpl extends ServiceImpl<VideoActionMapper, Video
             actionMapper.updateById(action);
         }
         videoInfoMapper.increaseShareCount(videoId);
+
+        // 加分
+        userVideoScoreService.saveOrUpdateScore(userUid, videoId, "share");
+        List<Long> tagIds = videoTagService.getTagIdsByVideoId(videoId);
+        for (Long tagId : tagIds) {
+            userTagScoreService.saveOrUpdateScore(userUid, tagId, "share");
+        }
         return true;
     }
+
 }
+

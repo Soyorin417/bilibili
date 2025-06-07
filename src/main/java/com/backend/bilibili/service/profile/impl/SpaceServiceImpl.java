@@ -6,6 +6,7 @@ import com.backend.bilibili.mapper.video.VideoInfoMapper;
 import com.backend.bilibili.pojo.video.VideoInfo;
 import com.backend.bilibili.service.dto.VideoCardDTO;
 import com.backend.bilibili.service.profile.SpaceService;
+import com.backend.bilibili.service.user.utils.VideoCardConvertUtil;
 import com.backend.bilibili.utils.UserTokenUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,11 @@ public class SpaceServiceImpl implements SpaceService {
     @Autowired
     private UserCollectMapper userCollectMapper;
 
+    @Autowired
+    private VideoCardConvertUtil videoCardConvertUtil;
+
+
+
     @Override
     public List<VideoCardDTO> getUserPublishedVideos() {
         Long userId = UserTokenUtil.getUid();
@@ -32,7 +38,6 @@ public class SpaceServiceImpl implements SpaceService {
             return Collections.emptyList();
         }
 
-        // 直接查询 video_info 表中 author_id = userId 的视频列表
         List<VideoInfo> videos = videoInfoMapper.selectList(
                 new QueryWrapper<VideoInfo>().eq("author_id", userId)
         );
@@ -41,24 +46,27 @@ public class SpaceServiceImpl implements SpaceService {
             return Collections.emptyList();
         }
 
-        // 当前用户就是作者，所以只需构建 DTO，无需批量查询作者信息
-        return videos.stream().map(video -> {
-            VideoCardDTO dto = new VideoCardDTO();
-            dto.setId((long) video.getId());
-            dto.setTitle(video.getTitle());
-            dto.setViews(video.getViews());
-            dto.setComments(video.getComments());
-            dto.setTime(video.getTime());
-            dto.setDescription(video.getDescription());
-            dto.setVideoUrl(video.getVideoUrl());
-            dto.setImage(video.getImage());
-            dto.setDuration(video.getDuration());
+        List<VideoCardDTO> dtoList = videoCardConvertUtil.convertToCardDTOList(videos);
 
-            // 当前用户就是作者，直接写用户名（也可以从UserTokenUtil获取）
-            dto.setAuthor(UserTokenUtil.getUsername());
+        String currentUsername = UserTokenUtil.getUsername();
+        dtoList.forEach(dto -> dto.setAuthor(currentUsername));
 
-            return dto;
-        }).collect(Collectors.toList());
+        return dtoList;
     }
+
+    @Override
+    public List<VideoCardDTO> getUserPublishedVideos(long userId) {
+        List<VideoInfo> videos = videoInfoMapper.selectList(
+                new QueryWrapper<VideoInfo>().eq("author_id", userId)
+        );
+
+        if (videos.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return videoCardConvertUtil.convertToCardDTOList(videos);
+    }
+
+
 
 }

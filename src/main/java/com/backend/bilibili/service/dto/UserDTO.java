@@ -1,7 +1,12 @@
 package com.backend.bilibili.service.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+
+@AllArgsConstructor
+@NoArgsConstructor
 @Data
 public class UserDTO {
     private Long id;
@@ -9,4 +14,6 @@ public class UserDTO {
     private String avatar;
     private int level;
     private boolean isFollow;
+    private Long fans;
+    private Long videoCount;
 }

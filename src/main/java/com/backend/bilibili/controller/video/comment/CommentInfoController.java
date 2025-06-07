@@ -2,7 +2,7 @@ package com.backend.bilibili.controller.video.comment;
 
 
 import com.backend.bilibili.pojo.video.comment.CommentInfo;
-import com.backend.bilibili.service.vo.CommentVO;
+import com.backend.bilibili.service.dto.DanmuDTO;
 import com.backend.bilibili.service.video.comment.CommentInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +19,8 @@ public class CommentInfoController {
 
 
     @GetMapping("/list")
-    public ResponseEntity<List<CommentVO>> getComments(@RequestParam Long videoId) {
-        List<CommentVO> commentList = commentService.getCommentsWithUserInfo(videoId);
+    public ResponseEntity<List<DanmuDTO.CommentDTO>> getComments(@RequestParam Long videoId) {
+        List<DanmuDTO.CommentDTO> commentList = commentService.getCommentsWithUserInfo(videoId);
         return ResponseEntity.ok(commentList);
     }
 
@@ -44,5 +44,9 @@ public class CommentInfoController {
         }
     }
 
+    @GetMapping("/count/{videoId}")
+    public int getCommentCount(@PathVariable("videoId") Long videoId) {
+        return commentService.getCommentCountByVideoId(videoId);
+    }
 
 }

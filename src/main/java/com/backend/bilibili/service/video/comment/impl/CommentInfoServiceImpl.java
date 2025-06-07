@@ -1,9 +1,8 @@
 package com.backend.bilibili.service.video.comment.impl;
 
 import com.backend.bilibili.mapper.video.comment.CommentInfoMapper;
-import com.backend.bilibili.service.dto.CommentDTO;
 import com.backend.bilibili.pojo.video.comment.CommentInfo;
-import com.backend.bilibili.service.vo.CommentVO;
+import com.backend.bilibili.service.dto.DanmuDTO;
 import com.backend.bilibili.pojo.video.comment.ReplyInfo;
 import com.backend.bilibili.service.video.comment.CommentInfoService;
 import com.backend.bilibili.service.video.comment.ReplyInfoService;
@@ -25,12 +24,12 @@ public class CommentInfoServiceImpl extends ServiceImpl<CommentInfoMapper, Comme
     ReplyInfoService replyInfoService;
 
     @Override
-    public List<CommentVO> getCommentsWithUserInfo(Long videoId) {
+    public List<DanmuDTO.CommentDTO> getCommentsWithUserInfo(Long videoId) {
         return commentInfoMapper.selectCommentsWithUserInfo(videoId);
     }
 
     @Override
-    public void addComment(CommentDTO dto, Long userUid) {
+    public void addComment(com.backend.bilibili.service.dto.CommentDTO dto, Long userUid) {
         CommentInfo comment = new CommentInfo();
         comment.setVideoId(dto.getVideoId());
         comment.setUserUid(userUid);
@@ -57,6 +56,21 @@ public class CommentInfoServiceImpl extends ServiceImpl<CommentInfoMapper, Comme
         System.out.println("删除评论结果: " + removeCommentResult);
 
         return removeCommentResult;
+    }
+
+    @Override
+    public int getCommentCountByVideoId(Long videoId) {
+
+        List<CommentInfo> comments = commentInfoMapper.selectList(
+                new QueryWrapper<CommentInfo>().eq("video_id", videoId)
+        );
+
+        int commentCount = comments.size(); // 一级评论数量
+        int totalReplyCount = comments.stream()
+                .mapToInt(comment -> comment.getReplyCount() == null ? 0 : comment.getReplyCount())
+                .sum();
+
+        return commentCount + totalReplyCount;
     }
 
 

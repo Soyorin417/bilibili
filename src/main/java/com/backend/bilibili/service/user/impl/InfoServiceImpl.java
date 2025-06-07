@@ -125,6 +125,13 @@ public class InfoServiceImpl implements InfoService {
         return userInfoMapper.update(null, wrapper) > 0;
     }
 
+    @Override
+    public Long getUserFansCount(Long uid) {
+        QueryWrapper queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("uid", uid);
+        return userInfoMapper.selectCount(queryWrapper);
+    }
+
     // 获取当前登录用户信息
     @Override
     public Map<String, Object> getCurrentUserInfo() {

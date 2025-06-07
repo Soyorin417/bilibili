@@ -11,6 +11,7 @@ public class RedisService {
     @Autowired
     private StringRedisTemplate redisTemplate;
 
+
     // 存字符串
     public void setValue(String key, String value) {
         redisTemplate.opsForValue().set(key, value);

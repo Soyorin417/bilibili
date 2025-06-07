@@ -6,6 +6,6 @@ import com.backend.bilibili.pojo.anime.Anime;
 import java.util.List;
 
 public interface AnimeService {
-    public Anime getAnime(int id);
-    public List<Anime> getAllAnimes();
+    Anime getAnime(int id);
+    List<Anime> getAllAnimes();
 }

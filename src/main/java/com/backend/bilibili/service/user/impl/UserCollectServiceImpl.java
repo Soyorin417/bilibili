@@ -5,10 +5,10 @@ import com.backend.bilibili.mapper.user.UserCollectMapper;
 import com.backend.bilibili.mapper.user.UserInfoMapper;
 import com.backend.bilibili.mapper.video.VideoInfoMapper;
 import com.backend.bilibili.pojo.user.UserCollect;
-import com.backend.bilibili.pojo.user.UserInfo;
 import com.backend.bilibili.pojo.video.VideoInfo;
-import com.backend.bilibili.service.dto.UserCollectVideoDTO;
+import com.backend.bilibili.service.dto.VideoCardDTO;
 import com.backend.bilibili.service.user.account.UserCollectService;
+import com.backend.bilibili.service.user.utils.VideoCardConvertUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +28,9 @@ public class UserCollectServiceImpl extends ServiceImpl<UserCollectMapper, UserC
 
     @Autowired
     UserCollectMapper userCollectMapper;
+
+    @Autowired
+    private VideoCardConvertUtil videoCardConvertUtil;
 
 
     @Override
@@ -74,38 +77,17 @@ public class UserCollectServiceImpl extends ServiceImpl<UserCollectMapper, UserC
     }
 
     @Override
-    public List<UserCollectVideoDTO> getUserCollectedVideos(Long userId) {
-        // 1. 查询用户收藏的视频ID
+    public List<VideoCardDTO> getUserCollectedVideos(Long userId) {
         List<Long> videoIds = userCollectMapper.selectList(
-                        new QueryWrapper<UserCollect>().eq("user_id", userId)
-                ).stream()
-                .map(UserCollect::getVideoId)
-                .collect(Collectors.toList());
+                new QueryWrapper<UserCollect>().eq("user_id", userId)
+        ).stream().map(UserCollect::getVideoId).collect(Collectors.toList());
 
         if (videoIds.isEmpty()) return Collections.emptyList();
 
-        // 2. 查询视频信息
         List<VideoInfo> videos = videoInfoMapper.selectBatchIds(videoIds);
 
-        // 3. 批量查询作者信息并映射
-        Map<Long, UserInfo> authorMap = userInfoMapper.selectBatchIds(
-                videos.stream().map(VideoInfo::getAuthorId).collect(Collectors.toSet())
-        ).stream().collect(Collectors.toMap(UserInfo::getUid, a -> a));
-
-        // 4. 封装为 DTO
-        return videos.stream().map(video -> {
-            UserInfo author = authorMap.get(video.getAuthorId());
-            return new UserCollectVideoDTO(
-                    (long) video.getId(),
-                    video.getTitle(),
-                    video.getImage(),
-                    video.getVideoUrl(),
-                    video.getViews(),
-                    video.getComments(),
-                    video.getDuration()
-            );
-        }).collect(Collectors.toList());
-
+        return videoCardConvertUtil.convertToCardDTOList(videos);
     }
+
 
 }

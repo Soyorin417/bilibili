@@ -3,7 +3,7 @@ package com.backend.bilibili.service.video.comment.impl;
 import com.backend.bilibili.mapper.video.comment.CommentInfoMapper;
 import com.backend.bilibili.mapper.video.comment.ReplyInfoMapper;
 import com.backend.bilibili.pojo.video.comment.ReplyInfo;
-import com.backend.bilibili.service.vo.ReplyVO;
+import com.backend.bilibili.service.dto.ReplyDTO;
 import com.backend.bilibili.service.video.comment.ReplyInfoService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
@@ -23,19 +23,19 @@ public class ReplyInfoServiceInfo extends ServiceImpl<ReplyInfoMapper, ReplyInfo
 
     // 查询评论的所有回复
     @Override
-    public List<ReplyVO> getRepliesByCommentId(Long commentId) {
+    public List<ReplyDTO> getRepliesByCommentId(Long commentId) {
         return replyInfoMapper.selectRepliesWithUserInfo(commentId);
     }
 
     // 新增回复
     @Override
-    public boolean saveReply(ReplyVO replyVO) {
+    public boolean saveReply(ReplyDTO replyDTO) {
         ReplyInfo replyInfo = new ReplyInfo();
-        BeanUtils.copyProperties(replyVO, replyInfo);
+        BeanUtils.copyProperties(replyDTO, replyInfo);
         boolean result = save(replyInfo); // 只调用一次保存！
 
         if (result) {
-            commentInfoMapper.increaseReplyCount(replyVO.getCommentId());
+            commentInfoMapper.increaseReplyCount(replyDTO.getCommentId());
         }
 
         return result;
@@ -43,10 +43,10 @@ public class ReplyInfoServiceInfo extends ServiceImpl<ReplyInfoMapper, ReplyInfo
 
 
     @Override
-    public boolean updateReplyById(Long id, ReplyVO replyVO) {
+    public boolean updateReplyById(Long id, ReplyDTO replyDTO) {
         ReplyInfo replyInfo = new ReplyInfo();
-        replyVO.setId(null);
-        BeanUtils.copyProperties(replyVO, replyInfo);
+        replyDTO.setId(null);
+        BeanUtils.copyProperties(replyDTO, replyInfo);
 
 
         ReplyInfo existing = replyInfoMapper.selectById(id);

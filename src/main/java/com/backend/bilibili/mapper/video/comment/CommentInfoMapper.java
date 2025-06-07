@@ -2,7 +2,7 @@ package com.backend.bilibili.mapper.video.comment;
 
 
 import com.backend.bilibili.pojo.video.comment.CommentInfo;
-import com.backend.bilibili.service.vo.CommentVO;
+import com.backend.bilibili.service.dto.DanmuDTO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -18,7 +18,7 @@ public interface CommentInfoMapper extends BaseMapper<CommentInfo> {
             "LEFT JOIN userinfo u ON c.user_uid = u.uid " +
             "WHERE c.video_id = #{videoId} " +
             "ORDER BY c.create_time DESC")
-    List<CommentVO> selectCommentsWithUserInfo(@Param("videoId") Long videoId);
+    List<DanmuDTO.CommentDTO> selectCommentsWithUserInfo(@Param("videoId") Long videoId);
     @Update("UPDATE comment_info SET like_count = like_count + 1 WHERE id = #{commentId}")
     void increaseLikeCount(@Param("commentId") Long commentId);
 

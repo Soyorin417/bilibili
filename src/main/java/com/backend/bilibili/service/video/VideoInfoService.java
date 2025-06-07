@@ -13,6 +13,7 @@ public interface VideoInfoService {
 
     VideoViewDTO getVideoInfoById(int id);
     List<VideoViewDTO> getAllVideoViews();
+    List<VideoViewDTO> recommendVideos();
     List<VideoViewDTO> getAllVideoViewsByUserId(int userId);
     ResponseEntity<Map<String, Object>> submitVideoWithParams(String title, String videoFileName,
                                                               String coverFileName, String description,
@@ -23,6 +24,7 @@ public interface VideoInfoService {
     boolean updateVideo(VideoInfo videoInfo);
     boolean increaseViewCount(Long videoId);
     Long getVideoCount();
+    Long  getVideoCountByUserId(Long userId);
     ResponseEntity<?> submitVideoTest(UploadVideoDTO dto);
 
 }

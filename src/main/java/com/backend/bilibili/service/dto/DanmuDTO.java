@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @AllArgsConstructor
@@ -56,4 +57,21 @@ public class DanmuDTO {
 
     @JsonProperty("position")
     private Map<String, Object> position;
+
+    @Data
+    public static class CommentDTO {
+        private Long id;
+        private Integer videoId;
+        private Long userUid;
+        private String content;
+        private LocalDateTime createTime;
+        private Integer likeCount;
+        private Boolean isUp;
+        private Boolean isLiked;
+        private Integer replyCount;
+
+        private String avatar;
+        private String username;
+        private Integer level;
+    }
 }

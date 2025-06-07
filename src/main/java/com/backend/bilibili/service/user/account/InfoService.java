@@ -19,5 +19,5 @@ public interface InfoService {
     Long getAllUserInfoCount();
     boolean banUser(Long uid);
     boolean unbanUser(Long uid);
-
+    Long getUserFansCount(Long uid);
 }

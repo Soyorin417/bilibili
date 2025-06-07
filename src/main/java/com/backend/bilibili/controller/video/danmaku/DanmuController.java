@@ -17,7 +17,6 @@ public class DanmuController {
     @PostMapping("/add")
     public String addDanmu(@RequestBody Danmu danmu) {
         danmuService.addDanmu(danmu);
-        System.out.println(danmu);
         return "发送成功";
     }
 

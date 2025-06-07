@@ -21,4 +21,10 @@ public class SpaceController {
     public List<VideoCardDTO> getUserPublishedVideos() {
         return spaceService.getUserPublishedVideos();
     }
+
+    @GetMapping("/videos/other")
+    public List<VideoCardDTO> getOtherUserPublishedVideos(Long userId) {
+        return spaceService.getUserPublishedVideos(userId);
+    }
+
 }

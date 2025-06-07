@@ -1,7 +1,7 @@
 package com.backend.bilibili.mapper.video.comment;
 
 import com.backend.bilibili.pojo.video.comment.ReplyInfo;
-import com.backend.bilibili.service.vo.ReplyVO;
+import com.backend.bilibili.service.dto.ReplyDTO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -16,5 +16,5 @@ public interface ReplyInfoMapper extends BaseMapper<ReplyInfo> {
             "LEFT JOIN userinfo u ON r.user_uid = u.uid " +
             "WHERE r.comment_id = #{commentId} " +
             "ORDER BY r.create_time ASC")
-    List<ReplyVO> selectRepliesWithUserInfo(@Param("commentId") Long commentId);
+    List<ReplyDTO> selectRepliesWithUserInfo(@Param("commentId") Long commentId);
 }

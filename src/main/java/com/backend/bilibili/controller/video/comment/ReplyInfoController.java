@@ -1,7 +1,7 @@
 package com.backend.bilibili.controller.video.comment;
 
 import com.backend.bilibili.pojo.video.comment.ReplyInfo;
-import com.backend.bilibili.service.vo.ReplyVO;
+import com.backend.bilibili.service.dto.ReplyDTO;
 import com.backend.bilibili.service.video.comment.ReplyInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,15 +18,15 @@ public class ReplyInfoController {
 
     // 获取某条评论下的所有回复
     @GetMapping("/list")
-    public ResponseEntity<List<ReplyVO>> getReplies(@RequestParam Long commentId) {
-        List<ReplyVO> replies = replyInfoService.getRepliesByCommentId(commentId);
+    public ResponseEntity<List<ReplyDTO>> getReplies(@RequestParam Long commentId) {
+        List<ReplyDTO> replies = replyInfoService.getRepliesByCommentId(commentId);
         return ResponseEntity.ok(replies);
     }
 
     // 新增一条回复
     @PostMapping("/add")
-    public ResponseEntity<String> addReply(@RequestBody ReplyVO replyVO) {
-        boolean success = replyInfoService.saveReply(replyVO);
+    public ResponseEntity<String> addReply(@RequestBody ReplyDTO replyDTO) {
+        boolean success = replyInfoService.saveReply(replyDTO);
         if (success) {
             return ResponseEntity.ok("回复添加成功");
         } else {
@@ -35,13 +35,13 @@ public class ReplyInfoController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<String> updateReply(@PathVariable Long id, @RequestBody ReplyVO replyVO) {
-        if (!id.equals(replyVO.getId())) {
+    public ResponseEntity<String> updateReply(@PathVariable Long id, @RequestBody ReplyDTO replyDTO) {
+        if (!id.equals(replyDTO.getId())) {
             System.out.println("路径id和请求体id不一致");
             return ResponseEntity.badRequest().body("路径ID与实体ID不一致");
         }
 
-        boolean success = replyInfoService.updateReplyById(id, replyVO);
+        boolean success = replyInfoService.updateReplyById(id, replyDTO);
         System.out.println("更新结果：" + success);
         if (success) {
             return ResponseEntity.ok("更新成功");

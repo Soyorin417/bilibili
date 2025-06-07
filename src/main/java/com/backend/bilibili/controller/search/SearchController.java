@@ -2,7 +2,7 @@ package com.backend.bilibili.controller.search;
 
 import com.backend.bilibili.service.dto.UserDTO;
 import com.backend.bilibili.service.dto.VideoCardDTO;
-import com.backend.bilibili.service.search.impl.SearchService;
+import com.backend.bilibili.service.search.SearchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

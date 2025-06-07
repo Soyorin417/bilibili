@@ -17,6 +17,11 @@ public class VideoController {
     @Autowired
     private VideoInfoService videoInfoService;
 
+    @GetMapping("/recommend")
+    public List<VideoViewDTO> recommendVideos() {
+        return videoInfoService.recommendVideos();
+    }
+
     @GetMapping("/getAllVideo")
     public List<VideoViewDTO> getAllVideoViews() {
         return videoInfoService.getAllVideoViews();

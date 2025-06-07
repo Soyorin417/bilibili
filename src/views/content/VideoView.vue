@@ -358,7 +358,7 @@ export default {
           }
 
           // Update recommended videos
-          this.refreshRecommendedVideos();
+          await this.refreshRecommendedVideos();
 
           // Get video tags
           await this.getVideoTags(id);
@@ -463,14 +463,51 @@ export default {
     },
 
     // 刷新推荐视频
-    refreshRecommendedVideos() {
+    async refreshRecommendedVideos() {
+      try {
+        const response = await videoApi.getRecommendVideos();
+        console.log("接口返回完整数据:", response);
+
+        if (response.status === 200) {
+          this.recommendedVideos = response.data.map((video) => ({
+            id: video.id,
+            title: video.title,
+            views: video.views,
+            comments: video.comments,
+            time: video.time,
+            description: video.description,
+            videoUrl: video.videoUrl,
+            image: video.image,
+            authorId: video.authorId,
+            duration: video.duration,
+            likeCount: video.likeCount,
+            collectCount: video.collectCount,
+            coinCount: video.coinCount,
+            shareCount: video.shareCount,
+            status: video.status,
+            avatar: video.avatar,
+            follow: video.follow,
+            authorFans: video.authorFans,
+            authorName: video.authorName,
+          }));
+          console.log("推荐视频列表:", this.recommendedVideos);
+        } else {
+          console.error("获取推荐视频失败:", response.message);
+          // 使用备用方案
+          this.useFallbackRecommendation();
+        }
+      } catch (error) {
+        console.error("获取推荐视频失败:", error);
+        // 使用备用方案
+        this.useFallbackRecommendation();
+      }
+    },
+
+    useFallbackRecommendation() {
       const currentId = parseInt(this.videoId);
       this.recommendedVideos = this.videoInfos.filter(
         (video) => parseInt(video.id) !== currentId
       );
-      console.log("视频列表", this.videoInfos);
-      console.log("当前视频ID", currentId);
-      console.log("刷新推荐视频", this.recommendedVideos);
     },
 
     // 处理视频点击

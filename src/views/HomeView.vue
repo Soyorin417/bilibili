@@ -77,9 +77,10 @@
                     :url="item.image"
                     :playCount="item.views"
                     :comment="item.comments"
-                    :time="item.duration"
+                    :time="item.time"
                     :title="item.title"
                     :message="item.author"
+                    :duration="item.duration"
                     class="mb-3"
                   />
                 </router-link>
@@ -110,7 +111,8 @@
                 :url="item.image"
                 :playCount="item.views"
                 :comment="item.comments"
-                :time="item.duration"
+                :time="item.time"
+                :duration="item.duration"
                 :title="item.title"
                 :message="item.author"
               />
@@ -128,6 +130,7 @@ import NavBar from "@/components/navBar/NavBar.vue";
 import TopNav from "@/components/navBar/TopNav.vue";
 import { videoApi } from "@/api/content/video";
 import { carouselApi } from "@/api/admin/carousel";
+import { formatDateType } from "@/utils/date";
 
 export default {
   name: "HomeView",
@@ -155,19 +158,32 @@ export default {
   methods: {
     async getVideoInfos() {
       try {
-        const videoInfos = await videoApi.getVideoCards();
-        this.videoInfos = videoInfos;
-        this.videoCards = this.videoInfos.slice(0, 6);
-        this.otherVideos = this.videoInfos.slice(6);
+        const response = await videoApi.getVideoCards();
+        console.log("获取到的视频数据:", response);
+        if (response.data && Array.isArray(response.data)) {
+          this.videoInfos = response.data.map((video) => ({
+            id: video.id,
+            title: video.title || "未知标题",
+            views: video.views || 0,
+            comments: video.comments || 0,
+            image: video.image || "http://113.45.69.13:9000/image/lucy_moon.jpg",
+            duration: video.duration || "00:00",
+            author: video.author || "未知作者",
+            time: formatDateType(video.time),
+          }));
 
-        this.loadedVideos = Array(this.videoInfos.length).fill(false);
-        this.videoInfos.forEach((_, index) => {
-          setTimeout(() => {
-            this.loadedVideos[index] = true;
-          }, 200 * (index + 1));
-        });
+          this.videoCards = this.videoInfos.slice(0, 6);
+          this.otherVideos = this.videoInfos.slice(6);
 
-        console.log("获取到的视频数据:", this.videoInfos);
+          this.loadedVideos = Array(this.videoInfos.length).fill(false);
+          this.videoInfos.forEach((_, index) => {
+            setTimeout(() => {
+              this.loadedVideos[index] = true;
+            }, 200 * (index + 1));
+          });
+        } else {
+          throw new Error("Invalid video data format");
+        }
       } catch (error) {
         console.error("获取视频列表失败:", error);
         alert("获取视频信息失败，请稍后再试");
@@ -191,12 +207,13 @@ export default {
     },
   },
   mounted() {
-    // 模拟网络延迟
-    this.videoCards.forEach((item, index) => {
-      setTimeout(() => {
-        this.loadedVideos[index] = true;
-      }, 200 * (index + 1)); // 每个视频卡片延迟2秒加载
-    });
+    formatDateType,
+      // 模拟网络延迟
+      this.videoCards.forEach((item, index) => {
+        setTimeout(() => {
+          this.loadedVideos[index] = true;
+        }, 200 * (index + 1)); // 每个视频卡片延迟2秒加载
+      });
 
     // 对另一组视频也应用相同的逻辑
     this.otherVideos.forEach((item, index) => {

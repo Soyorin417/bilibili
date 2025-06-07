@@ -10,7 +10,7 @@
         @focus="$emit('update:isSearchFocused', true)"
         @blur="onBlur"
       />
-      <button class="search-button" @click="$emit('search')">
+      <button class="search-button" @click="handleSearch">
         <i class="bi bi-search"></i>
       </button>
     </div>
@@ -20,16 +20,16 @@
       <div class="search-history">
         <div class="history-header">
           <span>搜索历史</span>
-          <span class="clear-history" @click="$emit('clearHistory')">清空</span>
+          <span class="clear-history" @click="handleClearHistory">清空</span>
         </div>
         <div class="history-tags">
           <span
-            v-for="(tag, index) in searchHistory"
-            :key="`history-${index}`"
+            v-for="item in searchHistoryList"
+            :key="item.id"
             class="history-tag"
-            @click="$emit('setSearchQuery', tag)"
+            @click="handleHistoryClick(item.keyword)"
           >
-            {{ tag }}
+            {{ item.keyword }}
           </span>
         </div>
       </div>
@@ -48,7 +48,7 @@
               v-for="(item, index) in col"
               :key="`hot-${colIdx}-${index}`"
               class="hot-search-item"
-              @click="$emit('setSearchQuery', item.title)"
+              @click="() => handleHotSearchClick(item.title)"
             >
               <span class="hot-number" :class="{ 'top-rank': colIdx * 5 + index < 3 }">
                 {{ colIdx * 5 + index + 1 }}
@@ -66,6 +66,9 @@
 </template>
 
 <script>
+import { hotSearchApi } from "@/api/content/hotSearch";
+import { searchHistoryApi } from "@/api/content/searchHistory";
+
 export default {
   name: "HotSearchList",
   props: {
@@ -85,10 +88,12 @@ export default {
       type: Boolean,
       required: true,
     },
-    hotSearchItems: {
-      type: Array,
-      required: true,
-    },
+  },
+  data() {
+    return {
+      hotSearchItems: [],
+      searchHistoryList: [],
+    };
   },
   emits: [
     "update:searchQuery",
@@ -108,6 +113,105 @@ export default {
       if (!title) return "";
       return title.length > 8 ? title.slice(0, 8) + "..." : title;
     },
+    async loadHotSearches() {
+      try {
+        const response = await hotSearchApi.getHotSearches();
+        if (response.status === 200) {
+          this.hotSearchItems = response.data.map((keyword, index) => ({
+            title: keyword,
+            tag: index < 3 ? "热" : "",
+            tagType: "hot-tag-red",
+          }));
+        }
+      } catch (error) {
+        console.error("获取热搜榜失败:", error);
+      }
+    },
+    async loadSearchHistory() {
+      try {
+        const response = await searchHistoryApi.getSearchHistory();
+        if (response.status === 200) {
+          this.searchHistoryList = response.data;
+        }
+      } catch (error) {
+        console.error("获取搜索历史失败:", error);
+      }
+    },
+    async handleHotSearchClick(keyword) {
+      console.log("点击热搜词:", keyword);
+      if (!keyword) {
+        console.error("热搜词为空");
+        return;
+      }
+      try {
+        // 增加热搜次数
+        await hotSearchApi.incrementHotSearch(keyword);
+        // 添加搜索历史
+        await searchHistoryApi.addSearchHistory(keyword);
+        // 更新搜索历史列表
+        await this.loadSearchHistory();
+        // 设置搜索词
+        this.$emit("setSearchQuery", keyword);
+      } catch (error) {
+        console.error("操作失败:", error);
+      }
+    },
+    async handleSearch() {
+      if (!this.searchQuery || this.searchQuery.trim() === "") {
+        return;
+      }
+      try {
+        // 增加热搜次数
+        await hotSearchApi.incrementHotSearch(this.searchQuery.trim());
+        // 添加搜索历史
+        await searchHistoryApi.addSearchHistory(this.searchQuery.trim());
+        // 更新搜索历史列表
+        await this.loadSearchHistory();
+        // 触发搜索事件
+        this.$emit("search");
+      } catch (error) {
+        console.error("操作失败:", error);
+        // 即使更新失败，也继续执行搜索
+        this.$emit("search");
+      }
+    },
+    async handleClearHistory() {
+      try {
+        await searchHistoryApi.clearSearchHistory();
+        await this.loadSearchHistory();
+        this.$emit("clearHistory");
+      } catch (error) {
+        console.error("清空搜索历史失败:", error);
+      }
+    },
+    async handleDeleteHistory(historyId) {
+      try {
+        await searchHistoryApi.deleteSearchHistory(historyId);
+        await this.loadSearchHistory();
+      } catch (error) {
+        console.error("删除搜索历史失败:", error);
+      }
+    },
+    async handleHistoryClick(keyword) {
+      try {
+        // 设置搜索词
+        this.$emit("update:searchQuery", keyword);
+        // 增加热搜次数
+        await hotSearchApi.incrementHotSearch(keyword);
+        // 添加搜索历史
+        await searchHistoryApi.addSearchHistory(keyword);
+        // 更新搜索历史列表
+        await this.loadSearchHistory();
+        // 触发搜索事件
+        this.$emit("search");
+      } catch (error) {
+        console.error("操作失败:", error);
+      }
+    },
+  },
+  mounted() {
+    this.loadHotSearches();
+    this.loadSearchHistory();
   },
   computed: {
     hotSearchColumns() {

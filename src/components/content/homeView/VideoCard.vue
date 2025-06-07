@@ -4,14 +4,17 @@
       <img :src="url" class="card card-img" alt="" />
       <div class="inner-shadow"></div>
       <div class="card-img-overlay mb-1">
-        <div class="card-text position-absolute bottom-0 start-0">
-          <play class="ms-2" theme="outline" size="18" fill="#ffffff" />
-          <small class="ms-1">{{ formatCount(playCount) }}</small>
-          <message class="ms-3" theme="outline" size="18" fill="#ffffff" />
-          <small class="ms-1">{{ formatCount(comment) }}</small>
+        <div class="card-text position-absolute bottom-0 start-0 video-stats">
+          <span>
+            <i class="bi bi-play-fill ms-1"></i
+            ><small class="ms-1">{{ playCount }}</small>
+          </span>
+          <span>
+            <i class="bi bi-chat-fill ms-1"></i><small class="ms-1">{{ comment }}</small>
+          </span>
         </div>
         <div class="card-text position-absolute bottom-0 end-0">
-          <small class="me-1">{{ time }}</small>
+          <small class="me-1">{{ duration }}</small>
         </div>
       </div>
     </div>
@@ -41,20 +44,15 @@
         ></path>
       </svg>
       <small class="info-text">{{ message }}</small>
-      <small class="ms-2 info-text">2-10</small>
+      <small class="ms-2 info-text">{{ time }}</small>
     </div>
   </div>
 </template>
 
 <script>
-import { Play } from "@icon-park/vue-next";
-import { Message } from "@icon-park/vue-next";
 export default {
   name: "VideoCard",
-  components: {
-    Play,
-    Message,
-  },
+  components: {},
   props: {
     url: {
       type: String,
@@ -80,6 +78,10 @@ export default {
       type: String,
       default: "默认消息",
     },
+    duration: {
+      type: String,
+      required: true,
+    },
   },
   data() {
     return {
@@ -97,17 +99,6 @@ export default {
   methods: {
     toggleLike() {
       this.isLiked = !this.isLiked;
-    },
-    formatCount(count) {
-      if (!count) return "0";
-      const n = parseFloat(count);
-      if (isNaN(n)) return "0";
-      if (n >= 100000000) {
-        return (n / 100000000).toFixed(1) + "亿";
-      } else if (n >= 10000) {
-        return (n / 10000).toFixed(1) + "万";
-      }
-      return n.toString();
     },
   },
 };
@@ -167,5 +158,16 @@ export default {
 }
 .card-img-overlay {
   z-index: 2; /* 保证文字在阴影上方 */
+}
+
+.video-stats {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  font-size: 14px;
+  display: flex;
+  gap: 12px;
+  color: #fff;
+  z-index: 1;
 }
 </style>

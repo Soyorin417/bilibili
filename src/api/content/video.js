@@ -2,6 +2,11 @@ import request from "@/utils/request";
 
 // 视频API
 export const videoApi = {
+  // 获取推荐视频
+  getRecommendVideos: () => {
+    return request.get("/video/recommend");
+  },
+
   // 获取所有视频
   getAllVideos: () => {
     return request.get("/video/getAllVideo");
@@ -103,25 +108,8 @@ export const videoApi = {
   },
 
   // 获取视频卡片列表
-  getVideoCards: async () => {
-    try {
-      const response = await request.get("/video/cards");
-      if (response.data && Array.isArray(response.data)) {
-        return response.data.map((video) => ({
-          id: video.id,
-          title: video.title || "未知标题",
-          views: video.views || 0,
-          comments: video.comments || 0,
-          image: video.image || "http://113.45.69.13:9000/image/lucy_moon.jpg",
-          duration: video.duration || "00:00",
-          author: video.author || "未知作者",
-        }));
-      }
-      throw new Error("Invalid video data format");
-    } catch (error) {
-      console.error("获取视频列表失败:", error);
-      throw error;
-    }
+  getVideoCards: () => {
+    return request.get("/video/cards");
   },
 
   // 获取视频评论

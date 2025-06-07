@@ -16,7 +16,9 @@
           <el-icon class="ms-4"><Message /></el-icon>
           <div class="small ms-1">发消息</div>
         </div>
-        <p class="small text-start mb-1">{{ truncatedDescription }}</p>
+        <p class="small text-start mb-1">
+          {{ truncatedDescription }}
+        </p>
         <div>
           <div class="d-grid gap-1 d-md-block">
             <button class="btn btn-sm btn-outline-danger me-1" style="width: 80px">
@@ -81,7 +83,7 @@ export default {
   },
   computed: {
     truncatedDescription() {
-      if (!this.videoInfo.description) return "";
+      if (!this.videoInfo.description) return "这个人很懒什么都没写";
       return this.videoInfo.description.length > 20
         ? this.videoInfo.description.slice(0, 20) + "..."
         : this.videoInfo.description;

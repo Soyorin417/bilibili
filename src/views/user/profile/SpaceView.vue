@@ -98,6 +98,7 @@ export default {
   async created() {
     try {
       const response = await spaceApi.getUserPublishedVideos();
+      console.log(response.data);
       if (response.status === 200) {
         this.videos = response.data.map((video) => ({
           ...video,
@@ -138,6 +139,7 @@ export default {
 .video-title {
   font-size: 14px;
   font-weight: 500;
+  text-align: left;
 }
 .card {
   width: 100%;

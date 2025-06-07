@@ -79,18 +79,18 @@
                     <span class="user-level" v-if="user.level">LV{{ user.level }}</span>
                   </div>
                   <div class="user-meta-desc">
-                    <span>{{ formatNumber(user.followers) }}粉丝 ·</span>
-                    <span>{{ formatNumber(user.videos) }}个视频 ·</span>
+                    <span>{{ user.fans }}粉丝 ·</span>
+                    <span>{{ user.videoCount }}个视频 ·</span>
                     <span class="user-desc">{{
                       user.description || "这个用户很懒，什么都没写~"
                     }}</span>
                   </div>
                   <button
                     class="follow-btn"
-                    :class="{ followed: user.isFollowed }"
-                    @click="user.isFollowed ? handleUnfollow(user) : handleFollow(user)"
+                    :class="{ followed: user.follow }"
+                    @click="user.follow ? handleUnfollow(user) : handleFollow(user)"
                   >
-                    {{ user.isFollowed ? "已关注" : "+ 关注" }}
+                    {{ user.follow ? "已关注" : "+ 关注" }}
                   </button>
                 </div>
                 <div class="user-card-action"></div>
@@ -138,8 +138,8 @@
                             fill="currentColor"
                           ></path>
                         </svg>
-                        <span class="uploader-name">{{ item.uploader }}</span>
-                        <span class="upload-time">{{ item.date }}</span>
+                        <span class="uploader-name">{{ item.author }}</span>
+                        <span class="upload-time">{{ item.time }}</span>
                       </div>
                     </div>
                   </div>
@@ -159,6 +159,7 @@ import { mapGetters } from "vuex";
 import { searchApi } from "@/api/content/search";
 import { userApi } from "@/api/user/user";
 import { sessionApi } from "@/api/message/session";
+import { formatDateType, formatCount } from "@/utils/date";
 
 export default {
   name: "SearchView",
@@ -184,6 +185,8 @@ export default {
     this.fetchSearchResults();
   },
   methods: {
+    formatDateType,
+    formatCount,
     async fetchSearchResults() {
       try {
         this.loading = true;
@@ -197,11 +200,12 @@ export default {
           title: video.title,
           image: video.image,
           duration: video.duration || "0:00",
-          uploader: video.uploader,
+          author: video.author,
           uploaderAvatar: video.uploaderAvatar,
-          views: this.formatNumber(video.views || 0),
-          danmaku: this.formatNumber(video.danmaku_count || 0),
-          date: this.formatDate(video.time),
+          views: formatCount(video.views || 0),
+          danmaku: formatCount(video.danmaku_count || 0),
+
+          time: formatDateType(video.time),
         }));
 
         // 如果用户已登录，搜索用户
@@ -209,8 +213,13 @@ export default {
           const userResponse = await searchApi.searchUser(keyword, this.userInfo.id);
           console.log("用户搜索返回：", userResponse.data);
           this.users = userResponse.data.map((user) => ({
-            ...user,
-            isFollowed: user.follow,
+            id: user.id,
+            username: user.username,
+            avatar: user.avatar,
+            fans: user.fans,
+            videoCount: user.videoCount,
+            level: user.level,
+            follow: user.follow,
           }));
         }
 
@@ -222,35 +231,6 @@ export default {
         this.loading = false;
       }
     },
-
-    formatNumber(num) {
-      if (!num && num !== 0) return "0";
-      if (num >= 10000) {
-        return (num / 10000).toFixed(1) + "万";
-      }
-      return num.toString();
-    },
-
-    formatDate(dateString) {
-      if (!dateString) return "";
-      const date = new Date(dateString);
-      const now = new Date();
-      const diff = now - date;
-
-      // 小于24小时
-      if (diff < 24 * 60 * 60 * 1000) {
-        const hours = Math.floor(diff / (60 * 60 * 1000));
-        return `${hours}小时前`;
-      }
-      // 小于30天
-      if (diff < 30 * 24 * 60 * 60 * 1000) {
-        const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-        return `${days}天前`;
-      }
-      // 大于30天
-      return `${date.getMonth() + 1}-${date.getDate()}`;
-    },
-
     async handleFollow(user) {
       try {
         console.log("关注用户 - 当前用户ID:", this.userInfo.id, "目标用户ID:", user.id);

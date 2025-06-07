@@ -100,6 +100,7 @@ export function parseDanmakuXml(xmlText) {
               duration: jsonData[3] || 8, // 持续时间
               alpha: jsonData[5] || 1, // 透明度
               rotation: jsonData[6] || 0, // 旋转角度
+
               size: jsonData[7] || fontSize, // 字体大小
               color: jsonData[8] || color, // 颜色
               type: jsonData[9] || type, // 类型

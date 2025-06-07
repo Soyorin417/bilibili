@@ -483,67 +483,13 @@ export default {
 
     // 处理弹幕发送
     handleSendDanmaku(danmaku) {
-      console.log("VideoView received danmaku:", danmaku);
-
-      // 转换弹幕数据格式
-      const displayDanmaku = {
-        text: danmaku.text,
-        time: danmaku.timeInVideo,
-        type: danmaku.isAdvanced
-          ? 7
-          : danmaku.isScrolling === false
-          ? danmaku.positionY <= 20
-            ? 1
-            : 2
-          : 0,
-        color: danmaku.fontColor,
-        fontSize: danmaku.fontSize || 25,
-        isSelf: true,
-        isAdvanced: danmaku.isAdvanced,
-        position: danmaku.isAdvanced
-          ? {
-              x: danmaku.positionX || 50,
-              y: danmaku.positionY || 10,
-              duration: danmaku.duration || 8.0,
-              scaleX: danmaku.scaleX || 1,
-              scaleY: danmaku.scaleY || 1,
-              rotation: danmaku.rotation || 0,
-              alpha: danmaku.alpha || 1,
-              font: danmaku.font || "SimHei",
-              fontFamily: danmaku.fontFamily || danmaku.font || "SimHei",
-              style: danmaku.style || 1,
-              isAdvanced: true,
-            }
-          : {
-              x: danmaku.mode === "scroll" ? 100 : 50,
-              y:
-                danmaku.mode === "scroll"
-                  ? (danmaku.track || Math.floor(Math.random() * 10)) * (100 / 10) +
-                    100 / 20
-                  : danmaku.mode === "top"
-                  ? 10
-                  : 90,
-              duration: 8.0,
-              font: danmaku.font || "SimHei",
-              fontFamily: danmaku.font || "SimHei",
-              scaleX: 1,
-              scaleY: 1,
-              rotation: 0,
-              alpha: 1,
-              isAdvanced: false,
-            },
-        track: danmaku.track || 0,
-      };
-
-      console.log("VideoView converted danmaku:", displayDanmaku);
-      console.log("DanmakuDisplay ref:", this.$refs.danmakuDisplay);
-
-      // 将转换后的弹幕传递给 DanmakuDisplay 组件
+      console.log("收到弹幕数据:", danmaku);
+      // 将弹幕数据传递给显示组件
       if (this.$refs.danmakuDisplay) {
-        this.$refs.danmakuDisplay.addNewDanmaku(displayDanmaku);
-        console.log("Danmaku passed to DanmakuDisplay");
+        this.$refs.danmakuDisplay.addNewDanmaku(danmaku);
+        console.log("弹幕已传递给显示组件");
       } else {
-        console.error("DanmakuDisplay ref not found");
+        console.error("弹幕显示组件未找到");
       }
     },
 

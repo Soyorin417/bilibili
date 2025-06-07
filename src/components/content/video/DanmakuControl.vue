@@ -10,9 +10,9 @@
     <!-- 弹幕类型选择 -->
     <div class="danmaku-type-selector me-2">
       <select v-model="currentDanmakuType" class="form-select form-select-sm">
-        <option :value="0">滚动</option>
-        <option :value="1">顶部</option>
-        <option :value="2">底部</option>
+        <option :value="1">滚动</option>
+        <option :value="4">顶部</option>
+        <option :value="5">底部</option>
       </select>
     </div>
 
@@ -58,7 +58,7 @@ export default {
     console.log("DanmakuControl data initialized");
     return {
       danmakuText: "",
-      currentDanmakuType: 0,
+      currentDanmakuType: 1,
       currentColor: "#ffffff",
       showDanmaku: true,
     };
@@ -67,6 +67,10 @@ export default {
     hexToNumber(hex) {
       hex = hex.replace("#", "");
       return parseInt(hex, 16);
+    },
+
+    getRndInteger(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
     },
 
     async sendDanmaku() {
@@ -80,23 +84,51 @@ export default {
 
       console.log("Sending danmaku with currentTime:", this.currentTime);
 
-      // 构建弹幕数据
+      const mode = this.currentDanmakuType;
+      const fontSize = 25;
+
+      let positionX = 50;
+      let positionY = 50;
+      let track = 0;
+
+      //0高0低
+      if (mode === 1) {
+        // 滚动弹幕
+        track = this.getRndInteger(0, 8);
+        positionX = 100; // 从右边出现
+        positionY = track * 10 + 5;
+      } else if (mode === 5) {
+        // 顶部弹幕
+        track = this.getRndInteger(5, 8);
+        positionX = 50;
+        positionY = 10; // 靠近顶部
+      } else if (mode === 4) {
+        // 底部弹幕
+        track = this.getRndInteger(0, 4);
+        positionX = 50;
+        positionY = 90;
+      } else {
+        track = 0;
+        positionX = 50;
+        positionY = 50;
+      }
+      // 组装对象
       const danmu = {
         videoId: this.videoId,
         text: this.danmakuText.trim(),
         timeInVideo: this.currentTime,
-        mode: this.currentDanmakuType,
+        mode,
         fontColor: this.currentColor,
-        fontSize: 25,
+        fontSize,
         status: 1,
         duration: 8.0,
         font: "SimHei",
         pool: 0,
-        isAdvanced: this.currentDanmakuType === "advanced",
-        isScrolling: this.currentDanmakuType === "scroll",
-        positionX: 50,
-        positionY: 10,
-        track: 0,
+        isAdvanced: mode === 7,
+        isScrolling: mode === 1,
+        track, // 所有类型都使用 track
+        positionX,
+        positionY,
       };
 
       console.log("Emitting send-danmaku event with data:", danmu);

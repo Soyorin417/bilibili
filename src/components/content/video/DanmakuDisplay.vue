@@ -98,7 +98,7 @@ export default {
       console.log("数据库弹幕响应:", dbResponse.data);
 
       // 3. 转换数据库弹幕格式
-      const dbDanmaku = (dbResponse.data || []).map(convertDbDanmuToFrontend);
+      const dbDanmaku = (dbResponse.data || []).map((d) => convertDbDanmuToFrontend(d));
       console.log("转换后的数据库弹幕:", dbDanmaku);
 
       // 4. 合并弹幕数据
@@ -255,36 +255,56 @@ export default {
       });
     },
     addNewDanmaku(danmaku) {
-      console.log("DanmakuDisplay received new danmaku:", danmaku);
+      console.log("添加新弹幕:", danmaku);
 
-      // 添加到弹幕列表
+      // 创建新的活动弹幕
+      const id = Date.now() + Math.random();
+      const activeDanmaku = {
+        id,
+        text: danmaku.text,
+        type: danmaku.mode,
+        time: danmaku.timeInVideo,
+        isSelf: danmaku.isSelf,
+        style: {
+          color: danmaku.fontColor || "#fff",
+          fontSize: `${danmaku.fontSize || 24}px`,
+          textDecoration: danmaku.isSelf ? "underline" : "none",
+        },
+      };
+
+      // 根据弹幕类型设置不同的样式
+      if (danmaku.mode === 1) {
+        // 滚动弹幕
+        activeDanmaku.style = {
+          ...activeDanmaku.style,
+          top: `${danmaku.track * 10 + 5}%`,
+          animationDuration: `${this.duration}s`,
+        };
+      } else if (danmaku.mode === 4) {
+        // 顶部弹幕
+        activeDanmaku.style = {
+          ...activeDanmaku.style,
+          top: `${danmaku.track * 10 + 5}%`,
+          left: "50%",
+          transform: "translateX(-50%)",
+        };
+      } else if (danmaku.mode === 5) {
+        // 底部弹幕
+        activeDanmaku.style = {
+          ...activeDanmaku.style,
+          top: `${danmaku.track * 10 + 5}%`,
+          left: "50%",
+          transform: "translateX(-50%)",
+        };
+      }
+
+      // 立即添加到活动弹幕列表
+      this.activeDanmakus.push(activeDanmaku);
+
+      // 同时添加到弹幕列表（用于后续播放）
       this.danmakus.push(danmaku);
       // 按时间排序
-      this.danmakus.sort((a, b) => a.time - b.time);
-
-      // 如果当前时间接近新弹幕的时间，立即显示
-      if (Math.abs(this.localCurrentTime - danmaku.time) < 0.5) {
-        console.log("Creating active danmaku for immediate display");
-        const activeDanmaku = {
-          id: Date.now(),
-          text: danmaku.text,
-          type: danmaku.type,
-          time: danmaku.time,
-          isSelf: danmaku.isSelf,
-          style: {
-            color: danmaku.color,
-            fontSize: `${danmaku.fontSize}px`,
-            animationDuration: `${danmaku.position.duration}s`,
-            textDecoration: danmaku.isSelf ? "underline" : "none",
-            textDecorationColor: danmaku.color,
-            textDecorationThickness: "2px",
-            textDecorationStyle: "solid",
-            ...danmaku.position,
-          },
-        };
-        console.log("Created active danmaku:", activeDanmaku);
-        this.activeDanmakus.push(activeDanmaku);
-      }
+      this.danmakus.sort((a, b) => a.timeInVideo - b.timeInVideo);
     },
     getAuthorId() {
       return (

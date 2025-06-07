@@ -10,9 +10,20 @@
     <!-- 弹幕类型选择 -->
     <div class="danmaku-type-selector me-2">
       <select v-model="currentDanmakuType" class="form-select form-select-sm">
-        <option value="scroll">滚动</option>
-        <option value="fixed">固定</option>
+        <option :value="0">滚动</option>
+        <option :value="1">顶部</option>
+        <option :value="2">底部</option>
       </select>
+    </div>
+
+    <!-- 弹幕颜色选择 -->
+    <div class="danmaku-color-selector me-2">
+      <input
+        type="color"
+        v-model="currentColor"
+        class="form-control form-control-sm"
+        title="选择弹幕颜色"
+      />
     </div>
 
     <button class="btn btn-sm btn-primary" @click="sendDanmaku">发送</button>
@@ -29,31 +40,107 @@
 </template>
 
 <script>
+import danmuApi from "@/api/danmu";
+
 export default {
   name: "DanmakuControl",
+  props: {
+    videoId: {
+      type: String,
+      required: true,
+    },
+    currentTime: {
+      type: Number,
+      default: 0,
+    },
+  },
   data() {
+    console.log("DanmakuControl data initialized");
     return {
       danmakuText: "",
-      currentDanmakuType: "scroll",
+      currentDanmakuType: 0,
+      currentColor: "#ffffff",
       showDanmaku: true,
     };
   },
   methods: {
-    sendDanmaku() {
+    hexToNumber(hex) {
+      hex = hex.replace("#", "");
+      return parseInt(hex, 16);
+    },
+
+    async sendDanmaku() {
       if (!this.danmakuText.trim()) return;
 
-      this.$emit("send-danmaku", {
-        content: this.danmakuText,
-        type: this.currentDanmakuType,
-      });
+      if (!this.videoId) {
+        console.error("Cannot send danmaku: videoId is missing");
+        alert("视频ID缺失，无法发送弹幕");
+        return;
+      }
 
+      console.log("Sending danmaku with currentTime:", this.currentTime);
+
+      // 构建弹幕数据
+      const danmu = {
+        videoId: this.videoId,
+        text: this.danmakuText.trim(),
+        timeInVideo: this.currentTime,
+        mode: this.currentDanmakuType,
+        fontColor: this.currentColor,
+        fontSize: 25,
+        status: 1,
+        duration: 8.0,
+        font: "SimHei",
+        pool: 0,
+        isAdvanced: this.currentDanmakuType === "advanced",
+        isScrolling: this.currentDanmakuType === "scroll",
+        positionX: 50,
+        positionY: 10,
+        track: 0,
+      };
+
+      console.log("Emitting send-danmaku event with data:", danmu);
+
+      // 立即显示弹幕
+      this.$emit("send-danmaku", {
+        ...danmu,
+        isSelf: true, // 标记为自己发送的弹幕
+        textDecoration: "underline", // 添加下划线
+      });
       this.danmakuText = "";
+
+      // 异步发送到后端
+      try {
+        const response = await danmuApi.addDanmu(danmu);
+        console.log("Danmu API response:", response);
+
+        if (response.data !== "发送成功") {
+          console.warn("Danmu send failed:", response.data);
+        }
+      } catch (error) {
+        console.error("发送弹幕失败:", error);
+        console.error("Error details:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
+      }
     },
   },
   watch: {
     showDanmaku(newValue) {
       this.$emit("toggle-danmaku", newValue);
     },
+    videoId(newValue) {
+      if (!newValue) {
+        console.warn("videoId is missing or invalid");
+      }
+    },
+  },
+  created() {
+    if (!this.videoId) {
+      console.error("DanmakuControl: videoId prop is required but not provided");
+    }
   },
 };
 </script>
@@ -88,6 +175,15 @@ export default {
   font-size: 12px;
   background-color: rgba(255, 255, 255, 0.8);
   border: none;
+}
+
+.danmaku-color-selector input[type="color"] {
+  width: 40px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .form-check-label {

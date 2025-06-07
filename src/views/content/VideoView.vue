@@ -20,13 +20,17 @@
                 :url="videoInfo.videoUrl"
                 :videoId="videoId"
                 :isVisible="isDanmakuVisible"
+                :currentTime="currentTime"
                 ref="danmakuDisplay"
                 @play="handlePlay"
+                @update:currentTime="updateCurrentTime"
               />
             </div>
 
             <!-- 弹幕控制条 -->
             <DanmakuControl
+              :video-id="videoId"
+              :current-time="currentTime"
               @send-danmaku="handleSendDanmaku"
               @toggle-danmaku="handleToggleDanmaku"
             />
@@ -83,7 +87,7 @@
             />
 
             <!-- 弹幕列表 -->
-            <DanmakuList :danmakuList="danmakuList || ''" />
+            <DanmakuList :videoId="videoId" />
             <!-- 推荐视频列表 -->
             <RecommendedVideos
               :recommendedVideos="recommendedVideos"
@@ -441,16 +445,21 @@ export default {
       return n.toString();
     },
 
-    // 上报播放量
-    async handlePlay() {
+    // 处理视频播放
+    handlePlay() {
       if (this.hasReportedPlay) return;
       this.hasReportedPlay = true;
       console.log("上报播放量");
       try {
-        await videoApi.reportPlay(this.videoId);
+        videoApi.reportPlay(this.videoId);
       } catch (e) {
         console.error("上报播放量失败", e);
       }
+    },
+
+    // 更新视频时间
+    updateCurrentTime(time) {
+      this.currentTime = time;
     },
 
     // 刷新推荐视频
@@ -473,37 +482,74 @@ export default {
     },
 
     // 处理弹幕发送
-    async handleSendDanmaku(danmaku) {
-      if (!this.userInfo || !this.userInfo.id) {
-        alert("请先登录");
-        return;
-      }
-      console.log("发送弹幕", danmaku);
+    handleSendDanmaku(danmaku) {
+      console.log("VideoView received danmaku:", danmaku);
 
-      // 创建新弹幕对象
-      const newDanmaku = {
-        ...danmaku,
-        userId: this.userInfo.id,
-        username: this.userInfo.username,
-        timestamp: new Date().getTime(),
+      // 转换弹幕数据格式
+      const displayDanmaku = {
+        text: danmaku.text,
+        time: danmaku.timeInVideo,
+        type: danmaku.isAdvanced
+          ? 7
+          : danmaku.isScrolling === false
+          ? danmaku.positionY <= 20
+            ? 1
+            : 2
+          : 0,
+        color: danmaku.fontColor,
+        fontSize: danmaku.fontSize || 25,
+        isSelf: true,
+        isAdvanced: danmaku.isAdvanced,
+        position: danmaku.isAdvanced
+          ? {
+              x: danmaku.positionX || 50,
+              y: danmaku.positionY || 10,
+              duration: danmaku.duration || 8.0,
+              scaleX: danmaku.scaleX || 1,
+              scaleY: danmaku.scaleY || 1,
+              rotation: danmaku.rotation || 0,
+              alpha: danmaku.alpha || 1,
+              font: danmaku.font || "SimHei",
+              fontFamily: danmaku.fontFamily || danmaku.font || "SimHei",
+              style: danmaku.style || 1,
+              isAdvanced: true,
+            }
+          : {
+              x: danmaku.mode === "scroll" ? 100 : 50,
+              y:
+                danmaku.mode === "scroll"
+                  ? (danmaku.track || Math.floor(Math.random() * 10)) * (100 / 10) +
+                    100 / 20
+                  : danmaku.mode === "top"
+                  ? 10
+                  : 90,
+              duration: 8.0,
+              font: danmaku.font || "SimHei",
+              fontFamily: danmaku.font || "SimHei",
+              scaleX: 1,
+              scaleY: 1,
+              rotation: 0,
+              alpha: 1,
+              isAdvanced: false,
+            },
+        track: danmaku.track || 0,
       };
 
-      // 如果弹幕显示组件存在，立即显示新弹幕
-      if (this.$refs.danmakuDisplay) {
-        this.$refs.danmakuDisplay.addNewDanmaku(newDanmaku);
-      }
+      console.log("VideoView converted danmaku:", displayDanmaku);
+      console.log("DanmakuDisplay ref:", this.$refs.danmakuDisplay);
 
-      try {
-        // 发送到服务器
-        await videoApi.sendDanmaku(this.videoId, danmaku);
-      } catch (e) {
-        console.error("弹幕发送失败", e);
+      // 将转换后的弹幕传递给 DanmakuDisplay 组件
+      if (this.$refs.danmakuDisplay) {
+        this.$refs.danmakuDisplay.addNewDanmaku(displayDanmaku);
+        console.log("Danmaku passed to DanmakuDisplay");
+      } else {
+        console.error("DanmakuDisplay ref not found");
       }
     },
 
     // 处理弹幕显示
-    handleToggleDanmaku() {
-      this.isDanmakuVisible = !this.isDanmakuVisible;
+    handleToggleDanmaku(isVisible) {
+      this.isDanmakuVisible = isVisible;
     },
 
     // 处理弹幕类型切换
@@ -595,6 +641,19 @@ export default {
       } catch (error) {
         console.error("回复发送失败:", error);
         alert("回复发送失败，请稍后重试");
+      }
+    },
+
+    // 处理评论点赞
+    async handleLike(commentId) {
+      try {
+        const response = await commentApi.likeComment(commentId);
+        if (response.code === 200) {
+          // 更新评论列表
+          await this.getCommentList();
+        }
+      } catch (error) {
+        console.error("点赞失败:", error);
       }
     },
   },

@@ -12,17 +12,21 @@
           <tr>
             <th>时间</th>
             <th>弹幕内容</th>
+            <th>类型</th>
             <th>发送时间</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="!danmakuList || danmakuList.length === 0">
-            <td colspan="3" class="no-danmaku">暂无弹幕</td>
+          <tr v-if="!mergedDanmakuList || mergedDanmakuList.length === 0">
+            <td colspan="4" class="no-danmaku">暂无弹幕</td>
           </tr>
-          <tr v-else v-for="(danmaku, index) in danmakuList" :key="index">
+          <tr v-else v-for="(danmaku, index) in mergedDanmakuList" :key="index">
             <td>{{ formatTime(danmaku.time) }}</td>
-            <td>{{ danmaku.text || danmaku.content }}</td>
-            <td>{{ formatSendTime(danmaku.timestamp) }}</td>
+            <td>
+              {{ limitTextLength(danmaku.text) || limitTextLength(danmaku.content) }}
+            </td>
+            <td>{{ getDanmakuType(danmaku.type) }}</td>
+            <td>{{ formatDate(danmaku.timestamp) }}</td>
           </tr>
         </tbody>
       </table>
@@ -31,20 +35,60 @@
 </template>
 
 <script>
+import { danmakuApi } from "@/api/content/danmaku";
+import danmuApi from "@/api/danmu";
+import { parseDanmakuXml } from "@/utils/danmakuParser";
+import { convertDbDanmuToFrontend } from "@/utils/convertDbDanmuToFrontend";
+import { limitTextLength, formatDate } from "@/utils/date";
+
 export default {
   name: "DanmakuList",
   props: {
-    danmakuList: {
-      type: Array,
-      default: () => [],
+    videoId: {
+      type: String,
+      required: true,
     },
   },
   data() {
     return {
       isShow: false,
+      xmlDanmaku: [],
+      dbDanmaku: [],
     };
   },
+  computed: {
+    mergedDanmakuList() {
+      // 合并 XML 和数据库弹幕
+      const merged = [...this.xmlDanmaku, ...this.dbDanmaku];
+      // 按时间排序
+      return merged.sort((a, b) => a.time - b.time);
+    },
+  },
   methods: {
+    limitTextLength,
+    formatDate,
+    async fetchDanmakuData() {
+      try {
+        // 1. 获取 XML 弹幕
+        try {
+          const responseData = await danmakuApi.getDanmakuById(this.videoId);
+          if (responseData.data && responseData.data.url) {
+            const url = responseData.data.url;
+            const response = await fetch(url);
+            const xmlText = await response.text();
+            this.xmlDanmaku = parseDanmakuXml(xmlText);
+          }
+        } catch (xmlError) {
+          console.warn("XML弹幕获取失败:", xmlError);
+        }
+
+        // 2. 获取数据库弹幕
+        const dbResponse = await danmuApi.getDanmuList(this.videoId);
+        this.dbDanmaku = (dbResponse.data || []).map(convertDbDanmuToFrontend);
+      } catch (error) {
+        console.error("获取弹幕数据失败:", error);
+      }
+    },
     toggleShow() {
       this.isShow = !this.isShow;
     },
@@ -53,15 +97,24 @@ export default {
       const seconds = Math.floor(time % 60);
       return `${minutes}:${seconds.toString().padStart(2, "0")}`;
     },
-    formatSendTime(timestamp) {
-      if (!timestamp) return "";
-      const date = new Date(timestamp * 1000); // 如果是秒级时间戳
-      // const date = new Date(timestamp); // 如果是毫秒级时间戳
-      const month = (date.getMonth() + 1).toString().padStart(2, "0");
-      const day = date.getDate().toString().padStart(2, "0");
-      const hour = date.getHours().toString().padStart(2, "0");
-      const minute = date.getMinutes().toString().padStart(2, "0");
-      return `${month}-${day} ${hour}:${minute}`;
+    getDanmakuType(type) {
+      const types = {
+        0: "滚动",
+        1: "顶部",
+        2: "底部",
+        7: "高级",
+      };
+      return types[type] || "未知";
+    },
+  },
+  watch: {
+    videoId: {
+      immediate: true,
+      handler(newId) {
+        if (newId) {
+          this.fetchDanmakuData();
+        }
+      },
     },
   },
 };
@@ -94,41 +147,12 @@ export default {
   padding: 8px 0;
 }
 
-.no-danmaku {
-  padding: 20px;
-  text-align: center;
-  color: #999;
-}
-
-.danmaku-items {
-  padding: 0 16px;
-}
-
-.danmaku-item {
-  display: flex;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #f5f5f5;
-}
-
-.danmaku-time {
-  color: #999;
-  font-size: 12px;
-  margin-right: 8px;
-  min-width: 45px;
-}
-
-.danmaku-content {
-  font-size: 14px;
-  color: #333;
-  word-break: break-all;
-}
-
 .danmaku-table {
   width: 100%;
   border-collapse: collapse;
   background: #fff;
 }
+
 .danmaku-table th,
 .danmaku-table td {
   border-bottom: 1px solid #f5f5f5;
@@ -136,14 +160,17 @@ export default {
   font-size: 13px;
   text-align: left;
 }
+
 .danmaku-table th {
   background: #f8f9fa;
   color: #666;
   font-weight: 500;
 }
+
 .no-danmaku {
   text-align: center;
   color: #999;
+  padding: 20px;
 }
 
 .toggle-btn {
@@ -159,6 +186,7 @@ export default {
   cursor: pointer;
   transition: background 0.2s;
 }
+
 .toggle-btn:hover {
   background: #d0d3d6;
 }

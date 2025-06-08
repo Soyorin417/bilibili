@@ -68,7 +68,7 @@
       </ul>
     </li>
     <li class="nav-item dropdown">
-      <router-link :to="`/collection`" class="custom-link"
+      <router-link :to="`/profile/collection`" class="custom-link"
         ><div class="nav-link">
           <CollectIcon :fill="fill" />
           <span

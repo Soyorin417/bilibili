@@ -8,8 +8,8 @@ export default {
   },
 
   // 添加评论
-  addComment(commentData) {
-    return request.post('/comments/add', commentData);
+  addComment(data) {
+    return request.post("/comments/add", data);
   },
 
   // 删除评论
@@ -24,7 +24,7 @@ export default {
 
   // 添加回复
   addReply(replyData) {
-    return request.post('/reply/add', replyData);
+    return request.post("/reply/add", replyData);
   },
 
   // 删除回复
@@ -38,23 +38,23 @@ export default {
   },
 
   // 点赞评论
-  likeComment(commentId, userUid) {
-    return request.post('/comment-like/like', null, {
-      params: { commentId, userUid }
+  likeComment(commentId) {
+    return request.post("/comment-like/like", null, {
+      params: { commentId},
     });
   },
 
   // 取消点赞评论
-  unlikeComment(commentId, userUid) {
-    return request.post('/comment-like/unlike', null, {
-      params: { commentId, userUid }
+  unlikeComment(commentId) {
+    return request.post("/comment-like/unlike", null, {
+      params: { commentId },
     });
   },
 
   // 检查评论点赞状态
   checkLikeStatus(commentId, userUid) {
-    return request.get('/comment-like/is-liked', {
-      params: { commentId, userUid }
+    return request.get("/comment-like/is-liked", {
+      params: { commentId, userUid },
     });
-  }
+  },
 };

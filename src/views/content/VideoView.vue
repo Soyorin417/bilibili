@@ -65,10 +65,10 @@
             <!-- 评论列表 -->
             <div class="comments-section mt-4">
               <h5 class="mb-3">评论 ({{ commentData.length }})</h5>
-              <CommentInput @send-comment="handleNewComment" />
               <CommentList
                 ref="commentList"
-                :comments="commentData"
+                :video-id="videoId"
+                :user-info="userInfo"
                 @like="handleLike"
                 @comment-deleted="getCommentList"
                 @send-reply="handleSendReply"
@@ -107,7 +107,6 @@ import RecommendedVideos from "@/components/content/video/RecommendedVideos.vue"
 import AuthorInfo from "@/components/content/video/AuthorInfo.vue";
 import DanmakuControl from "@/components/content/video/DanmakuControl.vue";
 import DanmakuDisplay from "@/components/content/video/DanmakuDisplay.vue";
-import CommentInput from "@/components/content/video/CommentInput.vue";
 import CommentList from "@/components/content/video/CommentList.vue";
 import DanmakuList from "@/components/content/video/DanmakuList.vue";
 import VideoActions from "@/components/content/video/VideoActions.vue";
@@ -124,7 +123,6 @@ export default {
     AuthorInfo,
     DanmakuControl,
     DanmakuDisplay,
-    CommentInput,
     CommentList,
     DanmakuList,
     VideoActions,

@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-@TableName("user_history")
+@TableName("watch_history")
 public class UserHistory {
 
     @TableId(type = IdType.AUTO)

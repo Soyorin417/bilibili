@@ -14,20 +14,21 @@ import java.util.List;
 public class NavBarActivityController {
 
     @Autowired
-    private NavBarService NavBarService;
+    private NavBarService navBarService;
 
     @GetMapping("/activity")
     public List<NavBarDTO> getRightActivityList() {
-        return NavBarService.getRightActivities();
+        return navBarService.getRightActivities();
     }
 
     @GetMapping("/collect")
     public List<NavBarDTO> getCollectActivityList() {
-        return NavBarService.getCollection();
+
+        return navBarService.getCollection();
     }
 
     @GetMapping("/history")
     public List<NavBarDTO> getHistoryActivityList() {
-        return NavBarService.getHistory();
+        return navBarService.getHistory();
     }
 }

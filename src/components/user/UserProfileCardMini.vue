@@ -2,7 +2,7 @@
   <div class="user-card-mini">
     <!-- 用户头像 -->
     <div class="user-header">
-      <img class="avatar" :src="avatar" />
+      <img class="avatar" :src="avatar" @click="clickAvatar" />
       <div class="nickname">{{ user.username || "未登录" }}</div>
       <div class="coins">
         硬币: <span>{{ user.coin || 0 }}</span> &nbsp; B币:
@@ -64,6 +64,7 @@
 
 <script>
 import { mapGetters } from "vuex";
+import { goToUserProfile } from "@/utils/navigationUtils";
 
 export default {
   name: "UserProfileCardMini",
@@ -79,6 +80,9 @@ export default {
   },
 
   methods: {
+    async clickAvatar() {
+      await goToUserProfile(this.$router, this.userInfo.id);
+    },
     logout() {
       this.$emit("logout"); // 告诉父组件你要登出
     },

@@ -7,8 +7,8 @@ export const collectApi = {
     
   },
 
-  getCollectionDetail: () => {
-    return request.get(`/api/collect/detail`);
+  getCollectionDetail: (userId) => {
+    return request.get(`/api/collect/detail`,{params: { userId }});
   },
 
   // 收藏视频

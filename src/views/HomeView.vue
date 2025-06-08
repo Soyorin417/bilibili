@@ -131,6 +131,7 @@ import TopNav from "@/components/navBar/TopNav.vue";
 import { videoApi } from "@/api/content/video";
 import { carouselApi } from "@/api/admin/carousel";
 import { formatDateType } from "@/utils/date";
+import { parseVideoCard } from "@/utils/videoCardParser";
 
 export default {
   name: "HomeView",
@@ -161,17 +162,11 @@ export default {
         const response = await videoApi.getVideoCards();
         console.log("获取到的视频数据:", response);
         if (response.data && Array.isArray(response.data)) {
-          this.videoInfos = response.data.map((video) => ({
-            id: video.id,
-            title: video.title || "未知标题",
-            views: video.views || 0,
-            comments: video.comments || 0,
-            image: video.image || "http://113.45.69.13:9000/image/lucy_moon.jpg",
-            duration: video.duration || "00:00",
-            author: video.author || "未知作者",
-            time: formatDateType(video.time),
-          }));
+          const videoInfosWithComments = response.data.map((video) => {
+            return parseVideoCard(video);
+          });
 
+          this.videoInfos = videoInfosWithComments;
           this.videoCards = this.videoInfos.slice(0, 6);
           this.otherVideos = this.videoInfos.slice(6);
 

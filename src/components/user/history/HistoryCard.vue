@@ -1,7 +1,7 @@
 <template>
   <div class="history-card">
     <div class="cover">
-      <img :src="item.cover" alt="cover" />
+      <img :src="item.image" alt="cover" />
       <span class="duration">{{ item.duration }}</span>
     </div>
     <div class="info">

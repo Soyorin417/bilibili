@@ -3,7 +3,7 @@
     <NavBar />
 
     <div class="profile-container mt-2">
-      <SpaceTopBar />
+      <SpaceTopBar :userId="userId" />
       <div class="row mt-4">
         <!-- 主内容区 -->
         <div class="col-lg-9 col-md-8">
@@ -77,52 +77,60 @@ export default {
       videos: [],
       posts: [],
       userInfo: {},
+      userId: null,
     };
   },
-  async created() {
-    try {
-      const response = await dynamicApi.getUserDynamics();
-      console.log("API Response:", response);
-      if (response.status === 200) {
-        const dynamicData = Array.isArray(response.data) ? response.data : [];
-
-        this.posts = dynamicData.map((video) => ({
-          id: video.id,
-          user_id: video.authorId,
-          username: video.authorName || "用户名",
-          avatar: video.avatar || "默认头像url",
-          time: video.time,
-          content: limitTextLength(video.title || video.description || ""),
-          video: {
-            id: video.id,
-            image: video.image || "",
-            title: video.title || "无标题",
-            duration: video.duration || "00:00",
-            playCount: formatCount(video.views || 0),
-            commentCount: formatCount(video.comments || 0),
-          },
-          comments: formatCount(video.comments) || 0,
-          likeCount: video.likeCount || 0,
-          shared: video.shareCount || 0,
-          coinCount: video.coinCount || 0,
-          description: video.description || "",
-          status: video.status || "",
-          liked: false,
-          is_image: true,
-        }));
-        console.log("处理后的动态数据:", this.posts);
-      } else {
-        console.error("获取动态列表失败: 无效的响应状态码", response.status);
-        this.posts = [];
-      }
-      this.userInfo = JSON.parse(localStorage.getItem("userInfo")) || {}; // Ensure userInfo is loaded
-    } catch (error) {
-      console.error("获取动态列表失败:", error);
-      this.posts = [];
+  mounted() {
+    this.userId = this.$route.params.userId;
+    console.log("URL里的userId:", this.userId);
+    if (this.userId) {
+      this.fetchDynamics();
     }
   },
   methods: {
     formatDate,
+    async fetchDynamics() {
+      try {
+        const response = await dynamicApi.getUserDynamics(this.userId);
+        console.log("API Response:", response);
+        if (response.status === 200) {
+          const dynamicData = Array.isArray(response.data) ? response.data : [];
+
+          this.posts = dynamicData.map((video) => ({
+            id: video.id,
+            user_id: video.authorId,
+            username: video.authorName || "用户名",
+            avatar: video.avatar || "默认头像url",
+            time: video.time,
+            content: limitTextLength(video.title || video.description || ""),
+            video: {
+              id: video.id,
+              image: video.image || "",
+              title: video.title || "无标题",
+              duration: video.duration || "00:00",
+              playCount: formatCount(video.views || 0),
+              commentCount: formatCount(video.comments || 0),
+            },
+            comments: formatCount(video.comments) || 0,
+            likeCount: video.likeCount || 0,
+            shared: video.shareCount || 0,
+            coinCount: video.coinCount || 0,
+            description: video.description || "",
+            status: video.status || "",
+            liked: false,
+            is_image: true,
+          }));
+          console.log("处理后的动态数据:", this.posts);
+        } else {
+          console.error("获取动态列表失败: 无效的响应状态码", response.status);
+          this.posts = [];
+        }
+        this.userInfo = JSON.parse(localStorage.getItem("userInfo")) || {}; // Ensure userInfo is loaded
+      } catch (error) {
+        console.error("获取动态列表失败:", error);
+        this.posts = [];
+      }
+    },
     goToVideo(id) {
       console.log("DynamicView: Received view-video event with ID:", id);
       if (id) {
@@ -130,6 +138,12 @@ export default {
       } else {
         console.warn("DynamicView: Cannot navigate, received invalid video ID:", id);
       }
+    },
+  },
+  watch: {
+    "$route.params.userId"(newId) {
+      this.userId = newId;
+      this.fetchDynamics();
     },
   },
 };

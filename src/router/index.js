@@ -70,9 +70,9 @@ import DynamicView from '@/views/user/profile/DynamicView.vue'
 const routes = [
   //个人空间
   {
-    path: '/profile/space',
-    name: 'SpaceView',
-    component: SpaceView,
+    path: '/:userId/profile',
+    name: 'UserProfile',
+    component: SpaceView
   },
   //硬币
   {
@@ -124,7 +124,7 @@ const routes = [
   },
   //个人动态页面
   {
-    path: '/profile/dynamic',
+    path: '/profile/:userId/dynamic',
     name:'DynamicView',
     component:DynamicView
   },
@@ -290,7 +290,7 @@ const routes = [
   },
   // 收藏页面路由
   {
-    path: '/profile/collection',
+    path: '/profile/:userId/collection',
     name: 'CollectionView',
     component: CollectionView
   },

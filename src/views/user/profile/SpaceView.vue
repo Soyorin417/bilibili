@@ -3,7 +3,7 @@
     <NavBar />
 
     <div class="profile-container mt-2">
-      <SpaceTopBar />
+      <SpaceTopBar :userId="userId" />
       <div class="row mt-4">
         <!-- 主内容区 -->
         <div class="col-lg-9 col-md-8">
@@ -92,30 +92,44 @@ export default {
   components: { NavBar, SpaceTopBar },
   data() {
     return {
+      userId: null,
       videos: [],
     };
   },
-  async created() {
-    try {
-      const response = await spaceApi.getUserPublishedVideos();
-      console.log(response.data);
-      if (response.status === 200) {
-        this.videos = response.data.map((video) => ({
-          ...video,
-          playCount: formatCount(video.views || 0),
-          commentCount: formatCount(video.comments || 0),
-          duration: video.duration || "00:00",
-        }));
-        console.log("处理后的视频数据:", this.videos);
-      }
-    } catch (error) {
-      console.error("获取视频列表失败:", error);
-      this.videos = [];
+  mounted() {
+    this.userId = this.$route.params.userId;
+    console.log("URL里的userId:", this.userId);
+    if (this.userId) {
+      this.fetchVideos();
     }
   },
   methods: {
+    async fetchVideos() {
+      try {
+        const response = await spaceApi.getUserPublishedVideos(this.userId);
+        console.log(response.data);
+        if (response.status === 200) {
+          this.videos = response.data.map((video) => ({
+            ...video,
+            playCount: formatCount(video.views || 0),
+            commentCount: formatCount(video.comments || 0),
+            duration: video.duration || "00:00",
+          }));
+          console.log("处理后的视频数据:", this.videos);
+        }
+      } catch (error) {
+        console.error("获取视频列表失败:", error);
+        this.videos = [];
+      }
+    },
     goToVideo(id) {
       this.$router.push(`/video/${id}`);
+    },
+  },
+  watch: {
+    "$route.params.userId"(newId) {
+      this.userId = newId;
+      this.fetchVideos();
     },
   },
 };

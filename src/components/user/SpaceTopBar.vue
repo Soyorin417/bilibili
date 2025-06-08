@@ -1,25 +1,25 @@
 <template>
   <nav class="space-topbar">
     <div class="nav-list">
-      <router-link to="/profile/space" class="nav-item" exact>
+      <router-link :to="`/${userId}/profile`" class="nav-item" exact>
         <home theme="outline" size="22" fill="#0eb350" :strokeWidth="3" />
         <span>首页</span>
       </router-link>
-      <router-link to="/profile/dynamic" class="nav-item">
+      <router-link :to="`/profile/${userId}/dynamic`" class="nav-item">
         <windmill-two theme="outline" size="22" fill="#ff69b4" />
         <span>动态</span>
       </router-link>
-      <router-link to="/profile/video" class="nav-item">
+      <router-link :to="`/profile/${userId}/video`" class="nav-item">
         <i class="bi bi-tv icon" style="color: #00b5e5"></i>
         <span>投稿</span>
         <span class="count">48</span>
       </router-link>
-      <router-link to="/profile/list" class="nav-item">
+      <router-link :to="`/profile/${userId}/list`" class="nav-item">
         <i class="bi bi-stack icon" style="color: #3ac0ff"></i>
         <span>合集</span>
         <span class="count">1</span>
       </router-link>
-      <router-link to="/profile/collection" class="nav-item">
+      <router-link :to="`/profile/${userId}/collection`" class="nav-item">
         <CollectIcon :fill="fill" />
         <span>收藏</span>
         <span class="count">{{ collectCount }}</span>
@@ -47,6 +47,10 @@ export default {
     collectCount: {
       type: Number,
       default: 0,
+    },
+    userId: {
+      type: [String, Number],
+      required: true,
     },
   },
 };

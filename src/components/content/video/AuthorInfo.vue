@@ -8,6 +8,7 @@
           width="80"
           height="80"
           alt="author avatar"
+          @click="goToProfile"
         />
       </div>
       <div class="author-details">
@@ -57,7 +58,7 @@
 import axios from "axios";
 import { Message } from "@element-plus/icons-vue";
 import { goToChat } from "@/utils/chatUtils";
-
+import { goToUserProfile } from "@/utils/navigationUtils";
 export default {
   name: "AuthorInfo",
   components: {
@@ -136,6 +137,9 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    async goToProfile() {
+      await goToUserProfile(this.$router, this.videoInfo.authorId);
     },
     async refreshFollowCount() {
       // 假设有接口能查作者粉丝数

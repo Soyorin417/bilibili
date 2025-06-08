@@ -8,7 +8,13 @@
         aria-expanded="false"
         :class="{ avatar: isAvatarVisible }"
       >
-        <img :src="avatar" alt="用户头像" class="avart-img" v-if="isAvatarVisible" />
+        <img
+          :src="avatar"
+          alt="用户头像"
+          class="avart-img"
+          v-if="isAvatarVisible"
+          @click="clickAvatar"
+        />
       </a>
 
       <div class="dropdown-menu card" style="padding: 0; border: none; box-shadow: none">
@@ -73,7 +79,7 @@
       </ul>
     </li>
     <li class="nav-item dropdown">
-      <router-link :to="`/profile/collection`" class="custom-link"
+      <router-link :to="collectionUrl" class="custom-link"
         ><div class="nav-link">
           <CollectIcon :fill="fill" />
           <span
@@ -165,6 +171,8 @@ import { collectApi } from "@/api/user/collect.js";
 import { historyApi } from "@/api/user/history.js";
 import { activityApi } from "@/api/activity.js";
 import { messageApi } from "@/api/message/message";
+import { goToUserProfile } from "@/utils/navigationUtils";
+
 export default {
   name: "NavBarRightMenu",
   components: {
@@ -200,6 +208,9 @@ export default {
     this.getUnreadCount();
   },
   methods: {
+    async clickAvatar() {
+      await goToUserProfile(this.$router, this.userInfo.id);
+    },
     async getUnreadCount() {
       try {
         const res = await messageApi.getUnreadCount();
@@ -251,6 +262,9 @@ export default {
     },
     avatar() {
       return this.user.avatar;
+    },
+    collectionUrl() {
+      return `/profile/${this.user.id}/collection`;
     },
   },
 };

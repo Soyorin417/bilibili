@@ -3,7 +3,7 @@
     <NavBar />
 
     <div class="profile-container mt-2">
-      <SpaceTopBar :collect-count="videos.length" />
+      <SpaceTopBar :collect-count="videos.length" :userId="userId" />
       <div class="row mt-4">
         <!-- 主内容区 -->
         <div class="col-lg-9 col-md-8">
@@ -96,7 +96,12 @@ export default {
   data() {
     return {
       videos: [],
+      userId: null,
     };
+  },
+  mounted() {
+    this.userId = this.$route.params.userId;
+    this.getCollectionDetail();
   },
   computed: {
     ...mapGetters("user", ["userInfo", "isLogin"]),
@@ -104,31 +109,37 @@ export default {
       return this.userInfo;
     },
   },
-  async created() {
-    try {
-      const response = await collectApi.getCollectionDetail();
-      console.log(response, "res");
-      if (response.status === 200) {
-        const collects = Array.isArray(response.data)
-          ? response.data
-          : response.data.data || [];
-        this.videos = collects.map((video) => ({
-          ...video,
-          videoId: video.id || video.videoId,
-          playCount: formatCount(video.views || 0),
-          commentCount: formatCount(video.comments || 0),
-          duration: video.duration || "00:00",
-        }));
-        console.log("处理后的视频数据:", this.videos);
-      }
-    } catch (error) {
-      console.error("获取收藏列表失败:", error);
-      this.videos = [];
-    }
-  },
   methods: {
+    async getCollectionDetail() {
+      try {
+        const response = await collectApi.getCollectionDetail(this.userId);
+        console.log(response, "res");
+        if (response.status === 200) {
+          const collects = Array.isArray(response.data)
+            ? response.data
+            : response.data.data || [];
+          this.videos = collects.map((video) => ({
+            ...video,
+            videoId: video.id || video.videoId,
+            playCount: formatCount(video.views || 0),
+            commentCount: formatCount(video.comments || 0),
+            duration: video.duration || "00:00",
+          }));
+          console.log("处理后的视频数据:", this.videos);
+        }
+      } catch (error) {
+        console.error("获取收藏列表失败:", error);
+        this.videos = [];
+      }
+    },
     goToVideo(id) {
       this.$router.push(`/video/${id}`);
+    },
+  },
+  watch: {
+    // 监听路由变化，保证userId更新
+    "$route.params.userId"(newId) {
+      this.userId = newId;
     },
   },
 };

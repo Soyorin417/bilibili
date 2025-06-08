@@ -109,7 +109,7 @@
                     <span class="video-duration">{{ item.duration }}</span>
                     <div class="video-stats">
                       <span><i class="bi bi-play-fill"></i> {{ item.views }}</span>
-                      <span><i class="bi bi-chat-fill"></i> {{ item.danmaku }}</span>
+                      <span><i class="bi bi-chat-fill"></i> {{ item.comments }}</span>
                     </div>
                   </div>
                   <div class="video-info">
@@ -204,7 +204,7 @@ export default {
           uploaderAvatar: video.uploaderAvatar,
           views: formatCount(video.views || 0),
           danmaku: formatCount(video.danmaku_count || 0),
-
+          comments: video.comments,
           time: formatDateType(video.time),
         }));
 

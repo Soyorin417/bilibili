@@ -1,5 +1,5 @@
 <template>
-  <div class="history-card">
+  <div class="history-card" @click="navigateToVideo">
     <div class="cover">
       <img :src="item.image" alt="cover" />
       <span class="duration">{{ item.duration }}</span>
@@ -11,9 +11,9 @@
         <span>{{ item.time }}</span>
         <span>{{ item.category }}</span>
       </div>
-      <div class="actions">
-        <i class="bi bi-trash" title="删除"></i>
-        <i class="bi bi-star" title="收藏"></i>
+      <div class="card-actions">
+        <i class="bi bi-play-circle" title="播放" @click.stop="navigateToVideo"></i>
+        <i class="bi bi-trash" title="删除" @click.stop="$emit('delete', item.id)"></i>
       </div>
     </div>
   </div>
@@ -21,8 +21,18 @@
 
 <script>
 export default {
+  name: "HistoryCard",
   props: {
-    item: Object,
+    item: {
+      type: Object,
+      required: true,
+    },
+  },
+  emits: ["delete"],
+  methods: {
+    navigateToVideo() {
+      this.$router.push(`/video/${this.item.id}`);
+    },
   },
 };
 </script>
@@ -86,13 +96,13 @@ export default {
   gap: 8px;
   margin-bottom: 6px;
 }
-.actions {
+.card-actions {
   display: flex;
   gap: 12px;
   color: #b1b1b1;
   font-size: 16px;
 }
-.actions i:hover {
+.card-actions i:hover {
   color: #00aeec;
   cursor: pointer;
 }

@@ -13,7 +13,7 @@
             placeholder="搜索或输入up主/昵称"
             class="search-input"
           />
-          <el-button>清除全部</el-button>
+          <el-button @click="clearAll">清除全部</el-button>
           <el-button>批量管理</el-button>
         </div>
       </div>
@@ -26,7 +26,12 @@
         <div class="timeline-content">
           <HistoryTimeline :groups="groupedHistory" />
           <div class="history-list">
-            <HistoryCard v-for="item in filteredHistory" :key="item.id" :item="item" />
+            <HistoryCard
+              v-for="item in filteredHistory"
+              :key="item.id"
+              :item="item"
+              @delete="deleteOne"
+            />
           </div>
         </div>
       </div>
@@ -41,6 +46,7 @@ import HistoryCard from "@/components/user/history/HistoryCard.vue";
 import HistoryTimeline from "@/components/user/history/HistoryTimeline.vue";
 import { watchApi } from "@/api/user/watchApi";
 import { parseVideoCard } from "@/utils/videoCardParser";
+import { ElMessage, ElMessageBox } from "element-plus";
 
 export default {
   name: "WatchHistoryView",
@@ -51,13 +57,7 @@ export default {
     HistoryTimeline,
   },
   async created() {
-    const res = await watchApi.getWatchHistory();
-    if (res?.data && Array.isArray(res.data)) {
-      this.historyList = res.data.map(parseVideoCard);
-    } else {
-      console.warn("Watch history data is not an array:", res?.data);
-      this.historyList = [];
-    }
+    await this.fetchHistory();
   },
   data() {
     return {
@@ -66,6 +66,59 @@ export default {
       activeTab: "综合",
       historyList: [],
     };
+  },
+  methods: {
+    async fetchHistory() {
+      const res = await watchApi.getWatchHistory();
+      if (res?.data && Array.isArray(res.data)) {
+        this.historyList = res.data.map(parseVideoCard);
+      } else {
+        console.warn("Watch history data is not an array:", res?.data);
+        this.historyList = [];
+      }
+    },
+    async deleteOne(videoId) {
+      try {
+        await ElMessageBox.confirm("确定要删除这条观看记录吗？", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
+        });
+        const res = await watchApi.deleteOne(videoId);
+        if (res.data === "删除成功") {
+          ElMessage.success("删除成功");
+          await this.fetchHistory();
+        } else {
+          ElMessage.error(res.data || "删除失败");
+        }
+      } catch (error) {
+        if (error !== "cancel") {
+          console.error("删除失败:", error);
+          ElMessage.error("删除失败");
+        }
+      }
+    },
+    async clearAll() {
+      try {
+        await ElMessageBox.confirm("确定要清空所有观看历史吗？此操作不可恢复！", "警告", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
+        });
+        const res = await watchApi.clearAll();
+        if (res.data === "已清空历史记录") {
+          ElMessage.success("已清空历史记录");
+          this.historyList = [];
+        } else {
+          ElMessage.error("清空失败");
+        }
+      } catch (error) {
+        if (error !== "cancel") {
+          console.error("清空失败:", error);
+          ElMessage.error("清空失败");
+        }
+      }
+    },
   },
   computed: {
     filteredHistory() {

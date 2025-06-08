@@ -224,15 +224,14 @@ export default {
         const res = await activityApi.getUserActivity();
 
         this.navbarDynamics = res.data;
-      } catch (e) {
-        console.error("获取动态失败", e);
+      } catch (error) {
+        console.error("获取动态失败", error);
       }
     },
     async fetchNabarCollections() {
       try {
         const res = await collectApi.getUserCollectedVideos();
         this.nabarCollections = res.data;
-        console.log(this.nabarCollections, "this.nabarCollections");
       } catch (error) {
         console.error("获取收藏列表失败:", error);
       }

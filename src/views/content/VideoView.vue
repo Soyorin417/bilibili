@@ -101,6 +101,7 @@
 </template>
 
 <script>
+import { watchApi } from "@/api/user/watchApi";
 import VideoBar from "@/components/navBar/VideoBar.vue";
 import { mapGetters } from "vuex";
 import RecommendedVideos from "@/components/content/video/RecommendedVideos.vue";
@@ -158,20 +159,34 @@ export default {
       immediate: true,
       handler(to) {
         if (to.params.id) {
-          // 重置数据
+          const videoId = to.params.id;
+
+          // 重置播放状态
           this.danmakuList = [];
           this.activeDanmaku = [];
           if (this.$refs.videoPlayer) {
             this.$refs.videoPlayer.currentTime = 0;
             this.$refs.videoPlayer.pause();
           }
-          // 加载新数据
-          this.loadVideoData(to.params.id);
-          this.getDanmakuList(to.params.id);
+
+          // 加载新视频数据
+          this.loadVideoData(videoId);
+          this.getDanmakuList(videoId);
+
+          // 记录观看历史
+          watchApi
+            .recordWatch(videoId)
+            .then(() => {
+              console.log("观看历史已记录");
+            })
+            .catch((error) => {
+              console.error("记录观看历史失败", error);
+            });
         }
       },
     },
   },
+
   methods: {
     // 获取视频列表
     async getVideoInfos() {

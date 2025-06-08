@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface SessionService {
 
-    void saveSession(Session session);
+    void addSession(Session session);
 
     List<Session> getAllSessions();
 

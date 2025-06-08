@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/reply")
@@ -25,14 +26,27 @@ public class ReplyInfoController {
 
     // 新增一条回复
     @PostMapping("/add")
-    public ResponseEntity<String> addReply(@RequestBody ReplyDTO replyDTO) {
-        boolean success = replyInfoService.saveReply(replyDTO);
-        if (success) {
+    public ResponseEntity<String> addReply(@RequestBody Map<String, Object> data) {
+        try {
+            // 参数校验
+            if (!data.containsKey("commentId") || !data.containsKey("content")) {
+                return ResponseEntity.badRequest().body("参数缺失");
+            }
+
+            Long commentId = Long.valueOf(data.get("commentId").toString());
+            String content = data.get("content").toString();
+
+            replyInfoService.addReply(commentId, content);
             return ResponseEntity.ok("回复添加成功");
-        } else {
-            return ResponseEntity.badRequest().body("添加失败");
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("添加失败");
         }
     }
+
+
 
     @PutMapping("/update/{id}")
     public ResponseEntity<String> updateReply(@PathVariable Long id, @RequestBody ReplyDTO replyDTO) {

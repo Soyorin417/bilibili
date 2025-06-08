@@ -22,7 +22,7 @@ public class SessionController {
 
     @PostMapping
     public void saveSession(@RequestBody Session session) {
-        sessionService.saveSession(session);
+        sessionService.addSession(session);
     }
 
     @GetMapping

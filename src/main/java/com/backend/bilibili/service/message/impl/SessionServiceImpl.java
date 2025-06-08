@@ -28,9 +28,25 @@ public class SessionServiceImpl implements SessionService {
     private UserInfoMapper userInfoMapper;
 
     @Override
-    public void saveSession(Session session) {
-        sessionMapper.insert(session);
+    public void addSession(Session session) {
+        QueryWrapper<Session> queryWrapper = new QueryWrapper<>();
+        queryWrapper
+                .and(wrapper -> wrapper
+                        .eq("user1_id", session.getUser1Id())
+                        .eq("user2_id", session.getUser2Id())
+                )
+                .or(wrapper -> wrapper
+                        .eq("user1_id", session.getUser2Id())
+                        .eq("user2_id", session.getUser1Id())
+                );
+
+        Session existing = sessionMapper.selectOne(queryWrapper);
+
+        if (existing == null) {
+            sessionMapper.insert(session);
+        }
     }
+
 
     @Override
     public List<Session> getAllSessions() {

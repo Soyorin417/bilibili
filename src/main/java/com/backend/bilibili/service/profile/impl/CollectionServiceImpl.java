@@ -8,6 +8,7 @@ import com.backend.bilibili.pojo.user.UserInfo;
 import com.backend.bilibili.pojo.video.VideoInfo;
 import com.backend.bilibili.service.dto.VideoCardDTO;
 import com.backend.bilibili.service.profile.CollectionService;
+import com.backend.bilibili.service.user.utils.VideoCardConvertUtil;
 import com.backend.bilibili.utils.UserTokenUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,9 @@ public class CollectionServiceImpl implements CollectionService {
     @Autowired
     private UserCollectMapper userCollectMapper;
 
+    @Autowired
+    private VideoCardConvertUtil videoCardConvertUtil;
+
     @Override
     public List<VideoCardDTO> getCollectionDetail() {
         Long userId = UserTokenUtil.getUid();
@@ -48,35 +52,12 @@ public class CollectionServiceImpl implements CollectionService {
                 .map(UserCollect::getVideoId)
                 .collect(Collectors.toList());
 
+        // 查询视频信息
         List<VideoInfo> videos = videoInfoMapper.selectBatchIds(videoIds);
 
-        // 批量查询作者信息
-        Set<Long> authorIds = videos.stream()
-                .map(VideoInfo::getAuthorId)
-                .collect(Collectors.toSet());
 
-        List<UserInfo> authors = userInfoMapper.selectBatchIds(authorIds);
-        Map<Long, UserInfo> authorMap = authors.stream()
-                .collect(Collectors.toMap(UserInfo::getUid, u -> u));
-
-        // 封装为 VideoCardDTO
-        return videos.stream().map(video -> {
-            VideoCardDTO dto = new VideoCardDTO();
-            dto.setId((long) video.getId());
-            dto.setTitle(video.getTitle());
-            dto.setViews(video.getViews());
-            dto.setComments(video.getComments());
-            dto.setTime(video.getTime());
-            dto.setDescription(video.getDescription());
-            dto.setVideoUrl(video.getVideoUrl());
-            dto.setImage(video.getImage());
-            dto.setDuration(video.getDuration());
-
-            UserInfo author = authorMap.get(video.getAuthorId());
-            dto.setAuthor(author != null ? author.getUsername() : "未知作者");
-
-            return dto;
-        }).collect(Collectors.toList());
+        return videoCardConvertUtil.convertToCardDTOList(videos);
     }
+
 
 }

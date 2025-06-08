@@ -10,6 +10,7 @@ import com.backend.bilibili.service.dto.UserDTO;
 import com.backend.bilibili.service.dto.VideoCardDTO;
 import com.backend.bilibili.service.search.SearchService;
 import com.backend.bilibili.service.user.account.InfoService;
+import com.backend.bilibili.service.user.utils.VideoCardConvertUtil;
 import com.backend.bilibili.service.video.VideoInfoService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,27 +38,18 @@ public class SearchServiceImpl implements SearchService {
     private InfoService infoService;
 
 
+    @Autowired
+    private VideoCardConvertUtil videoCardConvertUtil;
+
+    @Override
     public List<VideoCardDTO> searchVideo(String keyword) {
         List<VideoInfo> videos = videoInfoMapper.selectList(
                 new QueryWrapper<VideoInfo>().like("title", keyword)
         );
 
-        return videos.stream().map(video -> {
-            UserInfo author = userInfoMapper.selectById(video.getAuthorId());
-            return new VideoCardDTO(
-                    (long) video.getId(),
-                    video.getTitle(),
-                    video.getViews(),
-                    video.getComments(),
-                    video.getTime(),
-                    video.getDescription(),
-                    video.getVideoUrl(),
-                    video.getImage(),
-                    video.getDuration(),
-                    author != null ? author.getUsername() : "未知作者"
-            );
-        }).collect(Collectors.toList());
+        return videoCardConvertUtil.convertToCardDTOList(videos);
     }
+
 
 
     public List<UserDTO> searchUser(String keyword, Long currentUid) {

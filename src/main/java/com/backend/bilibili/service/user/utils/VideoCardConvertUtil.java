@@ -38,7 +38,7 @@ public class VideoCardConvertUtil {
                     (long) video.getId(),
                     video.getTitle(),
                     video.getViews(),
-                    commentCount,  // 使用实时评论数
+                    commentCount,
                     video.getTime(),
                     video.getDescription(),
                     video.getVideoUrl(),

@@ -1,14 +1,15 @@
 package com.backend.bilibili.controller.video.comment;
 
 
-import com.backend.bilibili.pojo.video.comment.CommentInfo;
-import com.backend.bilibili.service.dto.DanmuDTO;
+
+import com.backend.bilibili.service.dto.CommentDTO;
 import com.backend.bilibili.service.video.comment.CommentInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/comments")
@@ -19,20 +20,25 @@ public class CommentInfoController {
 
 
     @GetMapping("/list")
-    public ResponseEntity<List<DanmuDTO.CommentDTO>> getComments(@RequestParam Long videoId) {
-        List<DanmuDTO.CommentDTO> commentList = commentService.getCommentsWithUserInfo(videoId);
+    public ResponseEntity<List<CommentDTO>> getComments(@RequestParam Long videoId) {
+        List<CommentDTO> commentList = commentService.getCommentsWithUserInfo(videoId);
         return ResponseEntity.ok(commentList);
     }
 
     @PostMapping("/add")
-    public ResponseEntity<String> addComment(@RequestBody CommentInfo commentInfo) {
-        boolean saved = commentService.save(commentInfo);
-        if (saved) {
+    public ResponseEntity<String> addComment(@RequestBody Map<String, Object> data) {
+        try {
+            Long videoId = Long.valueOf(data.get("videoId").toString());
+            String content = data.get("content").toString();
+            commentService.addComment(videoId, content);
             return ResponseEntity.ok("评论发布成功");
-        } else {
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body(e.getMessage());
+        } catch (Exception e) {
             return ResponseEntity.status(500).body("评论发布失败");
         }
     }
+
 
     @DeleteMapping("/delete/{commentId}")
     public ResponseEntity<String> deleteComment(@PathVariable Long commentId) {
@@ -48,5 +54,7 @@ public class CommentInfoController {
     public int getCommentCount(@PathVariable("videoId") Long videoId) {
         return commentService.getCommentCountByVideoId(videoId);
     }
+
+
 
 }

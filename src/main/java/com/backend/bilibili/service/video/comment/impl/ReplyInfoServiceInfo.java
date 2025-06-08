@@ -5,11 +5,13 @@ import com.backend.bilibili.mapper.video.comment.ReplyInfoMapper;
 import com.backend.bilibili.pojo.video.comment.ReplyInfo;
 import com.backend.bilibili.service.dto.ReplyDTO;
 import com.backend.bilibili.service.video.comment.ReplyInfoService;
+import com.backend.bilibili.utils.UserTokenUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -27,19 +29,28 @@ public class ReplyInfoServiceInfo extends ServiceImpl<ReplyInfoMapper, ReplyInfo
         return replyInfoMapper.selectRepliesWithUserInfo(commentId);
     }
 
-    // 新增回复
     @Override
-    public boolean saveReply(ReplyDTO replyDTO) {
-        ReplyInfo replyInfo = new ReplyInfo();
-        BeanUtils.copyProperties(replyDTO, replyInfo);
-        boolean result = save(replyInfo); // 只调用一次保存！
-
-        if (result) {
-            commentInfoMapper.increaseReplyCount(replyDTO.getCommentId());
+    public boolean addReply(Long commentId, String content) {
+        Long userUid = UserTokenUtil.getUid();
+        if (userUid == null) {
+            throw new RuntimeException("用户未登录");
         }
 
+        ReplyInfo replyInfo = new ReplyInfo();
+        replyInfo.setCommentId(commentId);
+        replyInfo.setUserUid(userUid);
+        replyInfo.setContent(content);
+        replyInfo.setCreateTime(LocalDateTime.now());
+        replyInfo.setLikeCount(0);
+
+        boolean result = this.save(replyInfo);
+
+        if (result) {
+            commentInfoMapper.increaseReplyCount(commentId);
+        }
         return result;
     }
+
 
 
     @Override

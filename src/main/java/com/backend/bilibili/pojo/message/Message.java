@@ -48,6 +48,9 @@ public class Message implements Serializable {
     @JsonProperty("receiver_avatar")
     private String receiverAvatar;
 
+    @JsonProperty("is_read")
+    private Boolean isRead;
+
     @Override
     public String toString() {
         return "Message{" +

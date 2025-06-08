@@ -9,7 +9,7 @@ import java.util.List;
 public interface ReplyInfoService extends IService<ReplyInfo> {
     List<ReplyDTO> getRepliesByCommentId(Long commentId);
 
-    boolean saveReply(ReplyDTO replyDTO);
+    boolean addReply(Long commentId, String content);
 
     boolean updateReplyById(Long id, ReplyDTO replyDTO);
 

@@ -1,6 +1,7 @@
 package com.backend.bilibili.controller.video.comment;
 
 import com.backend.bilibili.service.video.comment.CommentLikeService;
+import com.backend.bilibili.utils.UserTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +15,8 @@ public class CommentLikeController {
 
     // 点赞接口
     @PostMapping("/like")
-    public ResponseEntity<String> likeComment(@RequestParam Long commentId, @RequestParam Long userUid) {
+    public ResponseEntity<String> likeComment(@RequestParam Long commentId) {
+        Long userUid = UserTokenUtil.getUid();
         boolean success = commentLikeService.addLike(commentId, userUid);
         if (success) {
             return ResponseEntity.ok("点赞成功");
@@ -25,7 +27,8 @@ public class CommentLikeController {
 
     // 取消点赞接口
     @PostMapping("/unlike")
-    public ResponseEntity<String> unlikeComment(@RequestParam Long commentId, @RequestParam Long userUid) {
+    public ResponseEntity<String> unlikeComment(@RequestParam Long commentId) {
+        Long userUid = UserTokenUtil.getUid();
         boolean success = commentLikeService.removeLike(commentId, userUid);
         if (success) {
             return ResponseEntity.ok("取消点赞成功");

@@ -34,6 +34,8 @@ public class MessageServiceImpl implements MessageService {
         return messagesMapper.selectList(wrapper);
     }
 
+
+
     @Override
     public List<Message> getPrivateMessages(Long user1Id, Long user2Id) {
         // 使用 nested 保证 or 条件被正确括号包围，避免SQL逻辑错误
@@ -60,6 +62,39 @@ public class MessageServiceImpl implements MessageService {
 
         return messagesMapper.selectList(messageWrapper);
     }
+
+    @Override
+    public int getUnreadCount(Long userId) {
+        QueryWrapper<Message> wrapper = new QueryWrapper<>();
+        wrapper.eq("receiver_id", userId)
+                .eq("is_read", false);
+        return Math.toIntExact(messagesMapper.selectCount(wrapper));
+    }
+
+
+    @Override
+    public int getUnreadCountInSession(Long sessionId, Long userId) {
+        QueryWrapper<Message> wrapper = new QueryWrapper<>();
+        wrapper.eq("session_id", sessionId)
+                .eq("receiver_id", userId)
+                .eq("is_read", false);
+        return Math.toIntExact(messagesMapper.selectCount(wrapper));
+    }
+
+    @Override
+    public void markMessagesAsRead(Long sessionId, Long userId) {
+        Message update = new Message();
+        update.setIsRead(true);
+
+        QueryWrapper<Message> wrapper = new QueryWrapper<>();
+        wrapper.eq("session_id", sessionId)
+                .eq("receiver_id", userId)
+                .eq("is_read", false);
+
+        messagesMapper.update(update, wrapper);
+    }
+
+
     @Override
     public void deleteMessageById(Long id) {
         messagesMapper.deleteById(id);

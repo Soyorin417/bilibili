@@ -13,4 +13,10 @@ public interface MessageService {
     void deleteMessageById(Long id);
 
     List<Message> getPrivateMessages(Long user1Id, Long user2Id);
+
+    int getUnreadCount(Long userId);
+
+    int getUnreadCountInSession(Long sessionId, Long userId);
+
+    void markMessagesAsRead(Long sessionId, Long userId);
 }

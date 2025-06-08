@@ -20,4 +20,5 @@ public interface InfoService {
     boolean banUser(Long uid);
     boolean unbanUser(Long uid);
     Long getUserFansCount(Long uid);
+    String getUserNameById(Long uid);
 }

@@ -23,6 +23,7 @@ public class UserInfo {
     private int exp;
     private int coin;
     private int bcoin;
+    private String biography;
     private int fans;
     private int dynamic;
     private String role;

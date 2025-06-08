@@ -5,7 +5,7 @@ import com.backend.bilibili.pojo.user.UserInfo;
 import com.backend.bilibili.service.minio.MinioService;
 import com.backend.bilibili.service.redis.RedisService;
 import com.backend.bilibili.service.user.account.InfoService;
-import com.backend.bilibili.service.user.utils.UserInfoUtil;
+import com.backend.bilibili.service.dto.util.UserInfoUtil;
 import com.backend.bilibili.utils.UserTokenUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -130,6 +130,19 @@ public class InfoServiceImpl implements InfoService {
         QueryWrapper queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("uid", uid);
         return userInfoMapper.selectCount(queryWrapper);
+    }
+
+    @Override
+    public String getUserNameById(Long uid) {
+        QueryWrapper<UserInfo> wrapper = new QueryWrapper<>();
+        wrapper.eq("uid", uid);
+
+        UserInfo userInfo = userInfoMapper.selectOne(wrapper);
+        if (userInfo != null) {
+            return userInfo.getUsername();
+        } else {
+            return null;
+        }
     }
 
     // 获取当前登录用户信息

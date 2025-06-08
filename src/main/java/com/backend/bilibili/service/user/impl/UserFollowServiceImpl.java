@@ -20,7 +20,7 @@ public class UserFollowServiceImpl implements UserFollowService {
     private UserInfoMapper userInfoMapper;
 
 
-    public boolean follow(Long followerUid, Long followingUid, String remark) {
+    public boolean follow(Long followerUid, Long followingUid) {
         QueryWrapper<UserFollow> query = new QueryWrapper<>();
         query.eq("follower_uid", followerUid).eq("following_uid", followingUid);
         UserFollow exist = userFollowMapper.selectOne(query);
@@ -36,7 +36,6 @@ public class UserFollowServiceImpl implements UserFollowService {
 
             UserFollow update = new UserFollow();
             update.setStatus(1);
-            update.setRemark(remark);
             update.setIsMutual(isMutual ? 1 : 0);
 
             result = userFollowMapper.update(update, updateWrapper) > 0;
@@ -46,7 +45,6 @@ public class UserFollowServiceImpl implements UserFollowService {
             follow.setFollowingUid(followingUid);
             follow.setStatus(1);
             follow.setIsMutual(isMutual ? 1 : 0);
-            follow.setRemark(remark);
 
             result = userFollowMapper.insert(follow) > 0;
         }
@@ -62,6 +60,16 @@ public class UserFollowServiceImpl implements UserFollowService {
 
 
         return result;
+    }
+
+    @Override
+    public boolean isFollow(Long followerUid, Long followingUid) {
+        return userFollowMapper.selectCount(
+                new QueryWrapper<UserFollow>()
+                        .eq("follower_uid", followerUid)
+                        .eq("following_uid", followingUid)
+                        .eq("status", 1)
+        ) > 0;
     }
 
 
@@ -87,7 +95,8 @@ public class UserFollowServiceImpl implements UserFollowService {
     }
 
 
-    public List<UserFollow> getFollowingList(Long followerUid) {
+    @Override
+    public List<UserFollow> getFollowListByFollowerUid(Long followerUid) {
         QueryWrapper<UserFollow> query = new QueryWrapper<>();
         query.eq("follower_uid", followerUid).eq("status", 1);
         return userFollowMapper.selectList(query);

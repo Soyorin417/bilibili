@@ -1,4 +1,4 @@
-package com.backend.bilibili.service.user.utils;
+package com.backend.bilibili.service.dto.util;
 
 import com.backend.bilibili.pojo.user.UserInfo;
 
@@ -22,6 +22,7 @@ public class UserInfoUtil {
         map.put("role", user.getRole());
         map.put("register_time", user.getRegisterTime());
         map.put("is_banned", user.getIsBanned());
+        map.put("biography", user.getBiography());
         return map;
     }
     public static UserInfo convertToUserInfo(Map<String, Object> userInfoMap) {

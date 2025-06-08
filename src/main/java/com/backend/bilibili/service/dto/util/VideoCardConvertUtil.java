@@ -1,4 +1,4 @@
-package com.backend.bilibili.service.user.utils;
+package com.backend.bilibili.service.dto.util;
 
 import com.backend.bilibili.mapper.user.UserInfoMapper;
 import com.backend.bilibili.pojo.user.UserInfo;

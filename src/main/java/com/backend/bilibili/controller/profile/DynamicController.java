@@ -15,7 +15,7 @@ public class DynamicController {
     private DynamicService dynamicService;
 
     @GetMapping("/list")
-    public List<VideoCardDetailDTO> getUserDynamics() {
-        return dynamicService.getUserDynamics();
+    public List<VideoCardDetailDTO> getUserDynamics(@RequestParam Long userId) {
+        return dynamicService.getUserDynamics(userId);
     }
 }

@@ -6,5 +6,5 @@ import com.backend.bilibili.service.dto.VideoCardDetailDTO;
 import java.util.List;
 
 public interface DynamicService {
-    List<VideoCardDetailDTO> getUserDynamics();
+    List<VideoCardDetailDTO> getUserDynamics(Long userId);
 }

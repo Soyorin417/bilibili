@@ -21,9 +21,6 @@ public class VideoConvertUtil {
     @Autowired
     private CommentInfoService commentInfoService;
 
-    /**
-     * 将 VideoInfo 列表转换为带作者头像和粉丝数的 VideoViewDTO 列表
-     */
     public List<VideoViewDTO> convertToDTOList(List<VideoInfo> videoList) {
         List<VideoViewDTO> dtoList = new ArrayList<>();
         for (VideoInfo video : videoList) {
@@ -32,9 +29,6 @@ public class VideoConvertUtil {
         return dtoList;
     }
 
-    /**
-     * 转换单个 VideoInfo 到 DTO
-     */
     public VideoViewDTO convertToDTO(VideoInfo video) {
         VideoViewDTO dto = new VideoViewDTO();
         dto.setId(video.getId());

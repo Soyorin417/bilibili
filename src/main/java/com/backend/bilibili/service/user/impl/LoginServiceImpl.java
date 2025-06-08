@@ -1,6 +1,8 @@
 package com.backend.bilibili.service.user.impl;
 
+import com.backend.bilibili.mapper.user.UserInfoMapper;
 import com.backend.bilibili.pojo.user.User;
+import com.backend.bilibili.pojo.user.UserInfo;
 import com.backend.bilibili.service.user.account.LoginService;
 import com.backend.bilibili.service.user.utils.UserDetailsImpl;
 import com.backend.bilibili.utils.JwtUtil;
@@ -17,6 +19,10 @@ public class LoginServiceImpl implements LoginService {
 
     @Autowired
     private AuthenticationManager authenticationManager;
+    @Autowired
+    private UserInfoMapper userInfoMapper;
+
+
 
     @Override
     public Map<String, String> getToken(String username, String password) {
@@ -35,6 +41,17 @@ public class LoginServiceImpl implements LoginService {
                 // 如果认证通过，获取用户信息
                 UserDetailsImpl loginUser = (UserDetailsImpl) authenticate.getPrincipal();
                 User user = loginUser.getUser();
+
+                //封禁判断
+                Long uid = user.getId();
+                UserInfo userInfo = userInfoMapper.selectById(uid);
+
+                if (userInfo != null && userInfo.getIsBanned() != null && userInfo.getIsBanned()) {
+                    Map<String, String> map = new HashMap<>();
+                    map.put("error_message", "账号已被封禁，无法登录");
+                    return map;
+                }
+
 
                 // 生成JWT token
                 String jwt = JwtUtil.createJWT(user.getUsername());

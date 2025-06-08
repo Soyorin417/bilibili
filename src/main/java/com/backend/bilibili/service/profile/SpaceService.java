@@ -5,6 +5,5 @@ import com.backend.bilibili.service.dto.VideoCardDTO;
 import java.util.List;
 
 public interface SpaceService {
-    List<VideoCardDTO> getUserPublishedVideos();
     List<VideoCardDTO> getUserPublishedVideos(long userId);
 }

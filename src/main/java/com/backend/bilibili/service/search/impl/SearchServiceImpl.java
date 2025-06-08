@@ -10,7 +10,7 @@ import com.backend.bilibili.service.dto.UserDTO;
 import com.backend.bilibili.service.dto.VideoCardDTO;
 import com.backend.bilibili.service.search.SearchService;
 import com.backend.bilibili.service.user.account.InfoService;
-import com.backend.bilibili.service.user.utils.VideoCardConvertUtil;
+import com.backend.bilibili.service.dto.util.VideoCardConvertUtil;
 import com.backend.bilibili.service.video.VideoInfoService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -5,6 +5,7 @@ import com.backend.bilibili.service.dto.VideoCardDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -18,12 +19,7 @@ public class SpaceController {
 
     // 获取当前用户发布的视频列表
     @GetMapping("/videos")
-    public List<VideoCardDTO> getUserPublishedVideos() {
-        return spaceService.getUserPublishedVideos();
-    }
-
-    @GetMapping("/videos/other")
-    public List<VideoCardDTO> getOtherUserPublishedVideos(Long userId) {
+    public List<VideoCardDTO> getUserPublishedVideos(@RequestParam Long userId) {
         return spaceService.getUserPublishedVideos(userId);
     }
 

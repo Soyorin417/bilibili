@@ -140,20 +140,21 @@ export default {
       }
     },
 
-    selectSession(session) {
+    async selectSession(session) {
       this.selectedSession = session;
 
-      // 如果会话没有消息，才从数据库加载历史消息
       if (!session.messages || session.messages.length === 0) {
         const userInfoStr = JSON.parse(localStorage.getItem("userInfo"));
         const userId = parseInt(userInfoStr.id);
 
-        let targetUserId = null;
-        if (userId === session.user1Id) {
-          targetUserId = session.user2Id;
-        } else {
-          targetUserId = session.user1Id;
+        try {
+          await messageApi.markMessagesAsRead(session.id);
+          console.log("标记已读成功");
+        } catch (error) {
+          console.error("标记消息已读失败：", error);
         }
+
+        let targetUserId = userId === session.user1Id ? session.user2Id : session.user1Id;
 
         if (!userId || !targetUserId) {
           console.error("Invalid user IDs", userId, targetUserId);
@@ -162,7 +163,6 @@ export default {
         this.getMessages(userId, targetUserId);
       }
     },
-
     async sendMessage(newMsg) {
       if (!this.selectedSession) return;
 
@@ -181,7 +181,7 @@ export default {
       let receiverName = "";
       let receiverAvatar = "";
       try {
-        const res = await userApi.getUserById(receiverId);
+        const res = await userApi.getUserByUid(receiverId);
         receiverName = res.data.username;
         receiverAvatar = res.data.avatar;
       } catch (e) {

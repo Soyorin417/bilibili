@@ -20,6 +20,7 @@
         ><div class="nav-link">
           <VipIcon :fill="fill" />
           <span
+            v-if="0"
             class="position-absolute top-1 start-60 translate-middle badge border border-light rounded-circle bg-danger p-1"
             ><span class="visually-hidden">unread messages</span></span
           >
@@ -32,8 +33,11 @@
         ><div class="nav-link">
           <MessageIcon :fill="fill" />
           <span
+            v-if="unReadCount"
             class="position-absolute top-1 start-80 translate-middle badge rounded-pill bg-danger"
-            >9<span class="visually-hidden">unread messages</span>
+          >
+            {{ unReadCount }}
+            <span class="visually-hidden">unread messages</span>
           </span>
         </div>
         <div class="nav-text" :style="{ color: fill }">消息</div></router-link
@@ -52,6 +56,7 @@
         ><div class="nav-link">
           <ActivityIcon :fill="fill" />
           <span
+            v-if="0"
             class="position-absolute top-1 start-60 translate-middle badge border border-light rounded-circle bg-danger p-1"
             ><span class="visually-hidden">unread messages</span></span
           >
@@ -72,6 +77,7 @@
         ><div class="nav-link">
           <CollectIcon :fill="fill" />
           <span
+            v-if="0"
             class="position-absolute top-1 start-60 translate-middle badge border border-light rounded-circle bg-danger p-1"
             ><span class="visually-hidden">unread messages</span></span
           >
@@ -96,6 +102,7 @@
         ><div class="nav-link">
           <HistoryIcon :fill="fill" />
           <span
+            v-if="0"
             class="position-absolute top-1 start-60 translate-middle badge border border-light rounded-circle bg-danger p-1"
             ><span class="visually-hidden">unread messages</span></span
           >
@@ -117,6 +124,7 @@
         ><div class="nav-link">
           <CreateIcon :fill="fill" />
           <span
+            v-if="0"
             class="position-absolute top-1 start-60 translate-middle badge border border-light rounded-circle bg-danger p-1"
             ><span class="visually-hidden">unread messages</span></span
           >
@@ -156,6 +164,7 @@ import ActivityIcon from "@/components/utils/ui/ActivityIcon.vue";
 import { collectApi } from "@/api/user/collect.js";
 import { historyApi } from "@/api/user/history.js";
 import { activityApi } from "@/api/activity.js";
+import { messageApi } from "@/api/message/message";
 export default {
   name: "NavBarRightMenu",
   components: {
@@ -181,14 +190,24 @@ export default {
       navbarDynamics: [],
       nabarCollections: [],
       nabarHistory: [],
+      unReadCount: "",
     };
   },
   mounted() {
     this.fetchNavbarDynamics();
     this.fetchNabarCollections();
     this.fetchNabarHistory();
+    this.getUnreadCount();
   },
   methods: {
+    async getUnreadCount() {
+      try {
+        const res = await messageApi.getUnreadCount();
+        this.unReadCount = res.data;
+      } catch (e) {
+        console.error("获取未读消息失败", e);
+      }
+    },
     async fetchNavbarDynamics() {
       try {
         const res = await activityApi.getUserActivity();

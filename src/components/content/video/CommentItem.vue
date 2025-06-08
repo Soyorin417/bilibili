@@ -61,7 +61,11 @@
             v-if="userInfo && userInfo.id === localComment.userUid"
             class="d-flex align-items-center"
           >
-            <i class="bi bi-x" @click="$emit('delete', localComment)" style="cursor: pointer">
+            <i
+              class="bi bi-x"
+              @click="$emit('delete', localComment)"
+              style="cursor: pointer"
+            >
               <small>删除</small></i
             >
           </div>
@@ -123,10 +127,10 @@ export default {
   ],
   computed: {
     thumbsUpFillColor() {
-      return this.localComment.isLiked ? '#00aeec' : '#666666';
+      return this.localComment.isLiked ? "#00aeec" : "#666666";
     },
     thumbsDownFillColor() {
-      return this.localComment.isDisliked ? '#00aeec' : '#666666';
+      return this.localComment.isDisliked ? "#00aeec" : "#666666";
     },
   },
   watch: {
@@ -134,7 +138,11 @@ export default {
       handler(newVal) {
         // Update the local copy when the prop changes
         this.localComment = { ...newVal };
-        console.log("Comment prop changed in CommentItem:", newVal.isLiked, newVal.isDisliked);
+        console.log(
+          "Comment prop changed in CommentItem:",
+          newVal.isLiked,
+          newVal.isDisliked
+        );
       },
       deep: true,
     },
@@ -173,9 +181,22 @@ export default {
 }
 
 .comment-text {
-  background-color: transparent;
-  border: none;
-  padding: 0;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
   margin-bottom: 0.5rem; /* Matches Bootstrap's mb-1 */
+  color: #333 !important;
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+  /* Explicitly reset form-like styles */
+  box-sizing: border-box !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  outline: none !important;
 }
 </style>

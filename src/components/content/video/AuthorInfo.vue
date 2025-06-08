@@ -13,8 +13,14 @@
       <div class="author-details">
         <div class="d-flex align-items-center mb-1">
           <h6 class="mb-0">{{ videoInfo.authorName }}</h6>
-          <el-icon class="ms-4"><Message /></el-icon>
-          <div class="small ms-1">发消息</div>
+          <div
+            class="d-flex align-items-center"
+            @click="handleGoToChat"
+            style="cursor: pointer"
+          >
+            <el-icon class="ms-4"><Message /></el-icon>
+            <div class="small ms-1">发消息</div>
+          </div>
         </div>
         <p class="small text-start mb-1">
           {{ truncatedDescription }}
@@ -49,8 +55,14 @@
 
 <script>
 import axios from "axios";
+import { Message } from "@element-plus/icons-vue";
+import { goToChat } from "@/utils/chatUtils";
+
 export default {
   name: "AuthorInfo",
+  components: {
+    Message,
+  },
   props: {
     videoInfo: {
       type: Object,
@@ -153,6 +165,15 @@ export default {
     getAuthorId() {
       return (
         this.videoInfo.authorId || this.videoInfo.author?.id || this.videoInfo.author?.uid
+      );
+    },
+    handleGoToChat() {
+      goToChat(
+        this.userInfo,
+        this.getAuthorId(),
+        this.videoInfo.avatar,
+        this.videoInfo.authorName,
+        this.$router
       );
     },
   },

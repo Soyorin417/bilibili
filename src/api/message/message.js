@@ -9,14 +9,19 @@ export const messageApi = {
 
   // 获取私聊消息
   getPrivateMessages: (user1, user2) => {
-    return request.get(`/messages/private`, {
+    return request.get(`/api/messages/private`, {
       params: { user1, user2 },
     });
   },
 
   // 发送消息
   sendMessage: (messageData) => {
-    return request.post("/messages", messageData);
+    return request.post("/api/messages", messageData);
+  },
+
+  // 获取会话消息
+  getMessagesBySession: (sessionId) => {
+    return request.get(`/api/messages/session/${sessionId}`);
   },
 
   // 获取群聊消息
@@ -26,17 +31,23 @@ export const messageApi = {
 
   // 获取未读消息数
   getUnreadCount: () => {
-    return request.get("/messages/unread/count");
+    return request.get("/api/messages/unread/count");
+  },
+
+  // 获取会话内未读消息数
+  getUnreadCountInSession: (sessionId, userId) => {
+    return request.get(`/api/messages/unread/count/${sessionId}`, { params: { userId } });
   },
 
   // 标记消息为已读
-  markAsRead: (messageIds) => {
-    return request.put("/messages/read", { messageIds });
+  markMessagesAsRead: (sessionId) => {
+    return request.post(`/api/messages/read/${sessionId}`);
   },
+  
 
   // 删除消息
   deleteMessage: (messageId) => {
-    return request.delete(`/messages/${messageId}`);
+    return request.delete(`/api/messages/${messageId}`);
   },
 
   // 获取消息历史记录

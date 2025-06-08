@@ -24,7 +24,7 @@
           </div>
         </div>
         <p class="small text-start mb-1">
-          {{ truncatedDescription }}
+          {{ userInfo.biography }}
         </p>
         <div>
           <div class="d-grid gap-1 d-md-block">

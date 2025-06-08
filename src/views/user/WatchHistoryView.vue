@@ -39,7 +39,7 @@ import VideoBar from "@/components/navBar/VideoBar.vue";
 import HistoryTabs from "@/components/user/history/HistoryTabs.vue";
 import HistoryCard from "@/components/user/history/HistoryCard.vue";
 import HistoryTimeline from "@/components/user/history/HistoryTimeline.vue";
-import { getWatchHistory } from "@/api/user/watchApi";
+import { watchApi } from "@/api/user/watchApi";
 import { parseVideoCard } from "@/utils/videoCardParser";
 
 export default {
@@ -51,15 +51,20 @@ export default {
     HistoryTimeline,
   },
   async created() {
-    const res = await getWatchHistory();
-    const rawList = res.data || [];
-    this.historyList = rawList.map(parseVideoCard);
+    const res = await watchApi.getWatchHistory();
+    if (res?.data && Array.isArray(res.data)) {
+      this.historyList = res.data.map(parseVideoCard);
+    } else {
+      console.warn("Watch history data is not an array:", res?.data);
+      this.historyList = [];
+    }
   },
   data() {
     return {
       recordHistory: true,
       search: "",
       activeTab: "综合",
+      historyList: [],
     };
   },
   computed: {

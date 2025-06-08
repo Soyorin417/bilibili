@@ -1,11 +1,20 @@
 import request from "@/utils/request";
 
-export function recordWatch(videoId) {
-  return request.post("/api/watch-history/record", {
-    params: {  videoId }
-  });
-}
+export const watchApi = {
+  // 记录观看历史
+  recordWatch(videoId) {
+    return request({
+      url: "/api/watch-history/record",
+      method: "post",
+      params: { videoId }
+    });
+  },
 
-export function getWatchHistory() {
-  return request.get("/api/watch-history/");
-}
+  // 获取观看历史
+  getWatchHistory() {
+    return request({
+      url: "/api/watch-history",
+      method: "get"
+    });
+  }
+};
